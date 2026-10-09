@@ -48,4 +48,6 @@ ShellRoot {
     readonly property var tablet: Tablet
     // обновления окружения из git (Настройки → Updates)
     readonly property var dotfiles: Dotfiles
+    // меню загрузки и экран входа в стиле шелла (тема для rexilone-boot)
+    readonly property var bootTheme: BootTheme
 }

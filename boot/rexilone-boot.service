@@ -1,0 +1,16 @@
+# Оформление загрузки и входа + поиск систем: при загрузке и при выключении
+# (так меню Limine и экран входа следуют за темой шелла без запроса пароля)
+[Unit]
+Description=Rexilone: меню загрузки и экран входа в стиле шелла
+After=local-fs.target
+RequiresMountsFor=/boot
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/rexilone/rexilone-boot all
+ExecStop=/usr/local/lib/rexilone/rexilone-boot all
+TimeoutSec=60
+
+[Install]
+WantedBy=multi-user.target

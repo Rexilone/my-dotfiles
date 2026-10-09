@@ -1,0 +1,12 @@
+# Поиск систем на дисках: запускает правило udev, когда подключают или отключают диск
+[Unit]
+Description=Rexilone: поиск систем на подключённых дисках
+After=local-fs.target
+RequiresMountsFor=/boot
+
+[Service]
+Type=oneshot
+# подождать, пока подключатся все разделы диска
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/local/lib/rexilone/rexilone-boot scan
+TimeoutSec=60

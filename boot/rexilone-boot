@@ -1,0 +1,668 @@
+#!/usr/bin/env python3
+"""Загрузка и вход в стиле Rexilone Shell (запускается от root).
+
+  rexilone-boot scan           найти системы на всех дисках (Windows, другие Linux…) и добавить их в меню Limine
+  rexilone-boot apply          оформить меню Limine и экран входа LightDM по теме шелла
+  rexilone-boot all            scan + apply (при загрузке и выключении — rexilone-boot.service)
+  rexilone-boot hide|show <id> убрать систему из меню или вернуть
+  rexilone-boot forget <id>    забыть систему (диск отключён навсегда)
+  rexilone-boot status         состояние в JSON (то же пишется в /var/lib/rexilone/boot-status.json)
+
+Тему готовит шелл пользователя: ~/.local/state/rexilone/boot/{theme.json, wallpaper.jpg, greeter.jpg}.
+Пользователь — из /etc/rexilone/boot.conf (user=…). Эти файлы — данные, а не код: цвета и числа
+проверяются, картинки принимаются только JPEG и не больше 16 МБ.
+
+Меню Limine правится только внутри своих блоков (# >>> rexilone:…), остальное не трогается.
+Если в Limine вшит хеш конфига (Secure Boot), конфиг не меняется вовсе.
+"""
+import glob
+import json
+import os
+import pwd
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+STATE = "/var/lib/rexilone"
+SYSTEMS = f"{STATE}/boot-systems.json"
+STATUS = f"{STATE}/boot-status.json"
+GREETER_DIR = f"{STATE}/greeter"
+CONF = "/etc/rexilone/boot.conf"
+ESP_TYPE = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
+LIMINE_CANDIDATES = ["/boot/limine.conf", "/boot/limine/limine.conf", "/boot/EFI/limine/limine.conf",
+                     "/boot/EFI/BOOT/limine.conf", "/efi/limine.conf", "/efi/EFI/limine/limine.conf",
+                     "/efi/EFI/BOOT/limine.conf", "/boot/efi/EFI/limine/limine.conf", "/boot/efi/EFI/BOOT/limine.conf"]
+GREETER_CONF = "/etc/lightdm/lightdm-gtk-greeter.conf"
+GREETER_CSS = "/var/lib/lightdm/.config/gtk-3.0/gtk.css"
+HEX = re.compile(r"^#?[0-9a-fA-F]{6}$")
+MANAGED_GLOBALS = {"timeout", "remember_last_entry", "wallpaper", "wallpaper_style", "backdrop",
+                   "interface_branding", "interface_branding_colour", "interface_branding_color",
+                   "interface_help_hidden", "interface_help_colour", "interface_help_color",
+                   "interface_help_colour_bright", "interface_help_color_bright",
+                   "term_palette", "term_palette_bright", "term_background", "term_foreground",
+                   "term_background_bright", "term_foreground_bright", "term_margin", "term_margin_gradient"}
+
+log_lines = []
+
+
+def log(msg):
+    log_lines.append(msg)
+    print(msg, file=sys.stderr)
+
+
+def run(cmd, **kw):
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=30, **kw)
+
+
+def load_json(path, default):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def write_file(path, data, mode=0o644, binary=False):
+    d = os.path.dirname(path)
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".rexilone-")
+    with os.fdopen(fd, "wb" if binary else "w") as f:
+        f.write(data)
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+
+
+# ── пользователь и его тема ──────────────────────────────────────────
+
+def user_home():
+    user = ""
+    try:
+        for line in open(CONF):
+            if line.strip().startswith("user="):
+                user = line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    if not user:
+        return None
+    try:
+        return pwd.getpwnam(user).pw_dir
+    except KeyError:
+        return None
+
+
+def hexc(v, default):
+    v = str(v or "")
+    return v.lstrip("#").lower() if HEX.match(v) else default
+
+
+def load_theme():
+    """theme.json от шелла → проверенные значения."""
+    home = user_home()
+    src = os.path.join(home, ".local/state/rexilone/boot") if home else None
+    raw = load_json(os.path.join(src, "theme.json"), {}) if src else {}
+    c = raw.get("colors") if isinstance(raw.get("colors"), dict) else {}
+    t = {
+        "dir": src,
+        "bg": hexc(c.get("bg"), "151515"), "panel": hexc(c.get("panel"), "151515"),
+        "surface": hexc(c.get("surface"), "1b1b1b"), "surfaceHi": hexc(c.get("surfaceHi"), "222222"),
+        "surfaceHi2": hexc(c.get("surfaceHi2"), "2a2a2a"), "fg": hexc(c.get("fg"), "d4d4d4"),
+        "muted": hexc(c.get("muted"), "a0a0a0"), "dim": hexc(c.get("dim"), "6b6b6b"),
+        "accent": hexc(c.get("accent"), "d4d4d4"), "urgent": hexc(c.get("urgent"), "c96a6a"),
+        "warn": hexc(c.get("warn"), "d7a65f"),
+        "dark": bool(raw.get("dark", True)),
+        "font": re.sub(r"[^\w .+-]", "", str(raw.get("font") or "JetBrainsMono Nerd Font"))[:60],
+        "timeout": raw.get("timeout", 5),
+        "remember": bool(raw.get("remember", True)),
+        "wallpaper": bool(raw.get("wallpaper", True)),
+        "otherSystems": bool(raw.get("otherSystems", True)),
+        "greeterBlur": bool(raw.get("greeterBlur", True)),
+        "greeterClock": bool(raw.get("greeterClock", True)),
+        "greeterUserImage": bool(raw.get("greeterUserImage", False)),
+        "found": bool(raw),
+    }
+    to = t["timeout"]
+    t["timeout"] = "no" if to == "no" else (str(int(to)) if isinstance(to, (int, float)) and 0 <= to <= 60 else "5")
+    return t
+
+
+def user_jpeg(t, name):
+    """Картинка из папки темы, если это правда JPEG разумного размера."""
+    if not t["dir"]:
+        return None
+    p = os.path.join(t["dir"], name)
+    try:
+        st = os.lstat(p)
+        if not os.path.isfile(p) or os.path.islink(p) or st.st_size > 16 << 20 or st.st_size < 1024:
+            return None
+        with open(p, "rb") as f:
+            data = f.read()
+        return data if data[:3] == b"\xff\xd8\xff" else None
+    except OSError:
+        return None
+
+
+# ── Limine ────────────────────────────────────────────────────────────
+
+def limine_conf():
+    for p in LIMINE_CANDIDATES:
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def esp_root(conf):
+    """Корень раздела EFI, на котором лежит limine.conf (точка монтирования)."""
+    d = os.path.dirname(conf)
+    while d != "/" and not os.path.ismount(d):
+        d = os.path.dirname(d)
+    return d
+
+
+def config_hash_enrolled(conf):
+    """Вшит ли хеш конфига в Limine (Secure Boot): тогда менять конфиг нельзя."""
+    root = esp_root(conf)
+    for exe in glob.glob(os.path.join(root, "EFI", "*", "*.EFI")) + glob.glob(os.path.join(root, "EFI", "*", "*.efi")):
+        try:
+            data = open(exe, "rb").read()
+        except OSError:
+            continue
+        i = data.find(b"++CONFIG_B2SUM_SIGNATURE++")
+        if i < 0:
+            continue
+        h = data[i + 26:i + 26 + 128]
+        if h and set(h) != {ord("0")}:
+            return True
+    return False
+
+
+def strip_blocks(lines):
+    out, skip = [], False
+    for line in lines:
+        s = line.strip()
+        if s.startswith("# >>> rexilone:"):
+            skip = True
+            continue
+        if s.startswith("# <<< rexilone:"):
+            skip = False
+            continue
+        if not skip:
+            out.append(line)
+    return out
+
+
+def edit_limine(theme_block, systems_block):
+    conf = limine_conf()
+    if not conf:
+        log("limine.conf не найден — меню загрузки не меняю")
+        return {"limine": False}
+    if config_hash_enrolled(conf):
+        log("в Limine вшит хеш конфига (Secure Boot) — меню загрузки не меняю")
+        return {"limine": True, "path": conf, "locked": True}
+    old = open(conf).read()
+    lines = strip_blocks(old.splitlines())
+    # глобальные параметры, которыми управляем сами, — убрать из «чужой» части (до первого пункта меню)
+    first_entry = next((i for i, l in enumerate(lines) if l.strip().startswith("/")), len(lines))
+    head, body = [], lines[first_entry:]
+    for l in lines[:first_entry]:
+        key = l.split(":", 1)[0].strip() if ":" in l else ""
+        if key in MANAGED_GLOBALS and theme_block:
+            continue
+        head.append(l)
+    while head and not head[0].strip():
+        head.pop(0)
+    while body and not body[-1].strip():
+        body.pop()
+    parts = []
+    if theme_block:
+        parts += ["# >>> rexilone:theme (generated by rexilone-boot, Settings > Boot & login)", *theme_block,
+                  "# <<< rexilone:theme", ""]
+    parts += head + body
+    if systems_block:
+        parts += ["", "# >>> rexilone:systems (systems found on other disks, generated by rexilone-boot)",
+                  *systems_block, "# <<< rexilone:systems"]
+    new = "\n".join(parts).rstrip() + "\n"
+    if new != old:
+        orig = conf + ".orig"
+        if not os.path.exists(orig):
+            shutil.copy2(conf, orig)           # самый первый вариант — на всякий случай
+        shutil.copy2(conf, conf + ".bak")
+        write_file(conf, new, 0o644)
+        log(f"меню загрузки обновлено: {conf}")
+    return {"limine": True, "path": conf, "locked": False}
+
+
+def limine_theme(t, conf):
+    """Строки глобальных параметров Limine по теме шелла."""
+    if not t["found"]:
+        return []
+    bg, fg = t["bg"], t["fg"]
+    lines = [f"timeout: {t['timeout']}"]
+    if t["remember"]:
+        lines.append("remember_last_entry: yes")
+    lines += [
+        "interface_branding: Rexilone",
+        f"interface_branding_colour: {t['accent']}",
+        "interface_help_hidden: yes",
+        f"interface_help_colour: {t['dim']}",
+        f"interface_help_colour_bright: {t['fg']}",
+        f"term_foreground: {fg}",
+        f"term_foreground_bright: {fg}",
+        f"term_background_bright: {t['surfaceHi2']}",
+        # чёрный, красный, зелёный, коричневый, синий, пурпурный, голубой, серый
+        f"term_palette: {bg};{t['urgent']};{t['accent']};{t['warn']};{t['accent']};{t['accent']};{t['accent']};{t['muted']}",
+        f"term_palette_bright: {t['dim']};{t['urgent']};{fg};{t['warn']};{fg};{fg};{fg};{fg}",
+        f"backdrop: {bg}",
+    ]
+    img = user_jpeg(t, "wallpaper.jpg") if t["wallpaper"] else None
+    if img and conf:
+        dst = os.path.join(os.path.dirname(conf), "rexilone-wallpaper.jpg")
+        try:
+            if not os.path.exists(dst) or open(dst, "rb").read() != img:
+                write_file(dst, img, 0o644, binary=True)
+            rel = "/" + os.path.relpath(dst, esp_root(conf))
+            # карточка меню по центру: полупрозрачный фон темы и мягкий край
+            lines += ["wallpaper: boot():" + rel, "wallpaper_style: stretched",
+                      f"term_background: 30{t['panel']}", "term_margin: 140", "term_margin_gradient: 40"]
+        except OSError as e:
+            log(f"обои меню загрузки: {e}")
+    else:
+        lines += [f"term_background: 00{bg}", "term_margin: 0"]
+    return lines
+
+
+# ── поиск систем ──────────────────────────────────────────────────────
+
+KNOWN = [  # (путь внутри ESP, название) — по порядку предпочтения
+    ("EFI/Microsoft/Boot/bootmgfw.efi", "Windows"),
+]
+DISTROS = {"ubuntu": "Ubuntu", "fedora": "Fedora", "debian": "Debian", "opensuse": "openSUSE", "manjaro": "Manjaro",
+           "pop": "Pop!_OS", "linuxmint": "Linux Mint", "mint": "Linux Mint", "endeavouros": "EndeavourOS",
+           "arch": "Arch Linux", "garuda": "Garuda", "cachyos": "CachyOS", "nixos": "NixOS", "centos": "CentOS",
+           "rocky": "Rocky Linux", "almalinux": "AlmaLinux", "kali": "Kali Linux", "elementary": "elementary OS",
+           "zorin": "Zorin OS", "neon": "KDE neon", "gentoo": "Gentoo", "void": "Void Linux", "redhat": "Red Hat",
+           "steamos": "SteamOS", "systemd": "Linux (systemd-boot)", "refind": "rEFInd", "limine": "Linux (Limine)"}
+LOADERS = ["shimx64.efi", "grubx64.efi", "systemd-bootx64.efi", "refind_x64.efi", "BOOTX64.EFI", "limine_x64.efi"]
+
+
+def lsblk():
+    r = run(["lsblk", "-J", "-b", "-o", "PATH,TYPE,PKNAME,PARTUUID,PARTTYPE,FSTYPE,MOUNTPOINTS,MODEL,VENDOR,SIZE,TRAN,RM"])
+    try:
+        return json.loads(r.stdout).get("blockdevices", [])
+    except ValueError:
+        return []
+
+
+def flatten(devs, parent=None):
+    for d in devs:
+        d["parent"] = parent
+        yield d
+        yield from flatten(d.get("children") or [], d)
+
+
+def find_ci(root, rel):
+    """Путь без учёта регистра (FAT): EFI/Microsoft/Boot/bootmgfw.efi."""
+    cur = root
+    for part in rel.split("/"):
+        try:
+            names = os.listdir(cur)
+        except OSError:
+            return None
+        hit = next((n for n in names if n.lower() == part.lower()), None)
+        if not hit:
+            return None
+        cur = os.path.join(cur, hit)
+    return os.path.relpath(cur, root)
+
+
+def scan_esp(mnt, own):
+    """Загрузчики на разделе EFI: [(путь, название)]."""
+    found = []
+    for rel, name in KNOWN:
+        p = find_ci(mnt, rel)
+        if p:
+            found.append((p, name))
+    efi = find_ci(mnt, "EFI") or ""
+    try:
+        dirs = sorted(os.listdir(os.path.join(mnt, efi))) if efi else []
+    except OSError:
+        dirs = []
+    for d in dirs:
+        low = d.lower()
+        if low in ("microsoft", "boot", "linux", "tools", "dell", "hp", "lenovo", "asus", "oem") or (own and low == "limine"):
+            continue
+        for loader in LOADERS:
+            p = find_ci(mnt, f"{efi}/{d}/{loader}")
+            if p:
+                found.append((p, DISTROS.get(low, d)))
+                break
+    if not own:
+        # чужой диск: собственные ядра (UKI) и запасной загрузчик, если ничего не нашли
+        for uki in sorted(glob.glob(os.path.join(mnt, efi, "[Ll]inux", "*.efi"))):
+            found.append((os.path.relpath(uki, mnt), "Linux · " + os.path.basename(uki)[:-4]))
+        if not found:
+            p = find_ci(mnt, f"{efi}/BOOT/BOOTX64.EFI")
+            if p:
+                found.append((p, "Other system"))
+    return found
+
+
+def scan():
+    conf = limine_conf()
+    own_root = esp_root(conf) if conf else None
+    known = load_json(SYSTEMS, {})
+    seen = set()
+    for d in flatten(lsblk()):
+        if d.get("type") != "part" or (d.get("parttype") or "").lower() != ESP_TYPE or not d.get("partuuid"):
+            continue
+        mounts = [m for m in (d.get("mountpoints") or []) if m]
+        own = bool(own_root and own_root in mounts)
+        disk = d.get("parent") or {}
+        label = " ".join(x for x in ((disk.get("vendor") or "").strip(), (disk.get("model") or "").strip()) if x) or disk.get("path", "")
+        tmp = None
+        mnt = mounts[0] if mounts else None
+        if not mnt:
+            tmp = tempfile.mkdtemp(prefix="rexilone-esp-")
+            r = run(["mount", "-o", "ro,noexec,nosuid,nodev", d["path"], tmp])
+            if r.returncode != 0:
+                os.rmdir(tmp)
+                continue
+            mnt = tmp
+        try:
+            for rel, name in scan_esp(mnt, own):
+                sid = f"{d['partuuid']}:{rel.lower()}"
+                seen.add(sid)
+                known[sid] = {"id": sid, "name": name, "disk": label, "own": own, "partuuid": d["partuuid"],
+                              "path": "/" + rel.replace(os.sep, "/"), "removable": bool(d.get("rm") or disk.get("rm")),
+                              "tran": disk.get("tran") or "", "present": True, "lastSeen": int(time.time()),
+                              "hidden": known.get(sid, {}).get("hidden", False)}
+        finally:
+            if tmp:
+                run(["umount", tmp])
+                os.rmdir(tmp)
+    for sid, s in known.items():
+        if sid not in seen:
+            s["present"] = False
+    write_file(SYSTEMS, json.dumps(known, ensure_ascii=False, indent=1))
+    log(f"систем найдено: {sum(1 for s in known.values() if s['present'])}, запомнено: {len(known)}")
+    return known
+
+
+def systems_block(known, t):
+    if not t["otherSystems"]:
+        return []
+    out = []
+    for s in sorted(known.values(), key=lambda s: (s["own"], s["name"].lower())):
+        if s.get("hidden"):
+            continue
+        res = "boot()" if s["own"] else f"guid({s['partuuid']})"
+        title = s["name"] if s["own"] else f"{s['name']} · {s['disk']}"
+        title = re.sub(r"[\r\n/\\#]", " ", title).strip()[:80]
+        out += [f"/{title}", "    protocol: efi", f"    path: {res}:{s['path']}", ""]
+    return out[:-1] if out else []
+
+
+# ── экран входа (LightDM GTK) ────────────────────────────────────────
+
+def rgba(h, a):
+    return f"rgba({int(h[0:2], 16)}, {int(h[2:4], 16)}, {int(h[4:6], 16)}, {a})"
+
+
+def greeter_css(t):
+    bg, panel, s1, s2, s3 = t["bg"], t["panel"], t["surface"], t["surfaceHi"], t["surfaceHi2"]
+    fg, dim, acc, urg = t["fg"], t["dim"], t["accent"], t["urgent"]
+    return f"""/* экран входа в стиле Rexilone Shell — генерирует rexilone-boot, вручную не править */
+* {{
+    font-family: "JetBrains Mono", "{t['font']}", monospace;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+}}
+
+/* верхняя полоса: часы, сеанс, питание */
+#panel_window {{
+    background-color: {rgba(bg, 0.55)};
+    background-image: none;
+    color: #{fg};
+    border: none;
+    box-shadow: none;
+    padding: 2px 10px;
+}}
+#panel_window menubar, #panel_window menubar > menuitem {{
+    background: transparent;
+    color: #{fg};
+    border: none;
+    box-shadow: none;
+}}
+#panel_window menubar > menuitem {{
+    padding: 6px 12px;
+    border-radius: 9px;
+}}
+#panel_window menubar > menuitem:hover {{
+    background-color: {rgba(s3, 0.8)};
+}}
+#panel_window menubar > menuitem label {{ color: #{fg}; }}
+
+/* часы по центру: по краям — значки одинаковой ширины (спецвозможности слева, питание справа) */
+#panel_window #a11y_menuitem, #panel_window #power_menuitem {{
+    min-width: 44px;
+    padding: 6px 0;
+}}
+#panel_window #clock_menuitem, #panel_window #clock_menuitem label {{
+    font-weight: bold;
+    font-size: 11pt;
+}}
+
+/* всплывающие меню */
+menu, .menu, .context-menu {{
+    background-color: #{panel};
+    color: #{fg};
+    border: 1px solid #{s3};
+    border-radius: 12px;
+    padding: 6px;
+}}
+menu menuitem {{
+    padding: 7px 14px;
+    border-radius: 8px;
+    color: #{fg};
+}}
+menu menuitem:hover {{ background-color: #{s2}; }}
+menu menuitem label, menu menuitem check, menu menuitem radio {{ color: #{fg}; }}
+
+/* карточка входа */
+#login_window, #power_window {{
+    background-color: {rgba(panel, 0.86)};
+    background-image: none;
+    border: 1px solid {rgba(s3, 0.9)};
+    border-radius: 18px;
+    box-shadow: none;
+    color: #{fg};
+    padding: 8px 8px 4px 8px;
+}}
+#login_window #content_frame, #login_window #buttonbox_frame,
+#power_window #content_frame, #power_window #buttonbox_frame {{
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}}
+#login_window #buttonbox_frame {{ padding-top: 4px; }}
+#login_window label, #power_window label {{ color: #{fg}; }}
+
+/* поля */
+#login_window entry, #login_window #prompt_entry {{
+    background-color: #{s2};
+    background-image: none;
+    color: #{fg};
+    caret-color: #{fg};
+    border: 1px solid #{s3};
+    border-radius: 11px;
+    box-shadow: none;
+    min-height: 40px;
+    min-width: 280px;
+    padding: 0 14px;
+    font-size: 11pt;
+}}
+#login_window entry:focus {{ border-color: #{acc}; }}
+#login_window entry selection {{ background-color: #{acc}; color: #{bg}; }}
+#login_window entry image {{ color: #{dim}; }}
+
+/* выбор пользователя */
+#login_window #user_combobox, #login_window #user_combobox button {{
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    color: #{fg};
+    font-size: 14pt;
+    font-weight: bold;
+}}
+#login_window #user_combobox button:hover {{ background-color: #{s2}; border-radius: 10px; }}
+#login_window #user_image {{ border-radius: 50%; }}
+#login_window #user_image_border {{ background: transparent; border: none; }}
+
+/* кнопки */
+#login_window button, #power_window button {{
+    background-color: #{s2};
+    background-image: none;
+    color: #{fg};
+    border: 1px solid #{s3};
+    border-radius: 11px;
+    box-shadow: none;
+    padding: 8px 18px;
+    min-height: 20px;
+}}
+#login_window button:hover, #power_window button:hover {{ background-color: #{s3}; }}
+#login_window #login_button, #power_window #power_ok_button {{
+    background-color: #{acc};
+    color: #{bg};
+    border: none;
+    font-weight: bold;
+}}
+#login_window #login_button label, #power_window #power_ok_button label {{ color: #{bg}; }}
+#login_window #login_button:hover, #power_window #power_ok_button:hover {{ background-color: #{fg}; }}
+
+/* сообщения (неверный пароль и т.п.) */
+#greeter_infobar {{
+    background: transparent;
+    border: none;
+    margin: 0 24px 6px 24px;
+}}
+#greeter_infobar revealer > box {{
+    background-color: {rgba(urg, 0.16)};
+    border: 1px solid {rgba(urg, 0.6)};
+    border-radius: 10px;
+    padding: 4px 10px;
+}}
+#greeter_infobar label {{ color: #{fg}; }}
+"""
+
+
+def greeter_conf(t, background):
+    """[greeter] для lightdm-gtk-greeter: наш блок, остальное — как было."""
+    ours = {
+        "background": background or f"#{t['bg']}",
+        "user-background": "false",
+        "theme-name": "Adwaita-dark" if t["dark"] else "Adwaita",
+        "icon-theme-name": "Adwaita",
+        "font-name": "JetBrains Mono 11",
+        "hide-user-image": "false" if t["greeterUserImage"] else "true",
+        "round-user-image": "true",
+        "position": "50%,center 50%,center",
+        # часы ровно по центру: слева и справа по одному значку одинаковой ширины
+        "indicators": "~a11y;~spacer;~clock;~spacer;~power" if t["greeterClock"] else "~a11y;~spacer;~power",
+        "clock-format": "%a, %d %b  ·  %H:%M",
+        "xft-antialias": "true",
+        "xft-hintstyle": "hintslight",
+        "screensaver-timeout": "60",
+    }
+    keep = []
+    try:
+        for line in open(GREETER_CONF):
+            k = line.split("=", 1)[0].strip()
+            s = line.strip()
+            if s.startswith("# >>> rexilone") or s.startswith("# <<< rexilone") or k in ours:
+                continue
+            keep.append(line.rstrip("\n"))
+    except OSError:
+        keep = ["[greeter]"]
+    if not any(l.strip() == "[greeter]" for l in keep):
+        keep.insert(0, "[greeter]")
+    i = next(i for i, l in enumerate(keep) if l.strip() == "[greeter]")
+    block = ["# >>> rexilone — оформление в стиле шелла (Настройки → Загрузка и вход)"] + \
+            [f"{k}={v}" for k, v in ours.items()] + ["# <<< rexilone"]
+    return "\n".join(keep[:i + 1] + block + keep[i + 1:]).rstrip() + "\n"
+
+
+def apply_greeter(t):
+    if not os.path.isdir("/etc/lightdm"):
+        log("LightDM не установлен — экран входа не меняю")
+        return False
+    os.makedirs(GREETER_DIR, exist_ok=True)
+    os.chmod(STATE, 0o755)
+    os.chmod(GREETER_DIR, 0o755)
+    background = None
+    img = user_jpeg(t, "greeter.jpg" if t["greeterBlur"] else "wallpaper.jpg") or user_jpeg(t, "wallpaper.jpg")
+    if img:
+        dst = os.path.join(GREETER_DIR, "background.jpg")
+        write_file(dst, img, 0o644, binary=True)
+        background = dst
+    write_file(GREETER_CONF, greeter_conf(t, background), 0o644)
+    try:
+        lightdm = pwd.getpwnam("lightdm")
+        css_dir = os.path.dirname(GREETER_CSS)
+        os.makedirs(css_dir, exist_ok=True)
+        write_file(GREETER_CSS, greeter_css(t), 0o644)
+        for p in (os.path.dirname(css_dir), css_dir, GREETER_CSS):
+            os.chown(p, lightdm.pw_uid, lightdm.pw_gid)
+    except KeyError:
+        log("нет пользователя lightdm — стиль экрана входа не записан")
+    log("экран входа оформлен")
+    return True
+
+
+# ── команды ───────────────────────────────────────────────────────────
+
+def write_status(extra):
+    known = load_json(SYSTEMS, {})
+    st = {"time": int(time.time()), "systems": sorted(known.values(), key=lambda s: (s["own"], s["name"].lower())),
+          "log": log_lines[-20:], **extra}
+    write_file(STATUS, json.dumps(st, ensure_ascii=False, indent=1), 0o644)
+    return st
+
+
+def main():
+    if os.geteuid() != 0:
+        sys.exit("нужен root (pkexec rexilone-boot …)")
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if cmd == "status":
+        print(json.dumps(load_json(STATUS, {}), ensure_ascii=False))
+        return
+    if cmd not in ("scan", "apply", "all", "hide", "show", "forget"):
+        print(__doc__)
+        return
+    os.makedirs(STATE, exist_ok=True)
+    os.chmod(STATE, 0o755)
+    t = load_theme()
+    known = scan() if cmd in ("scan", "all") else load_json(SYSTEMS, {})
+    # hide / show — убрать из меню или вернуть (найденная снова система остаётся скрытой);
+    # forget — забыть совсем (если диск подключён, при следующем поиске появится снова)
+    sid = sys.argv[2] if len(sys.argv) > 2 else ""
+    if cmd in ("hide", "show") and sid in known:
+        known[sid]["hidden"] = cmd == "hide"
+    elif cmd == "forget":
+        known.pop(sid, None)
+    if cmd in ("hide", "show", "forget"):
+        write_file(SYSTEMS, json.dumps(known, ensure_ascii=False, indent=1))
+    extra = edit_limine(limine_theme(t, limine_conf()), systems_block(known, t))
+    if cmd in ("apply", "all"):
+        extra["greeter"] = apply_greeter(t)
+    else:
+        extra["greeter"] = load_json(STATUS, {}).get("greeter", False)
+    extra["themeFound"] = t["found"]
+    write_status(extra)
+
+
+if __name__ == "__main__":
+    main()

@@ -458,6 +458,7 @@ Scope {
                     PageSlot { index: 16; sourceComponent: AboutPage {} }
                     PageSlot { index: 17; sourceComponent: PluginsPage {} }
                     PageSlot { index: 18; sourceComponent: UpdatesPage {} }
+                    PageSlot { index: 19; sourceComponent: BootPage {} }
                 }
             }
         }

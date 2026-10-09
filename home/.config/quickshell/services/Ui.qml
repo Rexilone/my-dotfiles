@@ -36,6 +36,7 @@ Singleton {
         { name: "About", keys: "device name account specs version hostname developer", icon2: 0xF02FD },
         { name: "Plugins", keys: "plugins developer extensions", icon2: 0xF0431, dev: true },
         { name: "Updates", keys: "update upgrade version git github dotfiles packages pacman", icon2: 0xF06B0 },
+        { name: "Boot & login", keys: "boot limine bootloader menu login lightdm greeter password screen windows dual other systems disk", icon2: 0xF0342 },
     ]
 
     // порядок в боковой панели Настроек — по группам
@@ -44,7 +45,7 @@ Singleton {
         { group: "Hardware", items: [1, 2, 10, 14] },
         { group: "Connections", items: [3, 4, 5] },
         { group: "Look & feel", items: [7, 15] },
-        { group: "System", items: [11, 12, 13, 18, 16, 17] },
+        { group: "System", items: [11, 12, 13, 18, 19, 16, 17] },
     ]
 
     // последняя тёмная схема — чтобы плитка «Тёмная тема» возвращала её

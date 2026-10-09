@@ -1,0 +1,2 @@
+# Подключили или отключили диск с разделом EFI — найти на нём системы и обновить меню Limine
+ACTION=="add|remove", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_TYPE}=="c12a7328-f81f-11d2-ba4b-00a0c93ec93b", RUN+="/usr/bin/systemctl --no-block start rexilone-boot-scan.service"

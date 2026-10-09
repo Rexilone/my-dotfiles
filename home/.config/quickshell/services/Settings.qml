@@ -120,6 +120,14 @@ Singleton {
     property alias updateRepo: cfg.updateRepo
     property alias updateBranch: cfg.updateBranch
     property alias updateAuto: cfg.updateAuto
+    // загрузка и вход (Настройки → Загрузка и вход): меню Limine и экран входа LightDM
+    property alias bootTimeout: cfg.bootTimeout
+    property alias bootRemember: cfg.bootRemember
+    property alias bootWallpaper: cfg.bootWallpaper
+    property alias bootOtherSystems: cfg.bootOtherSystems
+    property alias greeterBlur: cfg.greeterBlur
+    property alias greeterClock: cfg.greeterClock
+    property alias greeterUserImage: cfg.greeterUserImage
     property alias updateNotified: cfg.updateNotified
     // язык интерфейса Настроек: "en" | "ru" (services/I18n.qml)
     property alias language: cfg.language
@@ -240,6 +248,13 @@ Singleton {
             property string updateRepo: ""
             property string updateBranch: "main"
             property bool updateAuto: true
+            property int bootTimeout: 5
+            property bool bootRemember: true
+            property bool bootWallpaper: true
+            property bool bootOtherSystems: true
+            property bool greeterBlur: true
+            property bool greeterClock: true
+            property bool greeterUserImage: false
             property string updateNotified: ""
             property string trayMode: "inline"
             property var trayPinned: ([])
