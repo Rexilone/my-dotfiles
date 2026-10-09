@@ -324,9 +324,10 @@ window-rule {
     default-floating-position x=32 y=32 relative-to="bottom-right"
 }
 
-// окно Настроек Quickshell — плавающее, по центру
+// окна Настроек и Магазина Quickshell — плавающие, по центру
 window-rule {
     match app-id=r#"^org\.quickshell$"# title="^Settings$"
+    match app-id=r#"^org\.quickshell$"# title="^Store$"
     open-floating true
 }
 

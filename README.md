@@ -29,6 +29,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 - **Bar** — workspaces, clock, weather, tray (inline or in a menu), keyboard layout, volume and mic mixers, network, notifications, control center. Flat, floating or pill style; any monitor.
 - **Settings app** (`Super+I`) — display arrangement, sound, network & firewall, Bluetooth, phone, peripherals (keyboard, mouse, touchpad, graphics tablet, gamepads, printers), personalization, keyboard shortcuts, startup apps, power, notifications, updates. English and Russian.
 - **Color schemes** — dark, light, Nord, Gruvbox, Rosé Pine or generated from the wallpaper; applied live to foot, Neovim, yazi, fzf, GTK and Qt apps.
+- **Store** — an app store for pacman and AUR: categories, editors' picks, screenshots, search across repositories and AUR, one-click install, remove and update (password via the polkit dialog). Opens from the launcher.
 - **Launcher** (`Super+D`) — fuzzy search (also in the wrong keyboard layout), pinned apps, calculator, `>` shell commands, `?` web search, app actions, settings pages.
 - **Notifications** with history and Do not disturb; **clipboard history** with images (`Super+V`).
 - **Screen recorder** (`Alt+Z`) on gpu-screen-recorder; **hide a window from screencasts** (`Super+G`).
@@ -122,6 +123,7 @@ All shortcuts can be changed in **Settings → Keyboard shortcuts**.
 | `home/.config/niri/` | niri: keybindings, window rules, autostart |
 | `home/.config/{foot,nvim,yazi}/` | terminal, editor, file manager |
 | `home/.zshrc`, `home/.local/bin/` | zsh and helper scripts |
+| `home/.config/quickshell/scripts/store.py` | Store data: catalog, search, package info, updates |
 | `rexlink/` | Rexlink service (phone link), the Android app and its system files |
 | `defaults/` | initial versions of files the shell generates for the color scheme |
 | `state/quickshell/` | settings preset applied on install |

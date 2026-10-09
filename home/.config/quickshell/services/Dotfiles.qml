@@ -55,7 +55,7 @@ Singleton {
 
     // перезапуск отдельным процессом: старый шелл завершается, новый запускает niri (с окружением сеанса)
     function restartShell() {
-        Quickshell.execDetached(["setsid", "-f", "sh", "-c", "sleep 0.5; qs kill >/dev/null 2>&1 || pkill -x qs; sleep 0.5; pgrep -x qs >/dev/null || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs"]);
+        Quickshell.execDetached(["setsid", "-f", "sh", "-c", "sleep 0.5; qs kill >/dev/null 2>&1; sleep 0.7; qs list 2>/dev/null | grep -q '^Instance' || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs"]);
     }
 
     // ── проверка: найти репозиторий, origin, fetch, что нового

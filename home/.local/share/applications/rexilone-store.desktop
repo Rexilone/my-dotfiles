@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Store
+Name[ru]=Магазин
+GenericName=App store
+GenericName[ru]=Магазин приложений
+Comment=Install apps from Arch repositories and AUR
+Comment[ru]=Установка приложений из репозиториев Arch и AUR
+Icon=system-software-install
+Exec=qs ipc call store open
+Terminal=false
+Categories=System;PackageManager;
+Keywords=store;market;apps;install;pacman;aur;packages;магазин;приложения;установить;пакеты;
+StartupNotify=false

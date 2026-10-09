@@ -127,6 +127,10 @@ done
 for f in "$DOTS"/home/.local/bin/*; do
     link "$f" "$HOME/.local/bin/$(basename "$f")"
 done
+# ярлыки в меню приложений (Магазин)
+for f in "$DOTS"/home/.local/share/applications/*; do
+    link "$f" "$HOME/.local/share/applications/$(basename "$f")"
+done
 # службы пользователя (Rexlink)
 for f in "$DOTS"/home/.config/systemd/user/*; do
     link "$f" "$HOME/.config/systemd/user/$(basename "$f")"
@@ -236,9 +240,10 @@ fi
 # шелл уже запущен (обновление из Настроек, ./install.sh --link-only в сеансе) —
 # перезапустить его на новую версию. Отдельным процессом: если install.sh запустил сам шелл,
 # он завершится вместе с ним. Обновлятор, который перезапускает шелл сам, ставит REXILONE_UPDATER=1
-if [[ -n "${WAYLAND_DISPLAY:-}" && -z "${REXILONE_UPDATER:-}" ]] && pgrep -x qs >/dev/null && (( ! DRY )); then
+# (проверяем именно экземпляр с этим конфигом: `qs list`, а не любой процесс qs)
+if [[ -n "${WAYLAND_DISPLAY:-}" && -z "${REXILONE_UPDATER:-}" ]] && qs list 2>/dev/null | grep -q '^Instance' && (( ! DRY )); then
     info "Перезапускаю шелл…"
-    setsid -f sh -c 'sleep 2; qs kill >/dev/null 2>&1 || pkill -x qs; sleep 0.5; pgrep -x qs >/dev/null || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs' >/dev/null 2>&1
+    setsid -f sh -c 'sleep 2; qs kill >/dev/null 2>&1; sleep 0.7; qs list 2>/dev/null | grep -q "^Instance" || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs' >/dev/null 2>&1
     SHELL_RESTART=1
 fi
 

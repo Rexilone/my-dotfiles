@@ -24,6 +24,8 @@ ShellRoot {
     RecorderMenu {}
     WallpaperSwitcher {}
     SettingsWindow {}
+    // Магазин приложений (pacman + AUR), открывается из меню приложений
+    StoreWindow {}
     DesktopWidgets {}
     PluginServices {}
     // входящий звонок с телефона (Rexlink)
