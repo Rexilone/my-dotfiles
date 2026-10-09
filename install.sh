@@ -233,6 +233,15 @@ if [[ "$(getent passwd "$USER" | cut -d: -f7)" != */zsh ]]; then
     run chsh -s /usr/bin/zsh
 fi
 
+# шелл уже запущен (обновление из Настроек, ./install.sh --link-only в сеансе) —
+# перезапустить его на новую версию. Отдельным процессом: если install.sh запустил сам шелл,
+# он завершится вместе с ним. Обновлятор, который перезапускает шелл сам, ставит REXILONE_UPDATER=1
+if [[ -n "${WAYLAND_DISPLAY:-}" && -z "${REXILONE_UPDATER:-}" ]] && pgrep -x qs >/dev/null && (( ! DRY )); then
+    info "Перезапускаю шелл…"
+    setsid -f sh -c 'sleep 2; qs kill >/dev/null 2>&1 || pkill -x qs; sleep 0.5; pgrep -x qs >/dev/null || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs' >/dev/null 2>&1
+    SHELL_RESTART=1
+fi
+
 bold "Готово"
 if (( PACKAGES )); then
     cat <<EOF
@@ -240,7 +249,7 @@ if (( PACKAGES )); then
   Бар запускается сам (spawn-at-startup "qs" в ~/.config/niri/config.kdl).
   Super+D — приложения, Super+I — настройки, Super+Shift+E — питание.
 EOF
-else
+elif [[ -z "${SHELL_RESTART:-}" ]]; then
     info "Конфиги на месте. Если шелл уже запущен, перезапустите его, чтобы подхватить изменения."
 fi
 [[ -d "$BACKUP" ]] && echo "  Прежние файлы: ${BACKUP/#$HOME/~}"

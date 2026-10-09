@@ -110,10 +110,17 @@ Page {
         visible: !Rexlink.connected
         icon: String.fromCodePoint(0xF011C)
         title: Rexlink.installed ? "Rexlink service is not running" : "Rexlink service is not set up"
-        desc: Rexlink.installed ? "Start it to connect your devices (rexlink.service)" : "Run ./install.sh from the dotfiles folder — it sets up rexlink.service"
+        desc: Dotfiles.missingPackages.length > 0 ? `${I18n.tr("Install the missing packages first")}: ${Dotfiles.missingPackages.join(", ")}`
+            : Rexlink.installed ? "Start it to connect your devices (rexlink.service)" : "Run ./install.sh from the dotfiles folder — it sets up rexlink.service"
 
         SButton {
-            visible: Rexlink.installed
+            visible: Dotfiles.missingPackages.length > 0
+            text: "Install packages"
+            primary: true
+            onClicked: Dotfiles.installPackages()
+        }
+        SButton {
+            visible: Rexlink.installed && Dotfiles.missingPackages.length === 0
             text: "Start"
             primary: true
             onClicked: Rexlink.start()

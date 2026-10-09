@@ -606,5 +606,6 @@ Singleton {
         "offline": "не в сети",
         "What to sync": "Что синхронизировать",
         "Dial": "Позвонить",
+        "Install the missing packages first": "Сначала установите недостающие пакеты",
     })
 }

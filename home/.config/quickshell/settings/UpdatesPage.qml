@@ -121,10 +121,12 @@ Page {
                       : `${Dotfiles.dirty} changed files in ${Dotfiles.dir}. Commit or stash them (git stash), then update.`
     }
     SCard {
-        visible: Dotfiles.changedPackages.length > 0
+        visible: Dotfiles.changedPackages.length > 0 || Dotfiles.missingPackages.length > 0
         icon: String.fromCodePoint(0xF03D7)
         title: "New packages are needed"
-        desc: I18n.ru ? `Изменились списки: ${Dotfiles.changedPackages.join(", ")}` : `Changed lists: ${Dotfiles.changedPackages.join(", ")}`
+        desc: Dotfiles.missingPackages.length > 0
+            ? (I18n.ru ? `Не установлено: ${Dotfiles.missingPackages.join(", ")}` : `Not installed: ${Dotfiles.missingPackages.join(", ")}`)
+            : (I18n.ru ? `Изменились списки: ${Dotfiles.changedPackages.join(", ")}` : `Changed lists: ${Dotfiles.changedPackages.join(", ")}`)
 
         SButton {
             text: "Install packages"
