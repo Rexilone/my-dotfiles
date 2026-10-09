@@ -1,0 +1,12 @@
+[mgr]
+prepend_keymap = [
+	{ on = [ "g", "m" ], run = "plugin devices",         desc = "Drives & phone" },
+	{ on = [ "g", "u" ], run = "plugin devices unmount", desc = "Unmount / eject drive or phone" },
+	{ on = [ "g", "M" ], run = "plugin mount",           desc = "Manage partitions" },
+	{ on = "<C-n>", run = "shell -- GTK_THEME=Adwaita:dark ripdrag -x -a -n -b -W 280 -H 200 %s", desc = "Drag selected files out" },
+	{ on = "<C-y>", run = "shell -- ripdrag-drop",           desc = "Drop files here" },
+	{ on = [ "g", "r" ], run = "cd /run/media/rexilone", desc = "Go to mounted drives" },
+	{ on = [ "g", "d" ], run = "cd ~/Загрузки",          desc = "Go to Загрузки" },
+	{ on = [ "g", "D" ], run = "cd ~/Документы",         desc = "Go to Документы" },
+	{ on = [ "g", "p" ], run = "cd ~/Изображения",       desc = "Go to Изображения" },
+]

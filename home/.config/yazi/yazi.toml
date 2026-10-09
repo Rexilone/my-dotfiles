@@ -1,0 +1,23 @@
+[mgr]
+ratio          = [ 1, 3, 4 ]
+sort_by        = "natural"
+sort_dir_first = true
+linemode       = "size"
+show_hidden    = false
+scrolloff      = 5
+
+[preview]
+wrap       = "no"
+max_width  = 1200
+max_height = 1200
+
+# git-статусы в списке файлов
+[[plugin.prepend_fetchers]]
+url   = "*"
+run   = "git"
+group = "git"
+
+[[plugin.prepend_fetchers]]
+url   = "*/"
+run   = "git"
+group = "git"

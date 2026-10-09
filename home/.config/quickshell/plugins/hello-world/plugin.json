@@ -1,0 +1,10 @@
+{
+    "id": "hello-world",
+    "name": "Hello World",
+    "version": "1.0.0",
+    "author": "Rexilone",
+    "description": "Example plugin: a click counter in the bar, a background IPC command and a settings page.",
+    "bar": "Bar.qml",
+    "service": "Main.qml",
+    "settings": "Settings.qml"
+}

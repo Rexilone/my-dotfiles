@@ -1,0 +1,39 @@
+/* генерируется Quickshell (Настройки → Персонализация); вручную не править */
+:root {
+  --qs-bg: #101615;
+  --qs-bg-rgb: 16, 22, 21;
+  --qs-surface: #171f1e;
+  --qs-surface-rgb: 23, 31, 30;
+  --qs-surface-hi: #1e2726;
+  --qs-surface-hi-rgb: 30, 39, 38;
+  --qs-surface-hi-2: #26312f;
+  --qs-surface-hi-2-rgb: 38, 49, 47;
+  --qs-line: #384745;
+  --qs-line-rgb: 56, 71, 69;
+  --qs-fg: #d8e4e2;
+  --qs-fg-rgb: 216, 228, 226;
+  --qs-fg-hover: #eaf1f0;
+  --qs-fg-hover-rgb: 234, 241, 240;
+  --qs-fg-pressed: #b9cbc8;
+  --qs-fg-pressed-rgb: 185, 203, 200;
+  --qs-muted: #a0b1ae;
+  --qs-muted-rgb: 160, 177, 174;
+  --qs-dim: #6c7f7c;
+  --qs-dim-rgb: 108, 127, 124;
+  --qs-faint: #323e3c;
+  --qs-faint-rgb: 50, 62, 60;
+  --qs-urgent: #d9706f;
+  --qs-urgent-rgb: 217, 112, 111;
+  --qs-warn: #e0b060;
+  --qs-warn-rgb: 224, 176, 96;
+  --qs-accent: #88d2c7;
+  --qs-accent-rgb: 136, 210, 199;
+  --qs-rec: #e05d5d;
+  --qs-rec-rgb: 224, 93, 93;
+  --qs-accent-fg: #101615;
+  --qs-green: #addd9d;
+  --qs-blue: #9db7dd;
+  --qs-red: #dd9d9d;
+  --qs-font: "JetBrainsMono Nerd Font";
+  --qs-light: 0;
+}

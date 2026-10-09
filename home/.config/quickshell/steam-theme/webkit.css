@@ -1,0 +1,42 @@
+/* Rexilone Shell — страницы магазина и сообщества внутри Steam.
+   Вёрстку сайта не трогаем: только фон, скроллбары и выделение. */
+@import url("https://millennium.host/v1/themes/rexilone/colors.css");
+
+html, body, body.v6, body.v7, .responsive_page_frame, .responsive_page_content, .page_background_holder {
+    background-color: var(--qs-bg, #151515) !important;
+}
+body.v6 .page_background_holder, body.v6 .home_page_body_ctn { background-image: none !important; }
+
+::-webkit-scrollbar { width: 10px !important; height: 10px !important; background: transparent !important; }
+::-webkit-scrollbar-track { background: transparent !important; }
+::-webkit-scrollbar-thumb {
+    background: var(--qs-surface-hi-2, #2a2a2a) !important;
+    border: 3px solid transparent !important;
+    background-clip: padding-box !important;
+    border-radius: 10px !important;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--qs-line, #3a3a3a) !important; }
+::-webkit-scrollbar-corner, ::-webkit-scrollbar-button { display: none !important; }
+::selection { background: var(--qs-surface-hi-2, #2a2a2a); color: var(--qs-fg, #d4d4d4); }
+
+
+/* верхняя панель нового магазина (Browse · Recommendations · …): классы зашифрованы,
+   находим её по полю поиска внутри */
+.Panel.Focusable:has(form[role="search"]) {
+    background: var(--qs-bg, #151515) !important;
+    backdrop-filter: none !important;
+}
+.Panel.Focusable:has(> * form[role="search"]), .Panel.Focusable:has(form[role="search"]):not(:has(.Panel form[role="search"])) {
+    border-bottom: 1px solid var(--qs-surface-hi-2, #2a2a2a);
+}
+form[role="search"] {
+    background: var(--qs-surface-hi, #222) !important;
+    border: 1px solid var(--qs-surface-hi-2, #2a2a2a) !important;
+    border-radius: 8px !important;
+}
+form[role="search"] button {
+    background: var(--qs-surface-hi-2, #2a2a2a) !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+}
+form[role="search"] button:hover { background: var(--qs-line, #3a3a3a) !important; }

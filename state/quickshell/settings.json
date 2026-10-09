@@ -1,0 +1,50 @@
+{
+    "scheme": "wallpaper",
+    "barStyle": "flat",
+    "barModules": {
+        "control": true,
+        "launcher": true,
+        "phone": false,
+        "stats": false,
+        "tray": true,
+        "weather": true,
+        "window": false
+    },
+    "font": "JetBrainsMono Nerd Font",
+    "monoFont": "JetBrainsMono Nerd Font",
+    "appFont": "",
+    "clockFormat": "dddd HH:mm",
+    "workspaceStyle": "dots",
+    "trayMode": "menu",
+    "barHeight": 31,
+    "uiScale": 1,
+    "transparency": false,
+    "blur": false,
+    "opacity": 1,
+    "terminalOpacity": 1,
+    "popupTimeout": 5,
+    "weekStartsMonday": true,
+    "language": "en",
+    "input": {
+        "layouts": [
+            "us"
+        ],
+        "switchKey": "grp:caps_toggle",
+        "repeatDelay": 600,
+        "repeatRate": 25,
+        "numlock": true,
+        "focusFollowsMouse": true,
+        "mouse": {
+            "accelProfile": "adaptive",
+            "accelSpeed": 0,
+            "leftHanded": false,
+            "naturalScroll": false
+        },
+        "touchpad": {
+            "tap": true,
+            "naturalScroll": true
+        }
+    },
+    "developerMode": false,
+    "plugins": {}
+}

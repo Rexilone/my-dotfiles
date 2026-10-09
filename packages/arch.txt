@@ -1,0 +1,70 @@
+# ── основа: композитор, оболочка, порталы
+niri
+quickshell
+xwayland-satellite
+xdg-desktop-portal-gnome
+xdg-utils
+polkit
+upower
+libnotify
+swaylock
+# ── терминал и консоль
+foot
+foot-terminfo
+zsh
+zsh-autosuggestions
+zsh-completions
+zsh-syntax-highlighting
+neovim
+tree-sitter-cli
+yazi
+fzf
+fd
+ripgrep
+eza
+bat
+zoxide
+jq
+7zip
+unzip
+fastfetch
+git
+pacman-contrib
+python
+# ── превью файлов в yazi
+chafa
+ffmpegthumbnailer
+ueberzugpp
+imagemagick
+gvfs-mtp
+# ── буфер обмена, обои, запись экрана
+wl-clipboard
+cliphist
+awww
+gpu-screen-recorder
+# ── звук
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+gst-plugin-pipewire
+libpulse
+pavucontrol
+# ── сеть и Bluetooth
+bluez
+bluez-utils
+ufw
+# ── браузер (Super+B, браузер по умолчанию)
+chromium
+# ── шрифты
+ttf-jetbrains-mono-nerd
+ttf-jetbrains-mono
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+
+# экран входа: LightDM (GTK greeter) — пароль, затем сессия niri
+lightdm
+lightdm-gtk-greeter
+xorg-server

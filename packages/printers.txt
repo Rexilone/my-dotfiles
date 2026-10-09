@@ -1,0 +1,4 @@
+# --with-printers: печать и сканирование
+cups
+cups-pk-helper
+system-config-printer

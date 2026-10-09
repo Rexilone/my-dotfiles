@@ -1,0 +1,16 @@
+{
+    "name": "Rexilone",
+    "author": "Rexilone",
+    "description": "Steam в стиле Rexilone Shell: цвета и шрифт берутся из темы шелла и меняются вместе с ней.",
+    "version": "1.0.0",
+    "tags": [
+        "Rexilone",
+        "Minimal"
+    ],
+    "github": {
+        "owner": "Rexilone",
+        "repo_name": "my-dotfiles"
+    },
+    "UseDefaultPatches": true,
+    "Steam-WebKit": "webkit.css"
+}

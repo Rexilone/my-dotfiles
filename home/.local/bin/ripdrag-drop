@@ -1,0 +1,6 @@
+#!/bin/sh
+# окно-приёмник: перетащенные в него файлы копируются в текущую папку (для yazi, Ctrl+Y)
+GTK_THEME=Adwaita:dark ripdrag -t -x -W 280 -H 140 | while IFS= read -r f; do
+    f=$(python3 -c 'import sys, urllib.parse; p = sys.argv[1]; print(urllib.parse.unquote(p[7:] if p.startswith("file://") else p))' "$f")
+    [ -e "$f" ] && cp -r -n -- "$f" .
+done

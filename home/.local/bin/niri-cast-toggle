@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Скрыть/показать приложение активного окна на демонстрации экрана (niri block-out-from "screencast").
+
+Список приложений хранится в ~/.config/niri/screencast-hidden.list,
+из него генерируется ~/.config/niri/screencast-hidden.kdl (подключён через include).
+"""
+import json, os, re, subprocess
+
+CONF = os.path.expanduser("~/.config/niri")
+LIST = os.path.join(CONF, "screencast-hidden.list")
+KDL = os.path.join(CONF, "screencast-hidden.kdl")
+
+
+def notify(title, body, icon):
+    subprocess.run(["notify-send", "-a", "Screencast", "-i", icon, title, body])
+
+
+def write_kdl(apps):
+    out = ["// генерируется niri-cast-toggle (Super+G) и шеллом, вручную не редактировать\n"]
+    if apps:
+        out.append("window-rule {\n")
+        for a in apps:
+            out.append(f'    match app-id=r#"^{re.escape(a)}$"#\n')
+        out.append('    block-out-from "screencast"\n')
+        out.append("}\n")
+    tmp = KDL + ".tmp"
+    with open(tmp, "w") as f:
+        f.writelines(out)
+    os.replace(tmp, KDL)
+
+
+def main():
+    win = json.loads(subprocess.run(["niri", "msg", "-j", "focused-window"],
+                                    capture_output=True, text=True).stdout or "null")
+    app = (win or {}).get("app_id") or ""
+    if not app:
+        return notify("Не получилось", "У активного окна нет app-id", "dialog-warning")
+
+    apps = []
+    if os.path.exists(LIST):
+        apps = [l.strip() for l in open(LIST) if l.strip()]
+
+    if app in apps:
+        apps.remove(app)
+        title, icon = "Видно на демонстрации", "view-reveal-symbolic"
+    else:
+        apps.append(app)
+        title, icon = "Скрыто с демонстрации", "view-conceal-symbolic"
+
+    with open(LIST, "w") as f:
+        f.write("\n".join(apps) + ("\n" if apps else ""))
+    write_kdl(apps)  # niri сам перечитает конфиг
+    notify(title, win.get("title") or app, icon)
+
+
+main()

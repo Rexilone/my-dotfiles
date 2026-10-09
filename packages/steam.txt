@@ -1,0 +1,2 @@
+# --with-steam: Steam и тема «Rexilone» (Millennium)
+steam

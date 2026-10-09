@@ -1,0 +1,12 @@
+# генерирует шелл под текущую тему (начальные версии — в defaults/)
+home/.config/quickshell/steam-theme/colors.css
+home/.config/quickshell/.qmlls.ini
+home/.config/niri/qs-settings.kdl
+home/.config/niri/screencast-hidden.kdl
+home/.config/niri/screencast-hidden.list
+home/.config/foot/colors.ini
+home/.config/nvim/lua/qs_palette.lua
+home/.config/yazi/theme.toml
+**/__pycache__/
+nixos/hosts/*/hardware-configuration.nix
+nixos/result

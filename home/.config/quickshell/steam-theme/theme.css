@@ -1,0 +1,907 @@
+/*
+ * Rexilone Shell — тема клиента Steam (Millennium).
+ * Цвета и шрифт — переменные из colors.css (их пишет шелл при смене темы).
+ * `.%Имя%` — класс Steam по понятному имени, `.%Имя@Сосед%` — из модуля, где есть и Сосед
+ * (см. qs-loader.js).
+ */
+
+:root {
+    --qs-r: 10px;          /* карточки, как SCard */
+    --qs-r-sm: 8px;        /* кнопки, пункты списков */
+    --qs-r-lg: 14px;       /* крупные панели */
+    --qs-r-pop: 18px;      /* меню, как Popup в баре */
+    --qs-gap: 8px;
+    --qs-anim: 120ms;
+}
+
+/* ───────────────────────── база ───────────────────────── */
+
+html.qs-steam *:not(svg):not(svg *) {
+    font-family: var(--qs-font), "Motiva Sans", sans-serif !important;
+    letter-spacing: 0 !important;
+}
+
+html.qs-steam body {
+    background: var(--qs-bg) !important;
+    color: var(--qs-fg);
+}
+
+html.qs-steam ::selection { background: var(--qs-surface-hi-2); color: var(--qs-fg); }
+
+/* тонкие скроллбары, как в шелле */
+html.qs-steam ::-webkit-scrollbar { width: 10px !important; height: 10px !important; background: transparent !important; }
+html.qs-steam ::-webkit-scrollbar-track { background: transparent !important; }
+html.qs-steam ::-webkit-scrollbar-thumb {
+    background: var(--qs-surface-hi-2) !important;
+    border: 3px solid transparent !important;
+    background-clip: padding-box !important;
+    border-radius: 10px !important;
+}
+html.qs-steam ::-webkit-scrollbar-thumb:hover { background-color: var(--qs-line) !important; }
+html.qs-steam ::-webkit-scrollbar-corner,
+html.qs-steam ::-webkit-scrollbar-button { display: none !important; background: transparent !important; }
+
+/* ───────────────────────── каркас окна ───────────────────────── */
+
+.%Wrapper@OuterFrame%, .%OuterFrame%, .%ContentFrame%, .%LocalContentContainer% {
+    background: var(--qs-bg) !important;
+}
+.%OuterFrame% { border: none !important; }
+
+/* ── верхняя строка: меню Steam/View/…, кнопки справа */
+.%TopBar% { background: var(--qs-bg) !important; }
+.%TitleBar@TopBar% { background: transparent !important; }
+
+.%RootMenuButton% {
+    border-radius: var(--qs-r-sm);
+    margin: 4px 1px 0 !important;
+    height: 26px !important;
+    color: var(--qs-muted) !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+.%RootMenuButton% > div { margin-top: -3px; }
+.%RootMenuButton%:hover {
+    background: var(--qs-surface-hi) !important;
+    color: var(--qs-fg) !important;
+}
+
+/* кнопки справа: объявления, уведомления, аккаунт, Big Picture */
+.%TitleBarControls% .%Button@AnnouncementsButton%,
+.%TitleBarControls% .%AccountMenu%,
+.%TitleBarControls% .%Button@GamepadUIToggle% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-muted) !important;
+    box-shadow: none !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+.%TitleBarControls% .%Button@AnnouncementsButton%:hover,
+.%TitleBarControls% .%AccountMenu%:hover,
+.%TitleBarControls% .%Button@GamepadUIToggle%:hover {
+    background: var(--qs-surface-hi-2) !important;
+    color: var(--qs-fg) !important;
+}
+.%TitleBarControls% svg { fill: currentColor !important; }
+/* «есть новые» — акцентная точка вместо синей заливки */
+.%AnnouncementsButton%.%Active@AnnouncementsButton%,
+.%NotificationsButton%.%HasNew@NotificationsButton% {
+    background: var(--qs-accent) !important;
+    border-color: var(--qs-accent) !important;
+    color: var(--qs-accent-fg) !important;
+}
+.%AnnouncementsButton%.%Active@AnnouncementsButton% svg,
+.%NotificationsButton%.%HasNew@NotificationsButton% svg { fill: var(--qs-accent-fg) !important; color: var(--qs-accent-fg) !important; }
+.%AccountMenu% { padding-right: 8px !important; }
+.%AccountMenu% > div:not([class]) { color: var(--qs-fg) !important; }
+.%WalletBalance% { color: var(--qs-dim) !important; }
+.%AccountMenu% img { border-radius: 6px !important; }
+
+/* сворачивание/развёрнуть/закрыть — круглые кнопки */
+html.qs-steam .title-area { background: transparent !important; }
+html.qs-steam .title-area-highlight { display: none !important; }
+html.qs-steam .windowControlButton { border-radius: var(--qs-r-sm); margin: 4px 2px 0; height: 26px !important; width: 28px !important; }
+html.qs-steam .windowControlButton .title-area-icon-inner { height: 26px !important; width: 28px !important; display: flex; align-items: center; justify-content: center; }
+html.qs-steam .windowControlButton svg { position: static !important; margin: 0 !important; stroke: var(--qs-dim) !important; }
+html.qs-steam .windowControlButton:hover { background: var(--qs-surface-hi-2) !important; }
+html.qs-steam .windowControlButton:hover svg { stroke: var(--qs-fg) !important; }
+html.qs-steam .closeButton:hover { background: var(--qs-urgent) !important; }
+html.qs-steam .closeButton:hover svg { stroke: var(--qs-accent-fg) !important; }
+
+/* ───────────────────────── раскладка: узкая панель иконок слева ─────────────────────────
+ * Сверху вниз: логотип, «назад/вперёд», Магазин · Библиотека · Сообщество · Профиль
+ * (настоящие вкладки Steam — с их подменю), внизу Загрузки, Друзья, Добавить игру, Настройки.
+ * Подписи спрятаны, название видно в подсказке при наведении (data-qs-tip ставит rail.js).
+ * Элементы Steam не пересоздаются, а переставляются сеткой: все функции на месте. */
+:root { --qs-rail: 60px; }
+
+.%OuterFrame% {
+    display: grid !important;
+    grid-template-columns: var(--qs-rail) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    position: relative;
+}
+.%OuterFrame% > .%TopBar@OuterFrame%, .%OuterFrame% > .%BottomBarContainer% { display: contents !important; }
+.%TitleBar@OuterFrame% { grid-column: 2; grid-row: 1; }
+.%SuperNavBar% { grid-column: 1; grid-row: 1 / 3; }
+.%ContentFrame% { grid-column: 2; grid-row: 2 / 4; min-height: 0; min-width: 0; }
+.%BottomBar% { grid-column: 1; grid-row: 3; }
+/* баннер «Доступно обновление Steam» — под содержимым */
+.%BottomBarContainer% > div:not(.%BottomBar%) { grid-column: 2; grid-row: 4; }
+/* панель выше содержимого, чтобы подсказки ложились поверх */
+.%SuperNavBar%, .%BottomBar% { position: relative !important; z-index: 50; }
+
+/* ── верх панели: логотип и стрелки */
+.%SuperNavBar% {
+    background: transparent !important;
+    height: auto !important;
+    padding: 10px 0 0 !important;
+    display: block !important;
+}
+.%SuperNavBar%::before {
+    content: "\F04D3";
+    display: block;
+    text-align: center;
+    padding: 2px 0 12px;
+    color: var(--qs-fg);
+    font-size: 22px;
+}
+.%SuperNav% {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    height: auto !important;
+    gap: 4px;
+    padding: 0 !important;
+}
+/* «назад / вперёд» в панели не показываем (назад — кнопки мыши / Alt+←) */
+.%SuperNav% > svg { display: none !important; }
+
+
+/* ── кнопки панели: квадрат 40×40, иконка по центру */
+.%SuperNavMenu%, .%BottomBar% > .%AddGameButton%, .%BottomBar% > .%DownloadStatus%,
+.%BottomBar% > .%FriendsButton%, .qs-rail-item {
+    flex: 0 0 auto !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    border-radius: var(--qs-r) !important;
+    background: transparent !important;
+    color: var(--qs-dim) !important;
+    cursor: pointer;
+    overflow: visible !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+.%SuperNavMenu%::before, .%BottomBar% > .%AddGameButton%::before, .%BottomBar% > .%DownloadStatus%::before,
+.%BottomBar% > .%FriendsButton%::before, .qs-rail-item::before {
+    font-family: "JetBrainsMono Nerd Font Mono", "Symbols Nerd Font Mono", monospace !important;
+    font-size: 27px;
+    line-height: 40px;
+    width: 40px;
+    height: 40px;
+    display: block;
+    text-align: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: inherit;
+    pointer-events: none;
+}
+.%SuperNavMenu%:nth-of-type(1)::before { content: "\F07C7"; }   /* магазин */
+.%SuperNavMenu%:nth-of-type(2)::before { content: "\F0297"; }   /* библиотека */
+.%SuperNavMenu%:nth-of-type(3)::before { content: "\F0849"; }   /* сообщество */
+.%SuperNavMenu%:nth-of-type(4)::before { content: "\F0004"; }   /* профиль */
+.%BottomBar% > .%DownloadStatus%::before { content: "\F01DA"; }
+.%BottomBar% > .%FriendsButton%::before { content: "\F000E"; }
+.%BottomBar% > .%AddGameButton%::before { content: "\F0415"; }
+.qs-rail-item.qs-settings::before { content: "\F0493"; }
+
+.%SuperNavMenu%:hover, .%BottomBar% > .%AddGameButton%:hover, .%BottomBar% > .%DownloadStatus%:hover,
+.%BottomBar% > .%FriendsButton%:hover, .qs-rail-item:hover {
+    background: var(--qs-surface) !important;
+    color: var(--qs-fg) !important;
+}
+/* выбранный раздел — плашка с акцентной иконкой и полоской слева, как в Настройках */
+.%SuperNavMenu%.%Selected@SuperNavMenu% { background: var(--qs-surface-hi) !important; color: var(--qs-accent) !important; }
+
+/* подписи прячем, но кнопка Steam остаётся на всю плитку — клики и подменю работают как раньше */
+.%SuperNavMenu% .%MenuButton@SuperNavMenu% {
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    font-size: 0 !important;
+    color: transparent !important;
+    overflow: hidden;
+}
+.%SuperNavMenu% .%MenuButton@SuperNavMenu% * { font-size: 0 !important; }
+.%SuperNavMenu% .%MenuButton@SuperNavMenu%::after,
+.%SuperNavMenu% .%MenuButton@SuperNavMenu%::before { display: none !important; }
+.%BottomBar% .%Text@AddGameButton%, .%BottomBar% .%Queue@DownloadStatus%, .qs-rail-item .qs-label { display: none !important; }
+
+/* ── подсказка справа от кнопки, в стиле подсказок шелла */
+[data-qs-tip]::after {
+    content: attr(data-qs-tip);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translate(-4px, -50%);
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: var(--qs-r-sm);
+    background: var(--qs-surface-hi-2);
+    border: 1px solid var(--qs-line);
+    color: var(--qs-fg);
+    font-size: 12px;
+    font-weight: 400;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--qs-anim), transform var(--qs-anim);
+    z-index: 100;
+}
+[data-qs-tip]:hover::after { opacity: 1; transform: translate(0, -50%); }
+/* полоска выбранного раздела — тенью, т.к. ::after занят подсказкой */
+.%SuperNavMenu%.%Selected@SuperNavMenu% { box-shadow: inset 3px 0 0 var(--qs-accent) !important; }
+
+/* ── низ панели (бывшая нижняя полоса) */
+.%BottomBarContainer% { background: transparent !important; padding: 0 !important; }
+.%BottomBar% {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    height: auto !important;
+    padding: 8px 0 12px !important;
+    gap: 4px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.%BottomBar% > .%DownloadStatus% { order: 1; }
+.%BottomBar% > .%FriendsButton% { order: 2; }
+.%BottomBar% > .%AddGameButton% { order: 4; }
+.%BottomBar% > .qs-settings { order: 5; }
+.%BottomBar%::before { content: ""; order: 3; width: 24px; height: 1px; margin: 4px 0; background: var(--qs-surface-hi-2); }
+/* свои svg-иконки Steam заменены глифами шелла */
+.%BottomBar% .%Icon@AddGameButton% { display: none !important; }
+.%BottomBar% > .%FriendsButton% > * { display: none !important; }
+.%BottomBar% .%DownloadStatusContent% {
+    position: absolute !important;
+    inset: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    opacity: 0;
+}
+/* идёт загрузка — точка-индикатор на иконке */
+.%BottomBar% > .%DownloadStatus%:has(progress, [class*="Progress"]) { color: var(--qs-fg) !important; }
+.%BottomBar% svg { fill: currentColor !important; }
+/* уголок для изменения размера окна — в правом нижнем углу окна, как был */
+.%BottomBar% .window_resize_grip { position: fixed !important; right: 0; bottom: 0; }
+.%URLBarReplacement@OuterFrame% { box-shadow: none !important; }
+
+/* рамка окна и синяя полоса фокуса не нужны */
+.%Wrapper@OuterFrame% { border: none !important; }
+.%FocusBar@OuterFrame% { display: none !important; }
+.%TopBar@OuterFrame% { box-shadow: none !important; }
+
+/* ── строка адреса (магазин, сообщество) */
+.%URLBar@OuterFrame%, .%URLBar@BrowserTabs% {
+    background: transparent !important;
+    padding: 0 var(--qs-gap) 6px !important;
+    height: auto !important;
+    align-items: center;
+    gap: 4px;
+}
+.%URLBarText@OuterFrame%, .%URLBarText@BrowserTabs% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: var(--qs-r-sm) !important;
+    padding: 3px 12px 3px 6px !important;
+    height: auto !important;
+}
+.%URL@OuterFrame%, .%URL@BrowserTabs% { color: var(--qs-dim) !important; font-size: 12px !important; }
+.%StatusIcon@OuterFrame%, .%StatusIcon@BrowserTabs% { color: var(--qs-dim) !important; border-radius: var(--qs-r-sm); }
+.%StatusIcon@OuterFrame% svg, .%StatusIcon@BrowserTabs% svg { fill: currentColor !important; }
+.%ReloadButton@OuterFrame%:hover { background: var(--qs-surface-hi); color: var(--qs-fg) !important; }
+/* страница сайта — карточкой со скруглением */
+.%BrowserWrapper@OuterFrame% { padding: 0 var(--qs-gap); }
+.%Browser@OuterFrame% { border-radius: var(--qs-r-lg); overflow: hidden; background: var(--qs-surface) !important; }
+
+/* ───────────────────────── библиотека ───────────────────────── */
+
+/* левая колонка и правая панель — две карточки с зазором */
+.%Container@LeftListSizableContainer% { background: var(--qs-bg) !important; }
+.%LeftListSizableContainer% { padding: 0 0 var(--qs-gap) var(--qs-gap); box-sizing: border-box; }
+.%LeftListSizableContainer% > .%Container@GameListHomeAndSearch% {
+    background: var(--qs-bg) !important;
+}
+/* разделитель (за него тянут ширину списка) лежит поверх зазора, а зазор даёт отступ панели —
+   так он есть и когда список скрыт (страница загрузок) */
+.%LibraryWindowDivider% {
+    background: transparent !important;
+    width: var(--qs-gap) !important;
+    min-width: var(--qs-gap) !important;
+    margin-right: calc(-1 * var(--qs-gap));
+    position: relative;
+    z-index: 5;
+}
+.%LibraryWindowDivider%:hover, .%IsResizingLeftList% .%LibraryWindowDivider% { background: var(--qs-surface-hi-2) !important; border-radius: 4px; }
+.%MainPanel@LeftListSizableContainer% {
+    margin: 0 var(--qs-gap) var(--qs-gap) var(--qs-gap);
+    border-radius: var(--qs-r-lg);
+    border: 1px solid var(--qs-surface-hi);
+    overflow: hidden;
+    background: var(--qs-surface) !important;
+}
+.%TopGradient@LeftListSizableContainer% { display: none !important; }
+
+/* «Главная» и кнопка коллекций */
+.%GameListHomeAndSearch% { background: transparent !important; padding-top: 2px; }
+.%GameListHomeAndSearch% .%Bar@CollectionIconBox% {
+    background: transparent !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-muted) !important;
+    transition: background var(--qs-anim);
+}
+.%GameListHomeAndSearch% .%Bar@CollectionIconBox% .%Icon@CollectionIconBox% { display: none !important; }  /* картинка-волна Steam */
+.%GameListHomeAndSearch% .%Bar@CollectionIconBox%:hover { background: var(--qs-surface) !important; }
+.%GameListHomeAndSearch% .%Bar@CollectionIconBox%.%Selected@CollectionIconBox% { background: var(--qs-surface) !important; }
+.%HomeBox% .%Bar@CollectionIconBox%.%Selected@CollectionIconBox%::before {
+    content: ""; position: absolute; left: 0; top: 7px; width: 3px; height: 18px; border-radius: 2px; background: var(--qs-accent);
+}
+.%HomeBox% .%Label@CollectionIconBox% { color: var(--qs-fg) !important; font-weight: 600; padding-left: 6px; }
+.%CollectionIconBox% { background: var(--qs-dim) !important; border-radius: 2px; }
+.%CollectionButton@CollectionIconBox%:hover .%CollectionIconBox% { background: var(--qs-fg) !important; }
+
+/* выбор вида «Игры и программы» и фильтры */
+.%Bar@ViewFiltersBar% { background: transparent !important; }
+.%SearchBar@ViewFiltersBar% .%MenuHeader@ViewFiltersBar% {
+    border-radius: var(--qs-r-sm);
+    background: transparent !important;
+    color: var(--qs-muted) !important;
+}
+.%SearchBar@ViewFiltersBar% .%MenuHeader@ViewFiltersBar%:hover { background: var(--qs-surface) !important; color: var(--qs-fg) !important; }
+.%ViewName@ViewFiltersBar% { color: inherit !important; text-transform: none !important; }
+.%Arrow@ViewFiltersBar% svg, .%Arrow@ViewFiltersBar% polygon { fill: var(--qs-dim) !important; }
+.%CheckboxWithImage@ViewFiltersBar% { border-radius: 6px; color: var(--qs-dim) !important; }
+.%CheckboxWithImage@ViewFiltersBar% { opacity: .55; filter: grayscale(1); transition: opacity var(--qs-anim), background var(--qs-anim); }
+.%CheckboxWithImage@ViewFiltersBar%:hover { background: var(--qs-surface-hi); opacity: .9; }
+.%CheckboxWithImage@ViewFiltersBar%.%Active@ViewFiltersBar% { background: var(--qs-surface-hi-2); opacity: 1; }
+
+/* поиск — как поле поиска в Настройках */
+.%Container@SearchFilterInputClear% { background: transparent !important; }
+.%SearchInput@SearchFilterInputClear% input,
+.%SearchFilterInput@SearchFilterInputClear% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: 9px !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+}
+.%SearchInput@SearchFilterInputClear% input:focus { border-color: var(--qs-line) !important; }
+.%SearchInput@SearchFilterInputClear% input::placeholder { color: var(--qs-dim) !important; }
+.%AdvancedSearchButton@SearchFilterInputClear% { border-radius: var(--qs-r-sm); color: var(--qs-dim) !important; }
+.%AdvancedSearchButton@SearchFilterInputClear%:hover { background: var(--qs-surface-hi); color: var(--qs-fg) !important; }
+.%AdvancedSearchButton@SearchFilterInputClear% svg, .%AdvancedSearchButton@SearchFilterInputClear% path { fill: currentColor !important; }
+
+/* заголовки коллекций: «Избранное (21)» */
+.%Container@SectionHeaderContent% {
+    background: transparent !important;
+    border-radius: var(--qs-r-sm);
+    color: var(--qs-dim) !important;
+}
+.%Container@SectionHeaderContent%:hover { background: var(--qs-surface) !important; color: var(--qs-muted) !important; }
+.%SectionName@SectionHeaderContent% {
+    color: var(--qs-dim) !important;
+    text-transform: none !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+}
+.%SectionCount@SectionHeaderContent% { color: var(--qs-faint) !important; filter: brightness(1.6); }
+
+/* игры в списке — пункты навигации: скругление, полоска акцента у выбранной */
+.%Container@GameListEntryContainer% {
+    background: transparent !important;
+    border-radius: var(--qs-r-sm);
+    margin: 0 4px;
+    width: calc(100% - 8px) !important;
+    color: var(--qs-muted) !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+.%Container@GameListEntryContainer%.%Uninstalled@GameListEntryContainer% { color: var(--qs-dim) !important; }
+.%Container@GameListEntryContainer%:hover,
+.%Container@GameListEntryContainer%.%HasContextMenuOpen@GameListEntryContainer% {
+    background: var(--qs-surface) !important;
+    color: var(--qs-fg) !important;
+}
+.%Container@GameListEntryContainer%.%Selected@GameListEntryContainer% {
+    background: var(--qs-surface-hi) !important;
+    color: var(--qs-fg) !important;
+}
+.%Container@GameListEntryContainer%.%Selected@GameListEntryContainer%::before {
+    content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--qs-accent); z-index: 2;
+}
+.%Container@GameListEntryContainer%.%Running@GameListEntryContainer%,
+.%Container@GameListEntryContainer%.%Updating@GameListEntryContainer% { color: var(--qs-accent) !important; }
+.%GameListEntryContainer% { color: inherit !important; }
+.%GameIcon@GameListEntryContainer% { border-radius: 4px; }
+.%HoverOverlay@GameListEntryContainer% { display: none !important; }
+
+/* ── главная библиотеки: «Что нового», полки */
+.%URLBarReplacement@OuterFrame% { background: transparent !important; }
+.%AppDetailsTransitionGroup@LeftListSizableContainer% { background: var(--qs-surface) !important; }
+.%Container@LibraryHome%, .%LibraryHome%, .%UpdatesContainer% {
+    background: var(--qs-surface) !important;
+}
+/* «Что нового» — вложенная карточка */
+.%UpdatesContainer% { padding-bottom: 10px; }
+.%UpdatesContainer% > div:first-child {
+    background: var(--qs-surface-hi);
+    border-radius: var(--qs-r-lg);
+    margin: 10px;
+}
+.%EventTimeSpan@EventRowCarousel% { background: var(--qs-accent) !important; color: var(--qs-accent-fg) !important; border-radius: 6px; }
+.%PartnerEventRowCapsule% img, [class*="PartnerEventRowCapsule_MainImageContainer"] { border-radius: var(--qs-r) !important; overflow: hidden; }
+
+/* заголовки полок */
+.%ShowcaseHeader@Showcase% { color: var(--qs-fg) !important; text-transform: none !important; }
+.%Rule@Showcase%, .%RuleLeft@Showcase%, .%RuleRight@Showcase% { background: var(--qs-surface-hi-2) !important; }
+.%AddShowcase@Showcase% { color: var(--qs-dim) !important; border-radius: var(--qs-r-sm); padding: 0 10px; }
+.%AddShowcase@Showcase%:hover { background: var(--qs-surface-hi); color: var(--qs-fg) !important; }
+.%Collapser@Showcase% { background: var(--qs-surface-hi) !important; border-radius: 50% !important; }
+.%Collapser@Showcase%:hover { background: var(--qs-surface-hi-2) !important; }
+.%PageButtons@Showcase% svg, .%ShowcaseArrow@Showcase% { fill: var(--qs-dim) !important; }
+
+/* обложки игр */
+.%LibraryItemBox@PortraitImage% { border-radius: var(--qs-r) !important; overflow: hidden; }
+.%LibraryItemBoxShine@PortraitImage% { border-radius: var(--qs-r) !important; }
+.%RecentGameFooter@PortraitImage% { background: rgba(var(--qs-surface-hi-2-rgb), .92) !important; }
+.%AppPortraitBanner@PortraitImage% { background: var(--qs-accent) !important; color: var(--qs-accent-fg) !important; border-radius: 0 0 6px 6px; }
+.%LibraryItemActionButton@PortraitImage% {
+    background: var(--qs-accent) !important;
+    border-radius: var(--qs-r) !important;
+    box-shadow: none !important;
+}
+.%LibraryItemActionButton@PortraitImage% svg, .%LibraryItemActionButton@PortraitImage% svg * { fill: var(--qs-accent-fg) !important; }
+/* «Перетащите сюда, чтобы создать коллекцию» */
+.%NewCollectionTarget@LeftListSizableContainer% { background: var(--qs-surface-hi-2) !important; border-radius: var(--qs-r-sm); }
+
+/* ── баннер обновления Steam и прочие уведомления сверху */
+.%Alert@ActionAlert% {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2);
+    border-radius: var(--qs-r-lg);
+    color: var(--qs-fg) !important;
+}
+.%AlertButton@ActionAlert% { background: var(--qs-accent) !important; color: var(--qs-accent-fg) !important; border-radius: var(--qs-r-sm) !important; }
+.%ProgressTrack@ActionAlert% { background: var(--qs-surface-hi-2) !important; border-radius: 3px; }
+.%Progress@ActionAlert% { background: var(--qs-accent) !important; border-radius: 3px; }
+
+/* ───────────────────────── общие элементы Steam (Dialog*) ───────────────────────── */
+
+html.qs-steam .DialogDropDown, html.qs-steam .DialogDropDown_CurrentDisplay {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+}
+html.qs-steam .DialogDropDown .DialogDropDown_CurrentDisplay { border: none !important; background: transparent !important; }
+html.qs-steam .DialogDropDown:hover { background: var(--qs-surface-hi-2) !important; }
+html.qs-steam .DialogDropDown_Arrow svg, html.qs-steam .DialogDropDown_Arrow polygon { fill: var(--qs-dim) !important; }
+.%ShowcaseHeader@Showcase% .DialogDropDown, .%CollectionDropDown@Showcase% .DialogDropDown { background: transparent !important; border-color: transparent !important; }
+.%ShowcaseHeader@Showcase% .DialogDropDown:hover, .%CollectionDropDown@Showcase% .DialogDropDown:hover { background: var(--qs-surface-hi) !important; }
+
+/* в шелле нет КАПСА — везде обычный регистр */
+html.qs-steam *:not(svg):not(svg *) { text-transform: none !important; }
+
+/* ───────────────────────── страница игры ───────────────────────── */
+
+.%Body@ScrollToTopButtonPosition%.%ScrollContainer@PreventScrolling%,
+.%Glassy@PreventScrolling% {
+    background: var(--qs-surface) !important;
+}
+.%BackdropGlass% { background: linear-gradient(rgba(var(--qs-surface-rgb), .1) 0%, rgba(var(--qs-surface-rgb), .75) 82px, rgba(var(--qs-surface-rgb), .3)) !important; }
+.%StickyHeaderShadow% { display: none !important; }
+
+/* полоса с кнопкой «Играть» */
+.%PlayBar@InPage% {
+    background: rgba(var(--qs-surface-rgb), .92) !important;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--qs-surface-hi-2);
+}
+.%PlayButton@PlayButtonContainer%, .%StreamingSelector% {
+    background: var(--qs-accent) !important;
+    color: var(--qs-accent-fg) !important;
+    box-shadow: none !important;
+    transition: background var(--qs-anim);
+}
+.%PlayButton@PlayButtonContainer% { border-radius: var(--qs-r) 0 0 var(--qs-r) !important; }
+.%PlayButtonContainer%:not(.%ShowingStreaming%) .%PlayButton@PlayButtonContainer% { border-radius: var(--qs-r) !important; }
+.%StreamingSelector% { border-radius: 0 var(--qs-r) var(--qs-r) 0 !important; border-left: 1px solid rgba(var(--qs-bg-rgb), .25) !important; }
+.%PlayButton@PlayButtonContainer%:hover, .%StreamingSelector%:hover { background: var(--qs-fg-hover) !important; }
+.%PlayButton@PlayButtonContainer% *, .%StreamingSelector% * { color: var(--qs-accent-fg) !important; }
+.%PlayButton@PlayButtonContainer% svg, .%PlayButton@PlayButtonContainer% svg *,
+.%StreamingSelector% svg, .%StreamingSelector% svg * { fill: var(--qs-accent-fg) !important; }
+.%ButtonText@PlayButtonContainer% { font-size: 16px !important; font-weight: 700 !important; }
+.%PlayBarLabel% { color: var(--qs-dim) !important; font-size: 12px !important; }
+.%PlayBarDetailLabel% { color: var(--qs-muted) !important; }
+.%MenuButton@InPage% {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2);
+    border-radius: var(--qs-r-sm) !important;
+}
+.%MenuButton@InPage%:hover { background: var(--qs-surface-hi-2) !important; }
+.%MenuButton@InPage% svg path { fill: var(--qs-muted) !important; }
+.%MenuButton@InPage%.%Favorited% svg path { fill: var(--qs-fg) !important; }
+
+/* вкладки «Страница в магазине · DLC · Центр сообщества …» */
+.%LinkInner% { border-radius: var(--qs-r-sm); }
+.%Link@LinksSection% { border-radius: var(--qs-r-sm); transition: background var(--qs-anim); }
+.%Link@LinksSection%:hover { background: var(--qs-surface-hi); }
+.%Text@LinksSection% { color: var(--qs-dim) !important; }
+.%Link@LinksSection%:hover .%Text@LinksSection% { color: var(--qs-fg) !important; }
+[class*="LinksSection"], .%LinksSection% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r); }
+
+/* заголовки разделов: «Активность», «Друзья, которые играют» */
+.%SectionHeader% { background: none !important; }
+.%LabelText@SectionHeader%, .%Label@SectionHeader% { color: var(--qs-muted) !important; font-weight: 700 !important; font-size: 13px !important; }
+.%SubsectionHeader% { color: var(--qs-muted) !important; }
+
+/* блоки справа: друзья, достижения, карточки, мастерская — карточки как SCard */
+.%AppDetailsSectionContainer% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r) !important; border: none !important; }
+.%Highlight@BodyGutter% { background: var(--qs-surface-hi-2) !important; border-radius: var(--qs-r-sm) !important; }
+.%Body@BodyGutter%.%WorkshopContainer% { background-color: var(--qs-surface-hi-2) !important; border-radius: var(--qs-r-sm); }
+.%AchievementProgressContainer% { background: var(--qs-surface-hi-2) !important; border-radius: 4px; overflow: hidden; }
+.%AchievementProgress% { background: var(--qs-accent) !important; border-radius: 4px; }
+.%CardContainer% { background: var(--qs-surface-hi-2) !important; border-radius: 6px; }
+.%Gloss% { display: none !important; }
+.%AppDetailsButton% { background: var(--qs-surface-hi-2) !important; border-radius: var(--qs-r-sm) !important; }
+
+/* активность: поле «Расскажите друзьям…», события, скриншоты */
+.%PostTextEntryArea% {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    color: var(--qs-fg) !important;
+}
+.%PostTextEntryArea%:focus { border-color: var(--qs-line) !important; }
+.%EmoticonButton%, .%PostButton% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r-sm) !important; }
+.%PartnerEvent@GameCarouselItemWidth% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r) !important; overflow: hidden; }
+.%BackgroundEffects% { display: none !important; }
+.%EventBody@GameCarouselItemWidth%, .%ActivityCommentThread% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r); }
+.%CommunityItem% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r) !important; overflow: hidden; }
+.%AuthorSection% { background: transparent !important; }
+.%BottomSection@AutoRowColumnWidth%, .%TopSectionInner@AutoRowColumnWidth% { background: var(--qs-surface-hi-2) !important; }
+.%FetchMoreContainer% { background: var(--qs-surface-hi) !important; border-radius: var(--qs-r-sm) !important; }
+.%ZoomInButton% { background: rgba(var(--qs-bg-rgb), .8) !important; border-radius: 6px; }
+
+/* ───────────────────────── меню (отдельные окна Steam) ───────────────────────── */
+
+html.qs-steam body.ContextMenuPopupBody { background: var(--qs-surface) !important; }
+.%contextMenu@ContextMenuMouseOverlay% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
+}
+.%contextMenuContents@ContextMenuMouseOverlay% {
+    background: transparent !important;
+    padding: 5px !important;
+    box-shadow: none !important;
+}
+html.qs-steam .contextMenuItem,
+.%contextMenuItem@ContextMenuMouseOverlay% {
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-muted) !important;
+    background: transparent !important;
+    padding: 7px 14px !important;
+    min-height: 0 !important;
+    font-size: 13px !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+html.qs-steam .contextMenuItem:hover:not(.disabled),
+.%contextMenuItem@ContextMenuMouseOverlay%.%active@ContextMenuMouseOverlay%,
+.%contextMenuItem@ContextMenuMouseOverlay%:hover {
+    background: var(--qs-surface-hi-2) !important;
+    color: var(--qs-fg) !important;
+}
+html.qs-steam .contextMenuItem.disabled { color: var(--qs-dim) !important; opacity: .6; }
+/* разделители: тонкая линия с отступами */
+.%Separator@MenuWrapper% {
+    border: none !important;
+    border-top: 1px solid var(--qs-surface-hi-2) !important;
+    background: none !important;
+    margin: 5px 8px !important;
+    height: 0 !important;
+    padding: 0 !important;
+}
+.%contextMenu@ContextMenuMouseOverlay% svg path, .%contextMenu@ContextMenuMouseOverlay% svg polygon { fill: currentColor; }
+
+/* ───────────────────────── диалоги: настройки Steam, свойства игры ───────────────────────── */
+
+/* список страниц слева — как навигация Настроек шелла */
+.%PagedSettingsDialog_PageListColumn@ResponsivePageList% {
+    background: var(--qs-bg) !important;
+    box-shadow: none !important;
+    border-right: none !important;
+}
+.%PagedSettingsDialog_Title@ResponsivePageList%, .%PagedSettingsDialog_Title@ResponsivePageList% * {
+    color: var(--qs-fg) !important;
+    font-weight: 700 !important;
+}
+.%PagedSettingsDialog_PageList@ResponsivePageList% { padding: 0 8px; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList% {
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-muted) !important;
+    background: transparent !important;
+    margin: 1px 0;
+    height: auto !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    position: relative;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%:hover { background: var(--qs-surface) !important; color: var(--qs-fg) !important; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%.%Active@ResponsivePageList% {
+    background: var(--qs-surface) !important;
+    color: var(--qs-fg) !important;
+}
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%.%Active@ResponsivePageList%::before {
+    content: ""; position: absolute; left: 0; top: 9px; width: 3px; height: 18px; border-radius: 2px; background: var(--qs-accent);
+}
+.%PagedSettingsDialog_PageListItem@ResponsivePageList% .%PageListItem_Title@ResponsivePageList% { color: inherit !important; font-size: 13px !important; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%.%Active@ResponsivePageList% .%PageListItem_Title@ResponsivePageList% { font-weight: 700; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList% svg, .%PagedSettingsDialog_PageListItem@ResponsivePageList% svg * { fill: var(--qs-muted) !important; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%.%Active@ResponsivePageList% svg,
+.%PagedSettingsDialog_PageListItem@ResponsivePageList%.%Active@ResponsivePageList% svg * { fill: var(--qs-accent) !important; }
+.%PagedSettingsDialog_PageListItem@ResponsivePageList% img { filter: grayscale(1) brightness(1.4); }
+.%PageListSeparator@ResponsivePageList% { background: var(--qs-surface-hi-2) !important; height: 1px !important; border: none !important; margin: 6px 10px !important; }
+
+/* правая часть */
+.%PagedSettingDialog_ContentColumn@ResponsivePageList%, html.qs-steam .DialogContentTransition,
+.%PagedSettingsDialog_PageContent@ResponsivePageList%, html.qs-steam .DialogContent, html.qs-steam .ModalPosition_Content .DialogContent {
+    background: var(--qs-bg) !important;
+}
+html.qs-steam .DialogHeader, html.qs-steam .DialogContent_Title, html.qs-steam .DialogTitle {
+    color: var(--qs-fg) !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+}
+html.qs-steam .DialogBodyText, html.qs-steam .DialogBody { color: var(--qs-muted); }
+html.qs-steam .DialogLabel, html.qs-steam .DialogInputLabelGroup .DialogLabel { color: var(--qs-muted) !important; text-transform: none !important; letter-spacing: 0 !important; }
+
+/* строки настроек — карточки как SCard */
+.%Field@WithBottomSeparatorStandard% {
+    background: var(--qs-surface) !important;
+    border-radius: var(--qs-r) !important;
+    margin-bottom: 3px !important;
+    padding-left: 18px !important;
+    padding-right: 16px !important;
+}
+.%Field@WithBottomSeparatorStandard%::after, .%WithBottomSeparatorStandard%::after,
+.%WithBottomSeparator@WithBottomSeparatorStandard%::after, .%WithBottomSeparatorThick@WithBottomSeparatorStandard%::after { display: none !important; }
+.%FieldLabel@WithBottomSeparatorStandard% { color: var(--qs-fg) !important; font-size: 13px !important; }
+.%FieldDescription@WithBottomSeparatorStandard% { color: var(--qs-dim) !important; font-size: 12px !important; }
+.%Field@WithBottomSeparatorStandard%.%HighlightOnFocus@WithBottomSeparatorStandard%:focus-within,
+.%Field@WithBottomSeparatorStandard%.gpfocuswithin { background: var(--qs-surface-hi) !important; }
+html.qs-steam .SettingsDialogSubHeader, .%SettingsDialogSubHeader% {
+    color: var(--qs-dim) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    margin-top: 18px !important;
+}
+
+/* крупные кнопки «Пополнить баланс», «Приватность» */
+.%FatButton% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: var(--qs-r) !important;
+}
+.%FatButton%:hover { background: var(--qs-surface-hi) !important; }
+.%FatButton% svg, .%FatButton% svg * { fill: var(--qs-fg) !important; }
+
+/* кнопки — как SButton: обычные и главная (акцент) */
+html.qs-steam .DialogButton {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    font-size: 13px !important;
+    transition: background var(--qs-anim);
+}
+html.qs-steam .DialogButton:hover:not(.Disabled):not(:disabled) { background: var(--qs-surface-hi-2) !important; }
+html.qs-steam .DialogButton:active:not(.Disabled):not(:disabled) { background: var(--qs-line) !important; }
+html.qs-steam .DialogButton.Primary {
+    background: var(--qs-accent) !important;
+    border-color: var(--qs-accent) !important;
+    color: var(--qs-accent-fg) !important;
+    font-weight: 700 !important;
+}
+html.qs-steam .DialogButton.Primary:hover:not(.Disabled):not(:disabled) { background: var(--qs-fg-hover) !important; }
+html.qs-steam .DialogButton.Disabled, html.qs-steam .DialogButton:disabled { opacity: .4; }
+html.qs-steam .DialogButton svg path { fill: currentColor; }
+
+/* поля ввода */
+html.qs-steam .DialogInput, html.qs-steam .DialogTextInputBase, html.qs-steam textarea.DialogInput {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: 9px !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+}
+html.qs-steam .DialogInput:focus, html.qs-steam .DialogTextInputBase:focus { border-color: var(--qs-line) !important; outline: none !important; }
+html.qs-steam .DialogInput::placeholder { color: var(--qs-dim) !important; font-style: normal !important; }
+
+/* переключатели — как SSwitch: контур, при включении заливка акцентом */
+.%Toggle@ToggleSwitch% {
+    width: 44px !important;
+    height: 24px !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    box-shadow: inset 0 0 0 1.5px var(--qs-dim) !important;
+    transition: background var(--qs-anim), box-shadow var(--qs-anim);
+}
+.%Toggle@ToggleSwitch%:hover { box-shadow: inset 0 0 0 1.5px var(--qs-fg) !important; }
+.%ToggleRail@ToggleSwitch% { background: transparent !important; box-shadow: none !important; border-radius: 12px !important; width: 100% !important; height: 100% !important; }
+.%ToggleSwitch% {
+    width: 12px !important;
+    height: 12px !important;
+    top: 6px !important;
+    left: 6px !important;
+    background: var(--qs-dim) !important;
+    box-shadow: none !important;
+    transition: transform 220ms cubic-bezier(.33, 1, .68, 1), background var(--qs-anim) !important;
+}
+.%Toggle@ToggleSwitch%:hover .%ToggleSwitch% { background: var(--qs-fg) !important; }
+.%Toggle@ToggleSwitch%.%On@ToggleSwitch% { background: var(--qs-accent) !important; box-shadow: none !important; }
+.%Toggle@ToggleSwitch%.%On@ToggleSwitch% .%ToggleSwitch% { background: var(--qs-bg) !important; transform: translateX(20px) !important; }
+.%Toggle@ToggleSwitch%.%Disabled@ToggleSwitch% { opacity: .4; }
+.%ToggleRail@ToggleSwitch%::before, .%ToggleRail@ToggleSwitch%::after { display: none !important; }
+html.qs-steam .ModalPosition_TopBar { display: none !important; }
+html.qs-steam .ModalPosition_Content { box-shadow: none !important; }
+/* выделенный блок «Время обновления игр» */
+.%FakeContainer% { background: var(--qs-surface) !important; border-radius: var(--qs-r) !important; padding: 14px 18px !important; }
+.%SettingsDialogBodyText% { color: var(--qs-fg) !important; }
+html.qs-steam a, html.qs-steam .DialogBody a { color: var(--qs-fg); }
+
+/* выбор из нескольких вариантов — сегменты, как вкладки в окне часов */
+html.qs-steam .Shared_Radio_Group, .%Group@Button% {
+    background: var(--qs-surface) !important;
+    border-radius: 12px !important;
+    padding: 4px !important;
+    gap: 2px;
+    border: none !important;
+}
+html.qs-steam .RadioButton {
+    background: transparent !important;
+    border-radius: 9px !important;
+    color: var(--qs-dim) !important;
+    box-shadow: none !important;
+    transition: background var(--qs-anim), color var(--qs-anim);
+}
+html.qs-steam .RadioButton::before, html.qs-steam .RadioButton::after { display: none !important; }
+html.qs-steam .RadioButton:hover { color: var(--qs-muted) !important; }
+html.qs-steam .RadioButton.%Active@Group% {
+    background: var(--qs-surface-hi-2) !important;
+    color: var(--qs-fg) !important;
+}
+
+/* галочки */
+html.qs-steam .DialogCheckbox {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 5px !important;
+    background: transparent !important;
+    box-shadow: inset 0 0 0 1.5px var(--qs-dim) !important;
+    border: none !important;
+}
+html.qs-steam .DialogCheckbox:hover { box-shadow: inset 0 0 0 1.5px var(--qs-fg) !important; }
+html.qs-steam .DialogCheckbox svg { visibility: hidden; }
+html.qs-steam .DialogCheckbox.Active { background: var(--qs-accent) !important; box-shadow: none !important; }
+html.qs-steam .DialogCheckbox.Active svg { visibility: visible; filter: none !important; }
+html.qs-steam .DialogCheckbox.Active svg path { fill: none !important; stroke: var(--qs-accent-fg) !important; stroke-width: 28px !important; }
+html.qs-steam .DialogCheckbox svg path + path { display: none !important; }
+html.qs-steam .DialogCheckbox.Disabled { opacity: .4; }
+html.qs-steam .DialogCheckbox_Container { color: var(--qs-fg); }
+
+/* ───────────────────────── подсказки и карточки при наведении ───────────────────────── */
+
+.%TextToolTip%, .%ToolTip%, .%TooltipContents% {
+    background: var(--qs-surface-hi-2) !important;
+    color: var(--qs-fg) !important;
+    border: 1px solid var(--qs-line) !important;
+    border-radius: var(--qs-r-sm) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .4) !important;
+    font-size: 12px !important;
+}
+.%AppPortraitHover% {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, .45) !important;
+    overflow: hidden;
+}
+.%AppTitle@AppPortraitHover% { color: var(--qs-fg) !important; font-weight: 700; }
+.%AppStatus@AppPortraitHover%, .%PlaytimeDetails@AppPortraitHover% { color: var(--qs-muted) !important; background: none !important; }
+.%Header@AppPortraitHover% { color: var(--qs-dim) !important; }
+
+/* ───────────────────────── светлая схема ───────────────────────── */
+/* Steam местами жёстко задаёт белый текст. :where() даёт нулевую специфичность:
+   перекрашивает только текст Steam, а цвета из правил выше остаются. */
+:where(html.qs-light) :where(.%MainPanel@LeftListSizableContainer%, .%LeftListSizableContainer%, .%TopBar@OuterFrame%,
+    .%BottomBar%, html.qs-steam .DialogContent, .%PagedSettingsDialog_PageListColumn@ResponsivePageList%,
+    .%contextMenu@ContextMenuMouseOverlay%, .%AppPortraitHover%) :where(*:not(svg):not(svg *)) {
+    color: var(--qs-fg) !important;
+}
+/* а поверх картинок текст остаётся светлым */
+:where(html.qs-light) :where(.%LibraryItemBox@PortraitImage%, .%PlayButton@PlayButtonContainer%, .%StreamingSelector%,
+    .%AppPortraitBanner@PortraitImage%, .%EventTimeSpan@EventRowCarousel%, .%AnnouncementsButton%) :where(*) {
+    color: inherit !important;
+}
+html.qs-light .%LibraryItemBox@PortraitImage% { color: #fff; }
+html.qs-light .%RecentGameFooter@PortraitImage% { background: rgba(var(--qs-surface-hi-2-rgb), .95) !important; }
+html.qs-light .%RecentGameFooter@PortraitImage% * { color: var(--qs-fg) !important; }
+html.qs-light .%LibraryItemBoxShine@PortraitImage% { opacity: .3; }
+html.qs-light .%PlayBar@InPage% { background: rgba(var(--qs-surface-rgb), .95) !important; }
+.%SuperNavMenu% .%MenuButton@SuperNavMenu% * { color: inherit !important; }
+
+/* ───────────────────────── загрузки ───────────────────────── */
+.%DownloadsPage% { background: var(--qs-surface) !important; }
+.%Section@JumpBarHeight% { background: transparent !important; }
+.%HeroAndLogo% { background: var(--qs-surface-hi) !important; }
+.%Section@JumpBarHeight%.%Active@JumpBarHeight% { background: var(--qs-surface-hi) !important; border-radius: 0 0 var(--qs-r-lg) var(--qs-r-lg); }
+.%Button@GraphAndStats% { border-radius: var(--qs-r-sm) !important; }
+
+/* ───────────────────────── уведомления: всплывающие и список под колокольчиком ───────────────────────── */
+.%DesktopToastBackground%, .%DesktopToastContainer% { background: transparent !important; }
+.%StandardTemplateContainer@DesktopToastTemplate% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r-lg) !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+.%StandardTemplate@DesktopToastTemplate%, .%Content@DesktopToastTemplate% { background: transparent !important; }
+.%StandardTemplateContainer@DesktopToastTemplate%.%Unread@DesktopToastTemplate% { background: var(--qs-surface-hi) !important; }
+.%Title@DesktopToastTemplate%, .%Header@DesktopToastTemplate% { color: var(--qs-fg) !important; }
+.%StandardNotificationDescription@DesktopToastTemplate%, .%Body@DesktopToastTemplate% { color: var(--qs-muted) !important; }
+.%StandardNotificationSubText@DesktopToastTemplate%, .%Timestamp@DesktopToastTemplate% { color: var(--qs-dim) !important; }
+.%FriendInGameAppColor@DesktopToastTemplate%, .%IngameTitle@DesktopToastTemplate% { color: var(--qs-green) !important; }
+.%FriendOnlineColor%, .%OnlineTitle@DesktopToastTemplate% { color: var(--qs-blue) !important; }
+.%NewIndicator@DesktopToastTemplate% { background: var(--qs-accent) !important; }
+.%AppLogo@DesktopToastTemplate%, .%Icon@DesktopToastTemplate% { border-radius: var(--qs-r-sm); overflow: hidden; }
+.%markReadBackground@DesktopToastTemplate% { background: var(--qs-surface-hi-2) !important; }
+.%AllNotificationsButton% {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-fg) !important;
+}
+.%AllNotificationsButton%:hover { background: var(--qs-surface-hi-2) !important; }
+.%PinnedTemplateDesktop@PinnedTemplate%, .%PinnedTemplate@DesktopToastTemplate% {
+    background: var(--qs-surface-hi) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-fg) !important;
+}
+.%PinnedTemplateDesktop@PinnedTemplate%:hover { background: var(--qs-surface-hi-2) !important; }
+.%AllNotificationsTitle% { color: var(--qs-fg) !important; }
+.%BlueHighlight% { color: var(--qs-fg) !important; font-weight: 700; }
+

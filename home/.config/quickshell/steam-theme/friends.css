@@ -1,0 +1,234 @@
+/*
+ * Rexilone Shell — список друзей и окна чата Steam.
+ * Здесь в основном обычные (не зашифрованные) классы friendsui.
+ */
+
+/* ───────────────────────── каркас ───────────────────────── */
+
+html.qs-steam body, html.qs-steam .friendsui-container, html.qs-steam .FriendsListAndChatsSteamDialog,
+html.qs-steam .friendlistListContainer, html.qs-steam .chatRoomListContainer, html.qs-steam .friendListFooter,
+html.qs-steam .ChatWindowsContainer, html.qs-steam .chatWindow, html.qs-steam .chatContentContainer {
+    background: var(--qs-bg) !important;
+}
+html.qs-steam .title-area-highlight, html.qs-steam .singleWindowFocusBar,
+html.qs-steam .chatSingleWindowFocusBar { display: none !important; }
+.%FriendListInsetShadowTop%, .%FriendListInsetShadowBottom% { display: none !important; }
+html.qs-steam .friendGroup { background: none !important; }
+
+/* ── шапка: аватар, имя, статус */
+html.qs-steam .friendListHeaderContainer, html.qs-steam .titleBarContainer {
+    background: var(--qs-bg) !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+html.qs-steam .currentUserContainer { padding: 8px 10px 4px !important; }
+html.qs-steam .currentUserContainer .avatarHolder img, html.qs-steam .currentUserAvatar img { border-radius: var(--qs-r) !important; }
+html.qs-steam .currentUserContainer .personaNameAndStatusLabel,
+html.qs-steam .currentUserContainer .playerName { color: var(--qs-fg) !important; font-weight: 700 !important; }
+html.qs-steam .currentUserContainer .personaStatus, html.qs-steam .currentUserContainer .playerStatus { color: var(--qs-dim) !important; }
+
+/* «Перетащите друзей и чаты сюда» */
+html.qs-steam .quickAccessFriends, html.qs-steam .quickAccessFriendsMessage {
+    border: 1px dashed var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    color: var(--qs-dim) !important;
+    background: transparent !important;
+}
+html.qs-steam .quickAccessFriendsMessageDismiss {
+    background: var(--qs-surface-hi-2) !important;
+    color: var(--qs-fg) !important;
+    border-radius: 6px !important;
+}
+
+/* ── заголовки «Друзья» / «Групповые чаты» */
+html.qs-steam .friendTab, html.qs-steam .socialListTab, html.qs-steam .friendsListSectionTitle, html.qs-steam .chatSectionTitle {
+    background: var(--qs-surface) !important;
+    color: var(--qs-muted) !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 4px 8px !important;
+    border-radius: var(--qs-r-sm) !important;
+    width: auto !important;
+    font-weight: 700 !important;
+}
+html.qs-steam .friendTab.activeTab { color: var(--qs-fg) !important; }
+html.qs-steam .friendListButton, html.qs-steam .chatRoomButton {
+    border-radius: 6px !important;
+    opacity: .7;
+    transition: opacity var(--qs-anim), background var(--qs-anim);
+}
+html.qs-steam .friendListButton:hover, html.qs-steam .chatRoomButton:hover { opacity: 1; background: var(--qs-surface-hi-2) !important; }
+html.qs-steam .friendListButton svg, html.qs-steam .chatSectionTitle svg { fill: var(--qs-muted) !important; }
+html.qs-steam .requestsNumber { background: var(--qs-urgent) !important; color: var(--qs-accent-fg) !important; }
+
+/* ── группы: «В игре», «В сети (3)», «Не в сети» */
+html.qs-steam .groupName {
+    color: var(--qs-dim) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+html.qs-steam .groupName .groupCount, html.qs-steam .groupName span { color: var(--qs-faint) !important; filter: brightness(1.6); }
+html.qs-steam .groupHeaderContainer { border-radius: var(--qs-r-sm); margin: 0 6px; }
+html.qs-steam .groupHeaderContainer:hover { background: var(--qs-surface) !important; }
+html.qs-steam .friendGroup + .friendGroup, html.qs-steam .friendGroup { border-top: none !important; }
+html.qs-steam .friendGroup::after, html.qs-steam .friendGroup::before { display: none !important; }
+
+/* ── друзья в списке: пункты со скруглением, цвета статусов из палитры */
+html.qs-steam .friend {
+    border-radius: var(--qs-r-sm) !important;
+    margin: 0 6px !important;
+    width: auto !important;
+    transition: background var(--qs-anim);
+}
+html.qs-steam .friend:hover, html.qs-steam .friend.ContextMenuOpen { background: var(--qs-surface) !important; }
+html.qs-steam .friend .avatarHolder img, html.qs-steam .friend img.avatar { border-radius: 8px !important; }
+html.qs-steam .avatarHolder .avatarStatus { border-radius: 8px !important; }
+html.qs-steam .friend.online, html.qs-steam .friend.online .playerName, html.qs-steam .friend .online { color: var(--qs-blue) !important; }
+html.qs-steam .friend.ingame, html.qs-steam .friend.ingame .playerName, html.qs-steam .friend .ingame,
+html.qs-steam .friend.ingame .richPresenceLabel, html.qs-steam .friend.ingame .gameName { color: var(--qs-green) !important; }
+html.qs-steam .friend.offline, html.qs-steam .friend.offline .playerName { color: var(--qs-dim) !important; }
+html.qs-steam .friend.awayOrSnooze { opacity: .7; }
+html.qs-steam .friend .richPresenceLabel, html.qs-steam .friend .personaStatus,
+html.qs-steam .friend .playerStatus { opacity: .8; }
+/* полоска статуса у аватара */
+html.qs-steam .avatarHolder.online .avatarStatus, html.qs-steam .avatarHolder.online::after { background: var(--qs-blue) !important; }
+html.qs-steam .avatarHolder.ingame .avatarStatus, html.qs-steam .avatarHolder.ingame::after { background: var(--qs-green) !important; }
+html.qs-steam .avatarHolder.offline .avatarStatus { background: var(--qs-dim) !important; }
+
+/* ── групповые чаты */
+html.qs-steam .ChatRoomListGroupItem, html.qs-steam .chatRoomListItem {
+    border-radius: var(--qs-r-sm) !important;
+    margin: 0 6px !important;
+    background: transparent !important;
+}
+html.qs-steam .ChatRoomListGroupItem:hover, html.qs-steam .chatRoomListItem:hover { background: var(--qs-surface) !important; }
+html.qs-steam .ChatRoomGroupAvatar, html.qs-steam .ChatRoomMultiFriendAvatar {
+    background: var(--qs-surface-hi-2) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+html.qs-steam .ChatRoomGroupAvatar_initials { background: none !important; -webkit-text-fill-color: var(--qs-fg) !important; color: var(--qs-fg) !important; }
+html.qs-steam .chatRoomName, html.qs-steam .ChatRoomListGroupItem_name { color: var(--qs-fg) !important; }
+html.qs-steam .friendListFooter { border-top: none !important; }
+
+/* поиск по друзьям */
+html.qs-steam .friendListSearchContainer input, html.qs-steam .friendSearch input {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: 9px !important;
+    color: var(--qs-fg) !important;
+}
+
+/* ───────────────────────── окно чата ───────────────────────── */
+
+html.qs-steam .chatTabSetContainer, html.qs-steam .chatTabSet { background: var(--qs-bg) !important; }
+html.qs-steam .chatTab {
+    background: transparent !important;
+    border: none !important;
+    border-radius: var(--qs-r-sm) var(--qs-r-sm) 0 0 !important;
+    color: var(--qs-dim) !important;
+}
+html.qs-steam .chatTab:hover { background: var(--qs-surface) !important; color: var(--qs-muted) !important; }
+html.qs-steam .chatTab.activeTab, html.qs-steam .chatTab.Active { background: var(--qs-surface) !important; color: var(--qs-fg) !important; }
+html.qs-steam .chatTab.unreadMessages:not(.activeTab) { color: var(--qs-fg) !important; }
+html.qs-steam .chatTab.unreadMessages:not(.activeTab)::after { background: var(--qs-accent) !important; }
+
+html.qs-steam .chatHeader, html.qs-steam .ChatRoomGroupHeader, html.qs-steam .chatRoomGroupHeader,
+html.qs-steam .chatRoomHeader {
+    background: var(--qs-surface) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+html.qs-steam .chatHistoryContainer, html.qs-steam .chatHistory, html.qs-steam .ChatMessages,
+html.qs-steam .chatHistoryScroll, html.qs-steam .chatRoomRight, html.qs-steam .ChatRoomGroupDialog_contents {
+    background: var(--qs-surface) !important;
+}
+html.qs-steam .ChatMessageBlock .speaker, html.qs-steam .msg .speakerName { font-weight: 700; }
+html.qs-steam .ChatMessageBlock.ChatMessageBlockFromSelf .speakerName,
+html.qs-steam .ChatMessageBlock .speakerName { color: var(--qs-fg) !important; }
+html.qs-steam .msgText, html.qs-steam .ChatMessageBlock .msg { color: var(--qs-muted) !important; }
+html.qs-steam .speakerTimeStamp, html.qs-steam .msg .msgTimeStamp, html.qs-steam .ChatMessageBlock .speakerTimeStamp { color: var(--qs-dim) !important; }
+html.qs-steam .ChatDivider, html.qs-steam .chatHistoryDivider { color: var(--qs-dim) !important; }
+html.qs-steam .ChatDivider::before, html.qs-steam .ChatDivider::after { background: var(--qs-surface-hi-2) !important; }
+
+/* поле ввода сообщения */
+html.qs-steam .chatEntry, html.qs-steam .chatEntryControls { background: var(--qs-surface) !important; border: none !important; }
+html.qs-steam .chatentry_chatTextarea_113iu, html.qs-steam .chatEntry textarea, html.qs-steam textarea.chatTextarea {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+}
+html.qs-steam .chatSubmitButton {
+    background: var(--qs-accent) !important;
+    border-radius: var(--qs-r-sm) !important;
+    box-shadow: none !important;
+}
+html.qs-steam .chatSubmitButton svg, html.qs-steam .chatSubmitButton svg * { fill: var(--qs-accent-fg) !important; }
+html.qs-steam .chatSubmitButton.disabled { opacity: .5; }
+html.qs-steam .emoticonButton, html.qs-steam .EmoticonPickerButton, html.qs-steam .chatEntry .chatButton {
+    background: transparent !important;
+    border-radius: var(--qs-r-sm) !important;
+}
+html.qs-steam .emoticonButton:hover, html.qs-steam .chatEntry .chatButton:hover { background: var(--qs-surface-hi-2) !important; }
+
+/* список участников группы */
+html.qs-steam .chatRoomRightPanel, html.qs-steam .ChatRoomUserList, html.qs-steam .memberListContainer {
+    background: var(--qs-bg) !important;
+    border: none !important;
+}
+
+/* светящийся эллипс за аватаром в шапке */
+html.qs-steam .friendListHeaderContainer svg:has(> ellipse), html.qs-steam .currentUserContainer svg:has(ellipse) { display: none !important; }
+/* имена по статусу (класс имени зашифрован) */
+html.qs-steam .friend.online .%playerName%, html.qs-steam .labelHolder.online .%playerName% { color: var(--qs-blue) !important; }
+html.qs-steam .friend.ingame .%playerName%, html.qs-steam .labelHolder.ingame .%playerName% { color: var(--qs-green) !important; }
+html.qs-steam .friend.offline .%playerName%, html.qs-steam .labelHolder.offline .%playerName% { color: var(--qs-dim) !important; }
+html.qs-steam .currentUserContainer .%playerName% { color: var(--qs-fg) !important; font-weight: 700; }
+html.qs-steam .currentUserContainer .labelHolder.online .%playerName% ~ *, html.qs-steam .currentUserContainer .personaStatus { color: var(--qs-dim) !important; }
+html.qs-steam .friend .avatarHolder, html.qs-steam .friend .avatarHolder img { border-radius: 8px !important; }
+html.qs-steam .labelHolder.online .%richPresenceLabel% { color: var(--qs-blue) !important; opacity: .75; }
+html.qs-steam .labelHolder.ingame .%richPresenceLabel% { color: var(--qs-green) !important; opacity: .85; }
+html.qs-steam .labelHolder.offline .%richPresenceLabel% { color: var(--qs-dim) !important; }
+html.qs-steam .currentUserContainer .%richPresenceLabel% { color: var(--qs-dim) !important; opacity: 1; }
+html.qs-steam .friendListHeaderContainer .currentUserContainer .labelHolder .%playerName% { color: var(--qs-fg) !important; }
+
+/* ── окно чата: вкладки, низ с полем ввода (часть классов зашифрована) */
+html.qs-steam .ChatTabs, html.qs-steam .chatTabSetContainer { background: var(--qs-bg) !important; }
+.%ChatTab% { background: transparent !important; border-radius: var(--qs-r-sm) var(--qs-r-sm) 0 0 !important; color: var(--qs-dim) !important; }
+.%ChatTab%:hover { background: var(--qs-surface) !important; }
+.%ChatTab%.%Active@ChatTabTransitionGroup% { background: var(--qs-surface) !important; color: var(--qs-fg) !important; }
+html.qs-steam .chatDialogs { background: var(--qs-bg) !important; }
+html.qs-steam .chatHistory .ChatSpeaker + *, html.qs-steam .ChatDivider span, html.qs-steam .chatHistory > span { background: none !important; }
+html.qs-steam .chatHistory span[class=""], html.qs-steam .chatHistoryScroll span { background-image: none !important; }
+html.qs-steam .MemberListColumn { background: var(--qs-bg) !important; border-left: none !important; }
+html.qs-steam .friendSearchInput {
+    background-color: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi) !important;
+    border-radius: var(--qs-r-sm) !important;
+    color: var(--qs-fg) !important;
+}
+html.qs-steam .chatEntry { background: var(--qs-bg) !important; padding: 6px 8px 8px !important; }
+.%chatEntryControls%, .%chatEntryActionsGroup% { background: transparent !important; gap: 4px; }
+.%chatTextarea% {
+    background: var(--qs-surface) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    color: var(--qs-fg) !important;
+    box-shadow: none !important;
+}
+.%chatTextarea%:focus { border-color: var(--qs-line) !important; }
+.%chatSubmitButton%, html.qs-steam .VoiceToggle {
+    background: var(--qs-surface-hi) !important;
+    border: 1px solid var(--qs-surface-hi-2) !important;
+    border-radius: var(--qs-r) !important;
+    box-shadow: none !important;
+}
+.%chatSubmitButton%:hover, html.qs-steam .VoiceToggle:hover { background: var(--qs-surface-hi-2) !important; }
+.%chatSubmitButton% svg, .%chatSubmitButton% svg *, html.qs-steam .VoiceToggle svg, html.qs-steam .VoiceToggle svg * { fill: var(--qs-muted) !important; }
+/* «Отправить»: как главная кнопка, когда есть что отправлять */
+.%chatSubmitButton%:not(.%EmoticonPickerButton%):not(.%EmbedButton%):not(.%disabled%) { background: var(--qs-accent) !important; border-color: var(--qs-accent) !important; }
+.%chatSubmitButton%:not(.%EmoticonPickerButton%):not(.%EmbedButton%):not(.%disabled%) svg * { fill: var(--qs-accent-fg) !important; }
+.%NewEmoticonIndicator% { background: var(--qs-warn) !important; border-radius: 50%; transform: scale(.4); }
+html.qs-steam .ChatMessageEntryVoice { background: transparent !important; }

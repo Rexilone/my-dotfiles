@@ -1,0 +1,95 @@
+# генерируется Quickshell (Настройки → Персонализация); вручную не править
+
+[mgr]
+cwd           = { fg = "#6c7f7c" }
+border_symbol = "│"
+border_style  = { fg = "#26312f" }
+marker_copied   = { fg = "#96cd84", bg = "#96cd84" }
+marker_cut      = { fg = "#cd8484", bg = "#cd8484" }
+marker_marked   = { fg = "#84cdc7", bg = "#84cdc7" }
+marker_selected = { fg = "#cdb484", bg = "#cdb484" }
+count_copied   = { fg = "#101615", bg = "#96cd84" }
+count_cut      = { fg = "#101615", bg = "#cd8484" }
+count_selected = { fg = "#101615", bg = "#cdb484" }
+find_keyword  = { fg = "#cdb484", bold = true }
+find_position = { fg = "#6c7f7c" }
+
+[indicator]
+parent  = { fg = "#d8e4e2", bg = "#1e2726" }
+current = { fg = "#eaf1f0", bg = "#26312f", bold = true }
+preview = { bg = "#171f1e" }
+
+[tabs]
+active   = { fg = "#101615", bg = "#88d2c7", bold = true }
+inactive = { fg = "#6c7f7c", bg = "#171f1e" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "#101615", bg = "#88d2c7", bold = true }
+normal_alt  = { fg = "#d8e4e2", bg = "#26312f" }
+select_main = { fg = "#101615", bg = "#cdb484", bold = true }
+select_alt  = { fg = "#cdb484", bg = "#26312f" }
+unset_main  = { fg = "#101615", bg = "#cd8484", bold = true }
+unset_alt   = { fg = "#cd8484", bg = "#26312f" }
+
+[status]
+sep_left   = { open = "", close = "" }
+sep_right  = { open = "", close = "" }
+perm_sep   = { fg = "#384745" }
+perm_type  = { fg = "#84a2cd" }
+perm_read  = { fg = "#a0b1ae" }
+perm_write = { fg = "#a0b1ae" }
+perm_exec  = { fg = "#a0b1ae" }
+progress_label  = { fg = "#d8e4e2", bold = true }
+progress_normal = { fg = "#88d2c7", bg = "#26312f" }
+progress_error  = { fg = "#cd8484", bg = "#26312f" }
+
+[which]
+border          = { fg = "#384745" }
+cols            = 2
+mask            = { bg = "#101615" }
+cand            = { fg = "#d8e4e2", bold = true }
+rest            = { fg = "#6c7f7c" }
+desc            = { fg = "#a0b1ae" }
+separator       = "  "
+separator_style = { fg = "#384745" }
+
+[input]
+border   = { fg = "#384745" }
+title    = { fg = "#a0b1ae" }
+value    = { fg = "#d8e4e2" }
+selected = { bg = "#26312f" }
+
+[pick]
+border   = { fg = "#384745" }
+active   = { fg = "#eaf1f0", bold = true }
+inactive = { fg = "#a0b1ae" }
+
+[confirm]
+border  = { fg = "#384745" }
+title   = { fg = "#a0b1ae" }
+body    = { fg = "#d8e4e2" }
+list    = { fg = "#a0b1ae" }
+btn_yes = { fg = "#101615", bg = "#88d2c7" }
+btn_no  = { fg = "#a0b1ae" }
+
+[spot]
+border = { fg = "#384745" }
+title  = { fg = "#a0b1ae" }
+
+[tasks]
+border  = { fg = "#384745" }
+title   = { fg = "#a0b1ae" }
+hovered = { fg = "#eaf1f0", bold = true }
+
+[help]
+on      = { fg = "#d8e4e2" }
+run     = { fg = "#a0b1ae" }
+hovered = { bg = "#26312f", bold = true }
+footer  = { fg = "#101615", bg = "#88d2c7" }
+
+[notify]
+title_info  = { fg = "#d8e4e2" }
+title_warn  = { fg = "#cdb484" }
+title_error = { fg = "#cd8484" }

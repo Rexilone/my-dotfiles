@@ -1,0 +1,2 @@
+# --with-tablet: OpenTabletDriver (рабочая область, поворот, кнопки пера)
+opentabletdriver
