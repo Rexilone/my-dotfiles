@@ -127,7 +127,7 @@ done
 for f in "$DOTS"/home/.local/bin/*; do
     link "$f" "$HOME/.local/bin/$(basename "$f")"
 done
-# ярлыки в меню приложений (Магазин)
+# ярлыки в меню приложений («Программы»)
 for f in "$DOTS"/home/.local/share/applications/*; do
     link "$f" "$HOME/.local/share/applications/$(basename "$f")"
 done

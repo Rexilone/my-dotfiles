@@ -24,7 +24,7 @@ ShellRoot {
     RecorderMenu {}
     WallpaperSwitcher {}
     SettingsWindow {}
-    // Магазин приложений (pacman + AUR), открывается из меню приложений
+    // «Программы»: установка приложений (pacman + AUR), открывается из меню приложений
     StoreWindow {}
     DesktopWidgets {}
     PluginServices {}

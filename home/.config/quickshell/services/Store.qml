@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Магазин (окно StoreWindow, «Магазин» в меню приложений): приложения из репозиториев Arch и AUR.
+// «Программы» (окно StoreWindow, «Программы» в меню приложений): приложения из репозиториев Arch и AUR.
 // Данные — scripts/store.py (каталог appstream, поиск, сведения, обновления), действия — очередь задач:
 // pacman через pkexec (пароль спросит окно polkit шелла), AUR — через paru/yay с --sudo pkexec.
 Singleton {
@@ -387,7 +387,7 @@ Singleton {
             if (state === "done") {
                 const what = j.kind === "upgrade" ? I18n.tr("System updated")
                     : `${root.displayName(j.pkgs[0])} — ${I18n.tr(j.kind === "install" ? "installed" : "removed")}`;
-                Quickshell.execDetached(["notify-send", "-a", I18n.tr("Store"), "-i", "system-software-install", what]);
+                Quickshell.execDetached(["notify-send", "-a", I18n.tr("Software"), "-i", "system-software-install", what]);
             }
             root.next();
         }

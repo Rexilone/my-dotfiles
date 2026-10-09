@@ -265,6 +265,8 @@ PanelWindow {
 
         implicitWidth: 104
         implicitHeight: 92
+        // на узком экране с несколькими мониторами плитки сжимаются
+        Layout.minimumWidth: 72
         radius: 14
         color: selected ? Theme.surfaceHi : tileArea.containsMouse ? root.cardHover : root.card
         border.width: selected ? 1.5 : 0
@@ -342,6 +344,9 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 12
+            width: Math.min(implicitWidth, tile.width - 12)
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
             text: I18n.tr(tile.label)
             color: tile.selected ? Theme.fg : Theme.dim
             font.family: Theme.font
@@ -434,7 +439,9 @@ PanelWindow {
     Item {
         id: cardWrap
         anchors.centerIn: parent
-        width: 540
+        // шире, если не помещаются плитки источников (по одной на монитор) или параметры
+        // (по-русски подписи длиннее), но не шире экрана
+        width: Math.min(root.width - 40, Math.max(540, sourceRow.implicitWidth + 48, paramRow.implicitWidth + 48))
         height: column.implicitHeight + 48
 
         opacity: root.open ? 1 : 0
@@ -495,8 +502,8 @@ PanelWindow {
                     spacing: 2
 
                     Text {
-                        text: Recorder.recording ? (Recorder.paused ? "Paused" : "Recording")
-                            : Recorder.countdown > 0 ? `Starting in ${Recorder.countdown}…` : "Record screen"
+                        text: Recorder.recording ? I18n.tr(Recorder.paused ? "Paused" : "Recording")
+                            : Recorder.countdown > 0 ? (I18n.ru ? `Старт через ${Recorder.countdown}…` : `Starting in ${Recorder.countdown}…`) : I18n.tr("Record screen")
                         color: Theme.fg
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize + 7
@@ -504,9 +511,9 @@ PanelWindow {
                     }
 
                     Text {
-                        readonly property string src: Recorder.target === "region" ? "Region"
-                            : Recorder.target === "window" ? "Window" : (Recorder.target || Settings.primary)
-                        readonly property string snd: ({ none: "no audio", system: "system audio", mic: "microphone", both: "system + mic" })[Recorder.audio]
+                        readonly property string src: Recorder.target === "region" ? I18n.tr("Region")
+                            : Recorder.target === "window" ? I18n.tr("Window") : (Recorder.target || Settings.primary)
+                        readonly property string snd: I18n.tr(({ none: "no audio", system: "system audio", mic: "microphone", both: "system + mic" })[Recorder.audio])
                         text: Recorder.recording ? `${Recorder.elapsedText} · ${src} · ${snd}`
                             : `${src} · ${Recorder.fps} fps · ${snd}`
                         color: Recorder.recording ? root.red : Theme.dim
@@ -542,6 +549,7 @@ PanelWindow {
                 Caption { text: I18n.tr("Source") }
 
                 RowLayout {
+                    id: sourceRow
                     Layout.fillWidth: true
                     spacing: 8
 
@@ -612,6 +620,7 @@ PanelWindow {
 
             // ── параметры
             RowLayout {
+                id: paramRow
                 Layout.fillWidth: true
                 spacing: 8
                 enabled: !Recorder.recording
@@ -891,7 +900,7 @@ PanelWindow {
                             font.pixelSize: Theme.fontSize
                         }
                         Text {
-                            text: Recorder.replayActive ? `buffering last ${Recorder.replaySeconds}s · R to save` : "keeps the last moments in memory"
+                            text: Recorder.replayActive ? (I18n.ru ? `пишет последние ${Recorder.replaySeconds} с · R — сохранить` : `buffering last ${Recorder.replaySeconds}s · R to save`) : I18n.tr("keeps the last moments in memory")
                             color: Theme.dim
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize - 3

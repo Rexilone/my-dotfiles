@@ -7,7 +7,7 @@ import qs.services
 import qs.settings
 import qs.store
 
-// Магазин приложений: репозитории Arch и AUR. Открывается из меню приложений
+// «Программы» — установка приложений из репозиториев Arch и AUR. Открывается из меню приложений
 // (~/.local/share/applications/rexilone-store.desktop) или `qs ipc call store open`.
 // Окно создаётся при открытии и уничтожается при закрытии, как Настройки.
 Scope {
@@ -53,7 +53,7 @@ Scope {
         FloatingWindow {
             id: win
 
-            title: "Store"  // на заголовок завязано правило окна в niri — не переводить
+            title: "Software"  // на заголовок завязано правило окна в niri — не переводить
             visible: true
             implicitWidth: 1160
             implicitHeight: 780
@@ -128,7 +128,7 @@ Scope {
                                 ColumnLayout {
                                     spacing: 2
                                     Text {
-                                        text: I18n.tr("Store")
+                                        text: I18n.tr("Software")
                                         color: Theme.fg
                                         font.family: Theme.font
                                         font.pixelSize: Theme.fontSize + 4

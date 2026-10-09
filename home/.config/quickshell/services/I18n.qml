@@ -607,7 +607,7 @@ Singleton {
         "What to sync": "Что синхронизировать",
         "Dial": "Позвонить",
         "Install the missing packages first": "Сначала установите недостающие пакеты",
-        // Магазин
+        // Программы (установка приложений)
         "A calmer Firefox-based browser": "Спокойный браузер на основе Firefox",
         "AUR is not reachable — check the connection": "AUR недоступен — проверьте подключение",
         "AUR packages are made by users and built on your computer. Look at the PKGBUILD before installing.": "Пакеты AUR делают пользователи, а собираются они на вашем компьютере. Посмотрите PKGBUILD перед установкой.",
@@ -685,7 +685,8 @@ Singleton {
         "archlinux-appstream-data gives names, icons, categories and screenshots. Search works without it": "archlinux-appstream-data даёт названия, значки, категории и скриншоты. Поиск работает и без него",
         "from AUR": "из AUR",
         "queued": "в очереди",
-        "Store": "Магазин",
+        "Software": "Программы",
+        "microphone": "микрофон",
         "Go back": "Назад",
         "Updating the system…": "Обновление системы…",
         "System update failed": "Не удалось обновить систему",
