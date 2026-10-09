@@ -7,7 +7,7 @@
 Bar, menus, settings app, launcher, notifications, widgets and a screen recorder —
 one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Steam.
 
-[Русский](README.ru.md) · [Install](#install) · [Features](#features) · [Updates](#updates)
+[Русский](README.ru.md) · [Install](#install) · [Features](#features) · [Phone](#phone-rexlink) · [Updates](#updates)
 
 ![Desktop](docs/desktop.png)
 
@@ -27,7 +27,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 ## Features
 
 - **Bar** — workspaces, clock, weather, tray (inline or in a menu), keyboard layout, volume and mic mixers, network, notifications, control center. Flat, floating or pill style; any monitor.
-- **Settings app** (`Super+I`) — display arrangement, sound, network & firewall, Bluetooth, peripherals (keyboard, mouse, touchpad, graphics tablet, gamepads, printers), personalization, keyboard shortcuts, startup apps, power, notifications, updates. English and Russian.
+- **Settings app** (`Super+I`) — display arrangement, sound, network & firewall, Bluetooth, phone, peripherals (keyboard, mouse, touchpad, graphics tablet, gamepads, printers), personalization, keyboard shortcuts, startup apps, power, notifications, updates. English and Russian.
 - **Color schemes** — dark, light, Nord, Gruvbox, Rosé Pine or generated from the wallpaper; applied live to foot, Neovim, yazi, fzf, GTK and Qt apps.
 - **Launcher** (`Super+D`) — fuzzy search (also in the wrong keyboard layout), pinned apps, calculator, `>` shell commands, `?` web search, app actions, settings pages.
 - **Notifications** with history and Do not disturb; **clipboard history** with images (`Super+V`).
@@ -36,7 +36,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 - **Wallpaper switcher** (`Super+W`), **polkit** password dialog, **power menu** (`Super+Shift+E`).
 - **Steam theme** for [Millennium](https://steambrew.app) that follows the shell's colors.
 - **Graphics tablet** area, screen and rotation through OpenTabletDriver.
-- **Phone integration** through Rexlink (optional).
+- **Phone** — Rexlink is built in: notifications, SMS, calls, files, shared clipboard, webcam and the device screen, all in **Settings → Phone**. See [below](#phone-rexlink).
 - **Plugins** — write your own bar modules and settings pages (see `home/.config/quickshell/plugins/README.md`).
 
 ## Install
@@ -46,7 +46,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 ```sh
 git clone https://github.com/Rexilone/my-dotfiles ~/my-dotfiles
 cd ~/my-dotfiles
-./install.sh --all        # everything: Steam theme, OpenTabletDriver, printers
+./install.sh --all        # everything: Steam theme, OpenTabletDriver, printers, phone webcam
 ```
 
 Or pick what you need:
@@ -54,6 +54,7 @@ Or pick what you need:
 ```sh
 ./install.sh                              # base system
 ./install.sh --with-steam --with-tablet   # + Steam theme, + graphics tablet
+./install.sh --with-webcam                # + phone as a webcam (v4l2loopback)
 ./install.sh --link-only                  # configs only, no packages
 ./install.sh --dry-run                    # show what would happen
 ```
@@ -64,14 +65,32 @@ The installer:
 2. **links** the configs to this folder — edit `~/my-dotfiles` and it's live; whatever was there is moved to `~/.dots-backup/<date>/`;
 3. puts default theme files from `defaults/` (the shell regenerates them for your scheme);
 4. applies the settings preset from `state/` (scheme, bar, modules);
-5. optionally sets up the Steam theme, OpenTabletDriver and CUPS;
-6. sets up the login screen (LightDM, niri session by default), makes zsh the login shell and enables Bluetooth.
+5. sets up the Rexlink service (phone link) and opens its ports in ufw;
+6. optionally sets up the Steam theme, OpenTabletDriver, CUPS and the phone webcam;
+7. sets up the login screen (LightDM, niri session by default), makes zsh the login shell and enables Bluetooth.
 
 Then reboot, enter your password on the login screen — niri and the bar start by themselves.
 
 ### NixOS
 
 A flake with a system module and a Home Manager module is in [`nixos/`](nixos/README.md).
+
+## Phone (Rexlink)
+
+Android phones, tablets and watches connect to the desktop over the local network. Rexlink is part of the system: a background service (`rexlink.service`) with no window of its own — everything is in **Settings → Phone**, the bar, the desktop widget and the incoming call card.
+
+| | |
+|---|---|
+| **Notifications** | from every device, as regular pop-ups with actions and quick reply; dismissing syncs both ways |
+| **Messages** | SMS conversations, replies, new messages |
+| **Calls** | incoming call card with Answer / Decline, dialing from the PC |
+| **Files** | drag files onto the page or pick them; Share → Rexlink on the phone; progress and cancel |
+| **Clipboard** | text and images both ways |
+| **Webcam** | the phone camera as a regular webcam (`--with-webcam`) |
+| **Device screen** | see and control the screen with mouse and keyboard; can keep working with the device screen off (ADB) |
+| **Media** | the phone's player on the PC and the PC's player on the phone |
+
+Install `rexlink/rexlink.apk` on the device, open it, pick the computer and check the six-digit code. Everything goes over TLS; ports — TCP 47820 and UDP 47821. Details and the API for scripts: [`rexlink/README.md`](rexlink/README.md).
 
 ## Updates
 
@@ -103,6 +122,7 @@ All shortcuts can be changed in **Settings → Keyboard shortcuts**.
 | `home/.config/niri/` | niri: keybindings, window rules, autostart |
 | `home/.config/{foot,nvim,yazi}/` | terminal, editor, file manager |
 | `home/.zshrc`, `home/.local/bin/` | zsh and helper scripts |
+| `rexlink/` | Rexlink service (phone link), the Android app and its system files |
 | `defaults/` | initial versions of files the shell generates for the color scheme |
 | `state/quickshell/` | settings preset applied on install |
 | `packages/` | package lists for Arch |

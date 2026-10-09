@@ -5,6 +5,7 @@
 #   ./install.sh --with-steam    + Steam и тема «Rexilone» (Millennium)
 #   ./install.sh --with-tablet   + OpenTabletDriver (рабочая область планшета)
 #   ./install.sh --with-printers + печать и сканирование (CUPS)
+#   ./install.sh --with-webcam   + телефон как веб-камера (v4l2loopback для Rexlink)
 #   ./install.sh --all           всё сразу
 #   ./install.sh --link-only     только конфиги (без пакетов)
 #   ./install.sh --dry-run       показать, что будет сделано
@@ -15,17 +16,18 @@ set -euo pipefail
 
 DOTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP="$HOME/.dots-backup/$(date +%Y%m%d-%H%M%S)"
-STEAM=0 TABLET=0 PRINTERS=0 PACKAGES=1 DRY=0
+STEAM=0 TABLET=0 PRINTERS=0 WEBCAM=0 PACKAGES=1 DRY=0
 
 for a in "$@"; do
     case "$a" in
         --with-steam) STEAM=1 ;;
         --with-tablet) TABLET=1 ;;
         --with-printers) PRINTERS=1 ;;
-        --all) STEAM=1 TABLET=1 PRINTERS=1 ;;
+        --with-webcam) WEBCAM=1 ;;
+        --all) STEAM=1 TABLET=1 PRINTERS=1 WEBCAM=1 ;;
         --link-only) PACKAGES=0 ;;
         --dry-run) DRY=1 ;;
-        -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Неизвестный параметр: $a (см. --help)" >&2; exit 1 ;;
     esac
 done
@@ -51,8 +53,18 @@ if (( PACKAGES )); then
     pkgs=( $(list "$DOTS/packages/arch.txt") )
     (( STEAM )) && pkgs+=( $(list "$DOTS/packages/steam.txt") )
     (( PRINTERS )) && pkgs+=( $(list "$DOTS/packages/printers.txt") )
+    (( WEBCAM )) && pkgs+=( $(list "$DOTS/packages/webcam.txt") )
+
+    # Rexlink раньше ставился отдельным приложением (пакет rexlink) — теперь это служба системы.
+    # Без -s: его зависимости (pyside6, ffmpeg…) нужны службе и помечаются установленными явно ниже
+    if pacman -Qq rexlink >/dev/null 2>&1; then
+        info "Убираю пакет rexlink: Rexlink теперь часть системы (служба + Настройки → Телефон)"
+        run sudo pacman -Rn --noconfirm rexlink
+    fi
     # -Syu, а не -S: частичное обновление в Arch ломает библиотеки
     run sudo pacman -Syu --needed --noconfirm "${pkgs[@]}"
+    # уже стоявшие как чьи-то зависимости — теперь нужны системе сами по себе
+    run sudo pacman -D --asexplicit "${pkgs[@]}" >/dev/null
 
     # AUR-помощник. paru-bin не годится: это готовый бинарник, и после обновления
     # pacman он падает с «libalpm.so.N: cannot open shared object file». Поэтому
@@ -115,6 +127,10 @@ done
 for f in "$DOTS"/home/.local/bin/*; do
     link "$f" "$HOME/.local/bin/$(basename "$f")"
 done
+# службы пользователя (Rexlink)
+for f in "$DOTS"/home/.config/systemd/user/*; do
+    link "$f" "$HOME/.config/systemd/user/$(basename "$f")"
+done
 
 # файлы, которые шелл генерирует под тему: начальные версии, если их ещё нет
 bold "Начальные файлы темы"
@@ -160,6 +176,31 @@ if (( TABLET )); then
     info "модули wacom/hid_uclogic отключатся после перезагрузки (так задумано драйвером)"
 fi
 
+# ─────────────────────────── Rexlink: связь с телефоном
+bold "Rexlink"
+if (( PACKAGES )); then
+    # порты в ufw: TCP 47820 — связь, UDP 47821 — поиск компьютера телефоном
+    if command -v ufw >/dev/null; then
+        run sudo install -Dm644 "$DOTS/rexlink/system/rexlink.ufw" /etc/ufw/applications.d/rexlink
+        run sudo ufw allow 47820/tcp comment Rexlink >/dev/null
+        run sudo ufw allow 47821/udp comment Rexlink >/dev/null
+        info "порты Rexlink открыты в ufw"
+    fi
+    if (( WEBCAM )); then
+        run sudo install -Dm644 "$DOTS/rexlink/system/rexlink-v4l2loopback.conf" /etc/modprobe.d/rexlink-v4l2loopback.conf
+        run sudo install -Dm644 "$DOTS/rexlink/system/rexlink-modules-load.conf" /etc/modules-load.d/rexlink.conf
+        run sudo modprobe v4l2loopback || info "модуль v4l2loopback загрузится после перезагрузки"
+        info "виртуальная камера: /dev/video42 «Rexlink Camera»"
+    fi
+fi
+run systemctl --user daemon-reload || true
+run systemctl --user enable rexlink.service || true
+# в работающем сеансе — сразу перезапустить на новую версию
+if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+    run systemctl --user restart rexlink.service || true
+fi
+info "приложение для телефона: ${DOTS/#$HOME/~}/rexlink/rexlink.apk (Настройки → Телефон)"
+
 # ─────────────────────────── службы и оболочка
 bold "Службы"
 if (( PACKAGES )); then
@@ -193,10 +234,14 @@ if [[ "$(getent passwd "$USER" | cut -d: -f7)" != */zsh ]]; then
 fi
 
 bold "Готово"
-cat <<EOF
+if (( PACKAGES )); then
+    cat <<EOF
   Перезагрузитесь: появится экран входа (LightDM), введите пароль — запустится niri.
   Бар запускается сам (spawn-at-startup "qs" в ~/.config/niri/config.kdl).
   Super+D — приложения, Super+I — настройки, Super+Shift+E — питание.
 EOF
+else
+    info "Конфиги на месте. Если шелл уже запущен, перезапустите его, чтобы подхватить изменения."
+fi
 [[ -d "$BACKUP" ]] && echo "  Прежние файлы: ${BACKUP/#$HOME/~}"
 exit 0

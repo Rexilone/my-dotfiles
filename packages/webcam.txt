@@ -1,0 +1,3 @@
+# Rexlink: телефон как веб-камера (виртуальная камера v4l2loopback, «Rexlink Camera»)
+v4l2loopback-dkms
+linux-headers

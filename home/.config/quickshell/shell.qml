@@ -28,6 +28,8 @@ ShellRoot {
     PluginServices {}
     // входящий звонок с телефона (Rexlink)
     PhoneCall {}
+    // быстрый ответ на уведомление телефона
+    PhoneReply {}
     // цвета «под обои» считаются в фоне
     readonly property var wallColors: WallColors
     // настройки niri: сразу узнаём мониторы, чтобы запись конфига их не потеряла

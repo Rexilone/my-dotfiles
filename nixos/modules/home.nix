@@ -15,6 +15,7 @@ in
     ".zshrc".source = link ".zshrc";
     ".local/bin/niri-cast-toggle".source = link ".local/bin/niri-cast-toggle";
     ".local/bin/ripdrag-drop".source = link ".local/bin/ripdrag-drop";
+    ".local/bin/rexlink".source = link ".local/bin/rexlink";
     # тема Steam (Millennium) — нужна, если включён rexilone.steam
     ".local/share/Steam/millennium/themes/rexilone".source = link ".config/quickshell/steam-theme";
   };

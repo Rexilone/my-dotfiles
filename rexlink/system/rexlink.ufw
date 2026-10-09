@@ -1,0 +1,4 @@
+[Rexlink]
+title=Rexlink
+description=Связь с телефоном, планшетом и часами (TLS 47820, поиск 47821)
+ports=47820/tcp|47821/udp

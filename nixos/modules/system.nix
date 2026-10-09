@@ -1,16 +1,19 @@
 # Системная часть: композитор, оболочка, звук, Bluetooth, шрифты, порталы.
 # Необязательное включается в hosts/<имя>/configuration.nix:
-#   rexilone.steam.enable / rexilone.tablet.enable / rexilone.printers.enable
-{ config, lib, pkgs, user, millennium, ... }:
+#   rexilone.steam.enable / rexilone.tablet.enable / rexilone.printers.enable / rexilone.webcam.enable
+{ config, lib, pkgs, user, dots, millennium, ... }:
 
 let
   cfg = config.rexilone;
+  # Rexlink: служба связи с телефоном (код — ${dots}/rexlink), Python с PySide6
+  rexlinkPython = pkgs.python3.withPackages (p: [ p.pyside6 ]);
 in
 {
   options.rexilone = {
     steam.enable = lib.mkEnableOption "Steam с Millennium и темой «Rexilone»";
     tablet.enable = lib.mkEnableOption "OpenTabletDriver (рабочая область, поворот, кнопки пера)";
     printers.enable = lib.mkEnableOption "печать и сканирование (CUPS, SANE)";
+    webcam.enable = lib.mkEnableOption "телефон как веб-камера (v4l2loopback для Rexlink)";
   };
 
   config = lib.mkMerge [
@@ -45,6 +48,23 @@ in
         jack.enable = true;
       };
       programs.gpu-screen-recorder.enable = true; # запись экрана (Alt+Z)
+
+      # ── Rexlink: связь с телефоном (Настройки → Телефон). TCP 47820 — связь, UDP 47821 — поиск
+      networking.firewall.allowedTCPPorts = [ 47820 ];
+      networking.firewall.allowedUDPPorts = [ 47821 ];
+      systemd.user.services.rexlink = {
+        description = "Rexlink — связь с телефоном (служба шелла)";
+        partOf = [ "graphical-session.target" ];
+        after = [ "graphical-session.target" ];
+        wantedBy = [ "graphical-session.target" ];
+        path = with pkgs; [ ffmpeg wl-clipboard playerctl openssl glib iproute2 xdg-utils android-tools scrcpy quickshell systemd ];
+        environment.REXLINK_PYTHON = "${rexlinkPython}/bin/python3";
+        serviceConfig = {
+          ExecStart = "${dots}/home/.local/bin/rexlink";
+          Restart = "on-failure";
+          RestartSec = 3;
+        };
+      };
 
       environment.systemPackages = with pkgs; [
         quickshell
@@ -89,6 +109,11 @@ in
         # браузер (Super+B)
         chromium
 
+        # Rexlink (экран устройства без запроса, режим «экран выключен»)
+        android-tools
+        scrcpy
+        playerctl
+
         # звук
         pavucontrol
         pulseaudio           # pactl для микшера
@@ -118,6 +143,15 @@ in
         enable = true;
         daemon.enable = true;
       };
+    })
+
+    # ── веб-камера из телефона: /dev/video42 «Rexlink Camera»
+    (lib.mkIf cfg.webcam.enable {
+      boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
+      boot.kernelModules = [ "v4l2loopback" ];
+      boot.extraModprobeConfig = ''
+        options v4l2loopback devices=1 video_nr=42 exclusive_caps=1 card_label="Rexlink Camera"
+      '';
     })
 
     # ── принтеры и сканеры

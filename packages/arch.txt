@@ -55,6 +55,15 @@ pavucontrol
 bluez
 bluez-utils
 ufw
+# ── Rexlink: служба связи с телефоном (Настройки → Телефон)
+pyside6
+ffmpeg
+playerctl
+openssl
+glib2
+iproute2
+android-tools
+scrcpy
 # ── браузер (Super+B, браузер по умолчанию)
 chromium
 # ── шрифты

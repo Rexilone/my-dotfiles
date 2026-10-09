@@ -9,6 +9,9 @@ Singleton {
 
     signal closeMenus
 
+    // вкладка страницы «Телефон», которую открыть (Rexlink.show): home | notifications | messages | …
+    property string phoneTab: ""
+
     // разделы Настроек (порядок = номер страницы, на него ссылаются страницы и IPC).
     // group — подпись в боковой панели, hidden/go/tab — ссылка на вкладку другой страницы
     readonly property var settingsPages: [
@@ -17,7 +20,7 @@ Singleton {
         { name: "Sound", keys: "audio volume speaker microphone output input level", icon2: 0xF057E },
         { name: "Network & Internet", keys: "wifi ethernet vpn firewall ufw internet ip dns", icon2: 0xF0200 },
         { name: "Bluetooth", keys: "devices headphones pair", icon2: 0xF00AF },
-        { name: "Phone", keys: "rexlink android phone tablet notifications calls sms files clipboard webcam", icon2: 0xF011C },
+        { name: "Phone", keys: "rexlink android phone tablet watch notifications calls sms messages files clipboard webcam camera screen mirror", icon2: 0xF011C },
         // теперь вкладка «Периферии»: в меню не показываем, но поиск и `page printers` ведут туда
         { name: "Printers & scanners", keys: "print cups scan sane", icon2: 0xF042A, hidden: true, go: 10, tab: "printers" },
         { name: "Personalization", keys: "theme colors dark light wallpaper scheme accent font transparency blur bar panel clock workspaces modules tray widgets desktop weather notes quote", icon2: 0xF03D8 },

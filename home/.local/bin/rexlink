@@ -1,0 +1,7 @@
+#!/bin/sh
+# Rexlink — служба связи с телефоном (часть дотфайлов, окна нет: всё в Настройках → Телефон).
+# Код службы — в <дотфайлы>/rexlink, этот файл — ссылка на <дотфайлы>/home/.local/bin/rexlink.
+here=$(dirname "$(readlink -f "$0")")
+root=$(cd "$here/../../../rexlink" && pwd)
+# NixOS передаёт свой Python с PySide6 через REXLINK_PYTHON
+PYTHONPATH="$root${PYTHONPATH:+:$PYTHONPATH}" exec "${REXLINK_PYTHON:-python3}" -m rexlink "$@"

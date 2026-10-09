@@ -9,6 +9,7 @@
   rexilone.steam.enable = true;
   rexilone.tablet.enable = true;
   rexilone.printers.enable = false;
+  rexilone.webcam.enable = false;    # телефон как веб-камера (Rexlink)
 
   # ── загрузка и система (поправьте под себя)
   boot.loader.systemd-boot.enable = true;
