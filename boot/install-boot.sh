@@ -11,6 +11,12 @@ install -Dm755 "$dots/boot/rexilone-boot" /usr/local/lib/rexilone/rexilone-boot
 install -Dm644 "$dots/boot/rexilone-boot.service" /etc/systemd/system/rexilone-boot.service
 install -Dm644 "$dots/boot/rexilone-boot-scan.service" /etc/systemd/system/rexilone-boot-scan.service
 install -Dm644 "$dots/boot/90-rexilone-boot.rules" /etc/udev/rules.d/90-rexilone-boot.rules
+# «найти курсор встряхиванием» больше нет — убрать, если ставился раньше
+if [ -f /etc/systemd/system/rexilone-shake.service ]; then
+    systemctl disable --now rexilone-shake.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/rexilone-shake.service /usr/local/lib/rexilone/rexilone-shake
+    rm -rf /run/rexilone
+fi
 install -d /etc/rexilone
 printf 'user=%s\n' "$user" > /etc/rexilone/boot.conf
 

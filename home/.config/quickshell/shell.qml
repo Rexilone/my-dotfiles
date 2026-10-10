@@ -3,6 +3,9 @@
 //@ pragma IconTheme Adwaita
 // приложения, запущенные из шелла (лаунчер), берут цвета из GTK-темы
 //@ pragma Env QT_QPA_PLATFORMTHEME=gtk3
+//@ pragma Env QT_WAYLAND_DISABLED_INTERFACES=zwp_text_input_manager_v3
+// ↑ протокол ввода для IME (text-input-v3) в qt6-wayland 6.12 роняет шелл (падение в обработке событий
+// Wayland); раскладки и обычный ввод с клавиатуры идут без него
 
 import QtQuick
 import Quickshell
@@ -34,6 +37,8 @@ ShellRoot {
     PhoneReply {}
     // нижний индикатор: громкость, микрофон, яркость, голосовой ввод
     Osd {}
+    // лупа: Super+Shift+колесо (как в KDE)
+    Zoom {}
     // цвета «под обои» считаются в фоне
     readonly property var wallColors: WallColors
     // настройки niri: сразу узнаём мониторы, чтобы запись конфига их не потеряла

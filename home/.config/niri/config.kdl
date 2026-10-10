@@ -446,6 +446,9 @@ binds {
     Mod+Page_Up        { focus-workspace-up; }
     Mod+U              { focus-workspace-down; }
     Mod+I hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }
+    // лупа: Super+Shift+колесо вверх — приблизить, вниз — отдалить (до конца — выход; ещё Esc или клик)
+    Mod+Shift+WheelScrollUp cooldown-ms=60 hotkey-overlay-title="Zoom in" { spawn "qs" "ipc" "call" "zoom" "zoomIn"; }
+    Mod+Shift+WheelScrollDown cooldown-ms=60 hotkey-overlay-title="Zoom out" { spawn "qs" "ipc" "call" "zoom" "zoomOut"; }
     // голосовой ввод (Voxtype): нажать — говорить, нажать ещё раз — текст напечатается (русский и английский)
     Mod+H hotkey-overlay-title="Voice typing" { spawn "voxtype" "record" "toggle"; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
@@ -480,8 +483,7 @@ binds {
 
     // Usually scrolling up and down with Shift in applications results in
     // horizontal scrolling; these binds replicate that.
-    Mod+Shift+WheelScrollDown      { focus-column-right; }
-    Mod+Shift+WheelScrollUp        { focus-column-left; }
+    // Mod+Shift+колесо — лупа (выше); колонки листаются Mod+колесом влево/вправо
     Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
     Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
 

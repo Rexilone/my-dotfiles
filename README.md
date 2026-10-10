@@ -116,6 +116,7 @@ The same page shows pacman updates.
 | `Super+T` | Terminal (foot) |
 | `Super+B` | Browser (Chromium) |
 | `Super+H` | Voice typing (Russian / English) |
+| `Super+Shift+wheel` | Magnifier: zoom in / out (screen snapshot) |
 
 All shortcuts can be changed in **Settings → Keyboard shortcuts**.
 

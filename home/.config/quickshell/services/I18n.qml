@@ -743,5 +743,8 @@ Singleton {
         "Pop-up at the bottom": "Всплывает снизу",
         "When volume, microphone or brightness change, and while voice typing listens (Super+H)": "Когда меняются громкость, микрофон или яркость, и пока идёт голосовой ввод (Super+H)",
         "Voice typing": "Голосовой ввод",
+        // лупа
+        "snapshot": "снимок",
+        "wheel": "колесо",
     })
 }
