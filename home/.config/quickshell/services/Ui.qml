@@ -9,6 +9,9 @@ Singleton {
 
     signal closeMenus
 
+    // сколько меню бара открыто: пока открыто (например, громкость), нижний OSD не всплывает
+    property int menusOpen: 0
+
     // вкладка страницы «Телефон», которую открыть (Rexlink.show): home | notifications | messages | …
     property string phoneTab: ""
 

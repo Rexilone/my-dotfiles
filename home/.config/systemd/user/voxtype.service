@@ -1,0 +1,14 @@
+# Голосовой ввод: служба Voxtype (Super+H в niri — voxtype record toggle)
+[Unit]
+Description=Voxtype — голосовой ввод (Rexilone Shell)
+PartOf=graphical-session.target
+After=graphical-session.target pipewire.service pipewire-pulse.service
+
+[Service]
+Type=simple
+ExecStart=voxtype -q daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

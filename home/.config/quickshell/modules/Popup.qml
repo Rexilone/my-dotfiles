@@ -25,7 +25,9 @@ PanelWindow {
         } else {
             hideTimer.restart();
         }
+        Ui.menusOpen = Math.max(0, Ui.menusOpen + (open ? 1 : -1));
     }
+    Component.onDestruction: if (open) Ui.menusOpen = Math.max(0, Ui.menusOpen - 1)
 
     anchors {
         top: true

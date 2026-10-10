@@ -1,0 +1,41 @@
+# Голосовой ввод Voxtype (Rexilone Shell).
+# Super+H — начать запись, ещё раз Super+H — закончить: текст напечатается в активное окно.
+# Язык определяется сам — говорите по-русски или по-английски.
+# Состояние записи показывает нижний индикатор шелла (Osd.qml).
+
+state_file = "auto"
+
+[hotkey]
+# горячую клавишу даёт niri (Super+H → voxtype record toggle), не evdev
+enabled = false
+key = "SCROLLLOCK"
+modifiers = []
+
+[audio]
+device = "default"
+sample_rate = 16000
+max_duration_secs = 120
+
+[whisper]
+# многоязычная модель (не .en): русский и английский. tiny/base — быстрее, но русский хуже;
+# medium/large-v3-turbo — точнее, но на процессоре медленнее
+model = "small"
+language = "auto"
+translate = false
+on_demand_loading = false
+
+[output]
+# печатать в позицию курсора (wtype); если не вышло — в буфер обмена
+mode = "type"
+fallback_to_clipboard = true
+type_delay_ms = 0
+pre_type_delay_ms = 80
+
+[output.notification]
+# всё показывает нижний индикатор шелла
+on_recording_start = false
+on_recording_stop = false
+on_transcription = false
+
+[status]
+icon_theme = "nerd-font"

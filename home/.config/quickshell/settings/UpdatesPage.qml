@@ -36,6 +36,7 @@ Page {
                 color: Dotfiles.available ? Theme.accent : Theme.surfaceHi
 
                 Text {
+                    id: statusIcon
                     anchors.centerIn: parent
                     text: String.fromCodePoint(Dotfiles.checking || Dotfiles.updating ? 0xF0450 : Dotfiles.available ? 0xF01DA : 0xF012C)
                     color: Dotfiles.available ? Theme.bg : Theme.fg
@@ -48,7 +49,8 @@ Page {
                         to: 360
                         duration: 1200
                         loops: Animation.Infinite
-                        onRunningChanged: if (!running) parent.rotation = 0
+                        // после проверки — ровно (иначе стрелка/галочка застывает под углом)
+                        onRunningChanged: if (!running) statusIcon.rotation = 0
                     }
                 }
             }

@@ -390,7 +390,7 @@ binds {
     Mod+Down  { focus-window-down; }
     Mod+Up    { focus-window-up; }
     Mod+Right { focus-column-right; }
-    Mod+H     { focus-column-left; }
+    // Mod+H — голосовой ввод (ниже); влево по колонкам — Mod+Left
     Mod+J     { focus-window-down; }
     Mod+K     { focus-window-up; }
     Mod+L     { focus-column-right; }
@@ -446,6 +446,8 @@ binds {
     Mod+Page_Up        { focus-workspace-up; }
     Mod+U              { focus-workspace-down; }
     Mod+I hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }
+    // голосовой ввод (Voxtype): нажать — говорить, нажать ещё раз — текст напечатается (русский и английский)
+    Mod+H hotkey-overlay-title="Voice typing" { spawn "voxtype" "record" "toggle"; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
     Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
     Mod+Ctrl+U         { move-column-to-workspace-down; }

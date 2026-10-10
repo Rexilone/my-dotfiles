@@ -30,6 +30,8 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 - **Settings app** (`Super+I`) — display arrangement, sound, network & firewall, Bluetooth, phone, peripherals (keyboard, mouse, touchpad, graphics tablet, gamepads, printers), personalization, keyboard shortcuts, startup apps, power, notifications, updates. English and Russian.
 - **Color schemes** — dark, light, Nord, Gruvbox, Rosé Pine or generated from the wallpaper; applied live to foot, Neovim, yazi, fzf, GTK and Qt apps.
 - **Boot & login** — the Limine boot menu and the LightDM login screen in the shell's colors and wallpaper; Windows and other Linux on any connected disk show up in the boot menu by themselves (Settings → Boot & login).
+- **Voice typing** (`Super+H`) — Voxtype with a multilingual Whisper model: press, speak Russian or English, press again — the text is typed where the cursor is.
+- **On-screen indicator** — slides up from the bottom when volume, microphone or brightness change and while voice typing listens.
 - **Software** — install apps from pacman and AUR: categories, editors' picks, screenshots, search across repositories and AUR, one-click install, remove and update (password via the polkit dialog). Opens from the launcher.
 - **Launcher** (`Super+D`) — fuzzy search (also in the wrong keyboard layout), pinned apps, calculator, `>` shell commands, `?` web search, app actions, settings pages.
 - **Notifications** with history and Do not disturb; **clipboard history** with images (`Super+V`).
@@ -113,6 +115,7 @@ The same page shows pacman updates.
 | `Super+Shift+E` | Power menu |
 | `Super+T` | Terminal (foot) |
 | `Super+B` | Browser (Chromium) |
+| `Super+H` | Voice typing (Russian / English) |
 
 All shortcuts can be changed in **Settings → Keyboard shortcuts**.
 

@@ -734,5 +734,14 @@ Singleton {
         "User picture": "Фото пользователя",
         "~/.face — the picture next to the password field": "~/.face — картинка рядом с полем пароля",
         "Changes are saved now and reach the boot menu and the login screen on the next shutdown — or right away with Apply now.": "Изменения сохраняются сразу, а в меню загрузки и на экран входа попадают при следующем выключении — или сразу по кнопке «Применить».",
+        // нижний индикатор
+        "Listening…": "Слушаю…",
+        "Recognizing…": "Распознаю…",
+        "Brightness": "Яркость",
+        "muted": "без звука",
+        "Indicator": "Индикатор",
+        "Pop-up at the bottom": "Всплывает снизу",
+        "When volume, microphone or brightness change, and while voice typing listens (Super+H)": "Когда меняются громкость, микрофон или яркость, и пока идёт голосовой ввод (Super+H)",
+        "Voice typing": "Голосовой ввод",
     })
 }

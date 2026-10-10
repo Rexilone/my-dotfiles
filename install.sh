@@ -121,7 +121,7 @@ link() {
 }
 
 link "$DOTS/home/.zshrc" "$HOME/.zshrc"
-for d in quickshell niri foot nvim yazi; do
+for d in quickshell niri foot nvim yazi voxtype; do
     link "$DOTS/home/.config/$d" "$HOME/.config/$d"
 done
 for f in "$DOTS"/home/.local/bin/*; do
@@ -199,6 +199,18 @@ if (( PACKAGES )); then
 fi
 run systemctl --user daemon-reload || true
 run systemctl --user enable rexlink.service || true
+
+# ─────────────────────────── голосовой ввод (Voxtype, Super+H)
+if command -v voxtype >/dev/null; then
+    bold "Голосовой ввод"
+    # многоязычная модель Whisper (русский + английский), ~470 МБ — один раз
+    if [[ ! -f "$HOME/.local/share/voxtype/models/ggml-small.bin" ]]; then
+        info "скачиваю модель распознавания (small, ~470 МБ)…"
+        run voxtype setup --download --model small --quiet || info "не вышло — повторите: voxtype setup --download --model small"
+    fi
+    run systemctl --user enable voxtype.service || true
+    [[ -n "${WAYLAND_DISPLAY:-}" ]] && { run systemctl --user restart voxtype.service || true; }
+fi
 # в работающем сеансе — сразу перезапустить на новую версию
 if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
     run systemctl --user restart rexlink.service || true

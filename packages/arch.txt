@@ -68,6 +68,10 @@ scrcpy
 archlinux-appstream-data
 # иконки каталога — в формате JPEG XL
 kimageformats
+# ── яркость экрана ноутбука (клавиши яркости, нижний индикатор)
+brightnessctl
+# ── голосовой ввод (Voxtype, Super+H): печать распознанного текста
+wtype
 # ── браузер (Super+B, браузер по умолчанию)
 chromium
 # ── шрифты

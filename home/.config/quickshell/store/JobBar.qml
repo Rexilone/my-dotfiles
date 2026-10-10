@@ -49,6 +49,7 @@ Rectangle {
             spacing: 14
 
             Text {
+                id: jobIcon
                 text: String.fromCodePoint(bar.active ? 0xF0772 : bar.job?.state === "done" ? 0xF012C : 0xF0028)
                 color: bar.job?.state === "failed" ? Theme.urgent : bar.job?.state === "done" ? Theme.fg : Theme.accent
                 font.family: Theme.font
@@ -60,7 +61,7 @@ Rectangle {
                     to: 360
                     duration: 1400
                     loops: Animation.Infinite
-                    onStopped: parent.rotation = 0
+                    onRunningChanged: if (!running) jobIcon.rotation = 0
                 }
             }
 
