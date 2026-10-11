@@ -732,6 +732,8 @@ Singleton {
         "Otherwise the wallpaper as is": "Иначе — обои как есть",
         "Clock in the top bar": "Часы в верхней полосе",
         "Date and time in the top bar": "Дата и время в баре сверху",
+        "Update the boot menu and the login screen": "Обновить меню загрузки и экран входа",
+        "The system part (rexilone-boot, the Rexilone login screen on greetd) is newer in the update. Needs the password once; the new login screen starts on the next boot": "В обновлении новая системная часть (rexilone-boot, экран входа Rexilone на greetd). Нужен пароль один раз; новый экран входа появится со следующей загрузки",
         "Rexilone — like the shell: the bar, the card, the colors and the wallpaper. Takes effect on the next boot": "Rexilone — как в шелле: бар, карточка, цвета и обои. Сработает со следующей загрузки",
         "LightDM — the classic GTK login screen. Takes effect on the next boot": "LightDM — классический экран входа на GTK. Сработает со следующей загрузки",
         "The Rexilone login screen isn't installed": "Экран входа Rexilone не установлен",

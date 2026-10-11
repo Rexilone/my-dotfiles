@@ -12,6 +12,10 @@ install -Dm644 "$dots/boot/rexilone-boot.service" /etc/systemd/system/rexilone-b
 install -Dm644 "$dots/boot/rexilone-boot-scan.service" /etc/systemd/system/rexilone-boot-scan.service
 install -Dm644 "$dots/boot/90-rexilone-boot.rules" /etc/udev/rules.d/90-rexilone-boot.rules
 # экран входа Rexilone (greetd → niri → Quickshell): программа — общая, тема — в /var/lib/rexilone/greeter
+# greetd — из репозитория Arch, если ещё не стоит (обновление из Настроек ставит пакеты не всегда)
+if command -v pacman >/dev/null && ! pacman -T greetd greetd-agreety >/dev/null 2>&1; then
+    pacman -S --needed --noconfirm greetd greetd-agreety || echo "не удалось поставить greetd" >&2
+fi
 install -Dm755 "$dots/boot/rexilone-greeter" /usr/local/lib/rexilone/rexilone-greeter
 rm -rf /usr/local/share/rexilone/greeter
 install -d /usr/local/share/rexilone
@@ -37,4 +41,8 @@ udevadm control --reload || true
 systemctl enable rexilone-boot.service >/dev/null 2>&1
 # применить сразу (поиск систем + оформление)
 systemctl restart rexilone-boot.service
+# экран входа Rexilone — по умолчанию; если в Настройках выбрали другой (/etc/rexilone/dm), не трогаем
+if [ ! -f /etc/rexilone/dm ] && [ -x /usr/bin/greetd ]; then
+    /usr/local/lib/rexilone/rexilone-boot dm rexilone || true
+fi
 echo "rexilone-boot установлен"

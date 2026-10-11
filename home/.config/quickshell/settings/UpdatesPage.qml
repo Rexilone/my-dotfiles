@@ -135,6 +135,19 @@ Page {
             onClicked: Dotfiles.installPackages()
         }
     }
+    // системная часть (загрузка, экран входа) обновляется отдельно — нужен пароль
+    SCard {
+        visible: BootTheme.dots !== "" && (!BootTheme.installed || BootTheme.outdated)
+        icon: String.fromCodePoint(0xF0306)
+        title: "Update the boot menu and the login screen"
+        desc: "The system part (rexilone-boot, the Rexilone login screen on greetd) is newer in the update. Needs the password once; the new login screen starts on the next boot"
+        SButton {
+            text: BootTheme.busy ? "Installing…" : "Update"
+            primary: true
+            enabled: !BootTheme.busy
+            onClicked: BootTheme.setup()
+        }
+    }
     SCard {
         visible: !Dotfiles.isRepo && !Dotfiles.checking
         icon: String.fromCodePoint(0xF02A2)

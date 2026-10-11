@@ -158,12 +158,22 @@ Singleton {
             [ -x "${root.tool}" ] && echo installed
             [ -f "$dots/boot/rexilone-boot" ] && { ! cmp -s "$dots/boot/rexilone-boot" "${root.tool}" ||
                 ! cmp -s "$dots/boot/rexilone-greeter" /usr/local/lib/rexilone/rexilone-greeter ||
-                ! diff -rq "$dots/boot/greeter" /usr/local/share/rexilone/greeter >/dev/null 2>&1; } && echo outdated`]
+                ! diff -rq "$dots/boot/greeter" /usr/local/share/rexilone/greeter >/dev/null 2>&1; } && {
+                echo outdated
+                # одно уведомление на каждую новую версию системной части
+                sum=$(cat "$dots/boot/rexilone-boot" "$dots/boot/rexilone-greeter" "$dots"/boot/greeter/*.qml 2>/dev/null | cksum | cut -d" " -f1)
+                f="${root.dir}/notified"
+                [ "$(cat "$f" 2>/dev/null)" = "$sum" ] || { mkdir -p "${root.dir}"; echo "$sum" > "$f"; echo notify; }
+            }`]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.installed = text.includes("installed");
                 root.outdated = text.includes("outdated");
                 root.dots = (text.match(/^dots=(.*)$/m) ?? [])[1] ?? "";
+                if (text.includes("notify"))
+                    Quickshell.execDetached(["notify-send", "-a", "Rexilone", "-i", "system-software-update",
+                        I18n.ru ? "Обновите загрузку и экран входа" : "Update the boot menu and the login screen",
+                        I18n.ru ? "Настройки → Обновления → «Обновить» (нужен пароль)" : "Settings → Updates → Update (needs the password)"]);
             }
         }
     }

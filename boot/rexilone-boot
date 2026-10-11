@@ -772,6 +772,7 @@ def set_dm(which):
         log(f"не удалось включить {unit}: {r.stderr.strip()}")
         return False
     run(["systemctl", "set-default", "graphical.target"])
+    write_file("/etc/rexilone/dm", which + "\n", 0o644)   # выбор пользователя: install-boot.sh его не меняет
     log(f"экран входа: {which} (со следующей загрузки)")
     return True
 
