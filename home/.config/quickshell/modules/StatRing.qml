@@ -15,6 +15,10 @@ Item {
     property real shown: value
     Behavior on shown { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
     onShownChanged: ring.requestPaint()
+    // Canvas сам не знает о смене темы — перерисовать вместе с цветами
+    onArcColorChanged: ring.requestPaint()
+    readonly property color trackColor: Theme.surfaceHi2
+    onTrackColorChanged: ring.requestPaint()
 
     // battery: true — «мало» плохо (заряд), иначе «много» плохо (нагрузка)
     property bool battery: false
@@ -40,7 +44,7 @@ Item {
             ctx.lineCap = "round";
             ctx.lineWidth = root.thickness;
 
-            ctx.strokeStyle = Theme.surfaceHi2;
+            ctx.strokeStyle = root.trackColor;
             ctx.beginPath();
             ctx.arc(cx, cy, r, start, start + sweep);
             ctx.stroke();
