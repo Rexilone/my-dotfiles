@@ -1,0 +1,27 @@
+// niri для экрана входа Rexilone — запасной вариант (обычно rexilone-boot пишет
+// /var/lib/rexilone/greeter/niri.kdl с мониторами и раскладкой пользователя)
+input {
+    keyboard {
+        xkb {
+            layout "us,ru"
+            options "grp:caps_toggle"
+        }
+        numlock
+    }
+    touchpad {
+        tap
+    }
+}
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+gestures {
+    hot-corners {
+        off
+    }
+}
+
+// Quickshell закрылся (вход выполнен или сбой) — закрыть и niri, дальше решает greetd
+spawn-at-startup "sh" "-c" "qs -p /usr/local/share/rexilone/greeter; niri msg action quit --skip-confirmation"

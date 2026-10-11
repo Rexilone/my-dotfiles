@@ -1,0 +1,23 @@
+#!/bin/sh
+# Экран входа Rexilone (greetd запускает его от пользователя greeter): niri, в нём Quickshell.
+# Тема и настройки niri — /var/lib/rexilone/greeter (пишет rexilone-boot по теме шелла).
+# Экран входа не поднялся три раза подряд — текстовый вход agreety, чтобы не остаться без входа.
+G=/usr/local/share/rexilone/greeter
+D=/var/lib/rexilone/greeter
+S=/var/lib/rexilone/greeter-state
+[ -w "$S" ] || { S="${XDG_RUNTIME_DIR:-/tmp}/rexilone-greeter"; mkdir -p "$S"; }
+
+n=$(cat "$S/fails" 2>/dev/null)
+case "$n" in ''|*[!0-9]*) n=0 ;; esac
+if [ "$n" -ge 3 ] || ! command -v niri >/dev/null || ! command -v qs >/dev/null || [ ! -f "$G/shell.qml" ]; then
+    rm -f "$S/fails"
+    exec agreety --cmd niri-session
+fi
+# сбросит сам экран входа, когда запустится
+echo $((n + 1)) > "$S/fails"
+
+export REXILONE_GREETER_STATE="$S" XDG_CACHE_HOME="$S/cache" XDG_STATE_HOME="$S/state" XDG_DATA_HOME="$S/data"
+export QS_DISABLE_CRASH_HANDLER=1 QS_NO_RELOAD_POPUP=1 QT_QPA_PLATFORMTHEME=
+conf="$D/niri.kdl"
+[ -r "$conf" ] || conf="$G/niri.kdl"
+exec niri -c "$conf"

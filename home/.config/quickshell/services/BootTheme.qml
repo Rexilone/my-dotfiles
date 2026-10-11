@@ -3,8 +3,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Загрузка и вход в стиле шелла: готовит тему для меню Limine и экрана входа LightDM.
-// Шелл только пишет файлы в ~/.local/state/rexilone/boot/ (цвета, обои под экран, размытые обои),
+// Загрузка и вход в стиле шелла: готовит тему для меню Limine и экрана входа (Rexilone на greetd или LightDM).
+// Шелл только пишет файлы в ~/.local/state/rexilone/boot/ (цвета, обои под экран, размытые обои, аватар),
 // применяет их системная служба rexilone-boot (root): при выключении — сама, «Применить» — сразу.
 // Состояние (найденные системы, итог) — /var/lib/rexilone/boot-status.json.
 Singleton {
@@ -35,7 +35,16 @@ Singleton {
             bg: hex(Theme.bg), panel: hex(Theme.bg), surface: hex(Theme.surface), surfaceHi: hex(Theme.surfaceHi),
             surfaceHi2: hex(Theme.surfaceHi2), fg: hex(Theme.fg), muted: hex(Theme.muted), dim: hex(Theme.dim),
             accent: hex(Theme.accent), urgent: hex(Theme.urgent), warn: hex(Theme.warn),
+            line: hex(Theme.line), faint: hex(Theme.faint),
         },
+        // экран входа Rexilone повторяет бар и размеры шелла
+        lang: I18n.lang,
+        barStyle: Settings.barStyle,
+        barHeight: Settings.barHeight,
+        uiScale: Settings.uiScale,
+        transparency: Settings.transparency,
+        opacity: Settings.opacity,
+        primary: Settings.primary,
         dark: !Theme.isLight,
         font: Settings.font || "JetBrainsMono Nerd Font",
         timeout: Settings.bootTimeout < 0 ? "no" : Settings.bootTimeout,
@@ -60,7 +69,12 @@ Singleton {
     }
 
     function stage() {
-        themeProc.command = ["sh", "-c", 'mkdir -p "$1" && printf "%s\\n" "$2" > "$1/theme.json.tmp" && mv "$1/theme.json.tmp" "$1/theme.json"', "sh", dir, themeJson];
+        // + аватар для экрана входа: ~/.face → квадрат 256×256 (только если картинка новее)
+        themeProc.command = ["sh", "-c", `mkdir -p "$1" && printf "%s\\n" "$2" > "$1/theme.json.tmp" && mv "$1/theme.json.tmp" "$1/theme.json"
+            f="$HOME/.face"; [ -f "$f" ] || f="$HOME/.face.icon"
+            if [ -f "$f" ] && [ "$f" -nt "$1/avatar.jpg" ] && command -v magick >/dev/null; then
+                magick "$f[0]" -auto-orient -resize "256x256^" -gravity center -extent 256x256 -strip -quality 90 "jpg:$1/avatar.jpg.tmp" && mv "$1/avatar.jpg.tmp" "$1/avatar.jpg"
+            fi`, "sh", dir, themeJson];
         themeProc.running = true;
         const wp = Wallpapers.current;
         const key = `${wp}|${pw}x${ph}`;
@@ -112,6 +126,7 @@ Singleton {
     function hide(id) { run(["hide", id]); }
     function show(id) { run(["show", id]); }
     function forget(id) { run(["forget", id]); }
+    function setDm(which) { run(["dm", which]); }
 
     Process {
         id: runProc
@@ -141,7 +156,9 @@ Singleton {
         command: ["sh", "-c", `d=$(readlink -f "$HOME/.config/quickshell"); dots=\${d%/home/.config/quickshell}
             echo "dots=$dots"
             [ -x "${root.tool}" ] && echo installed
-            [ -f "$dots/boot/rexilone-boot" ] && ! cmp -s "$dots/boot/rexilone-boot" "${root.tool}" && echo outdated`]
+            [ -f "$dots/boot/rexilone-boot" ] && { ! cmp -s "$dots/boot/rexilone-boot" "${root.tool}" ||
+                ! cmp -s "$dots/boot/rexilone-greeter" /usr/local/lib/rexilone/rexilone-greeter ||
+                ! diff -rq "$dots/boot/greeter" /usr/local/share/rexilone/greeter >/dev/null 2>&1; } && echo outdated`]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.installed = text.includes("installed");

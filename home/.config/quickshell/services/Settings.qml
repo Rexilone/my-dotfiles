@@ -120,7 +120,7 @@ Singleton {
     property alias updateRepo: cfg.updateRepo
     property alias updateBranch: cfg.updateBranch
     property alias updateAuto: cfg.updateAuto
-    // загрузка и вход (Настройки → Загрузка и вход): меню Limine и экран входа LightDM
+    // загрузка и вход (Настройки → Загрузка и вход): меню Limine и экран входа
     property alias bootTimeout: cfg.bootTimeout
     property alias bootRemember: cfg.bootRemember
     property alias bootWallpaper: cfg.bootWallpaper

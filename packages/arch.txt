@@ -81,7 +81,6 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 
-# экран входа: LightDM (GTK greeter) — пароль, затем сессия niri
-lightdm
-lightdm-gtk-greeter
-xorg-server
+# экран входа Rexilone: greetd (niri + Quickshell) — пароль, затем сессия niri
+greetd
+greetd-agreety

@@ -29,7 +29,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 - **Bar** — workspaces, clock, weather, tray (inline or in a menu), keyboard layout, volume and mic mixers, network, notifications, control center. Flat, floating or pill style; any monitor.
 - **Settings app** (`Super+I`) — display arrangement, sound, network & firewall, Bluetooth, phone, peripherals (keyboard, mouse, touchpad, graphics tablet, gamepads, printers), personalization, keyboard shortcuts, startup apps, power, notifications, updates. English and Russian.
 - **Color schemes** — dark, light, Nord, Gruvbox, Rosé Pine or generated from the wallpaper; applied live to foot, Neovim, yazi, fzf, GTK and Qt apps.
-- **Boot & login** — the Limine boot menu and the LightDM login screen in the shell's colors and wallpaper; Windows and other Linux on any connected disk show up in the boot menu by themselves (Settings → Boot & login).
+- **Boot & login** — the Limine boot menu and its own login screen (greetd + Quickshell, like the shell: bar, card, colors, wallpaper); Windows and other Linux on any connected disk show up in the boot menu by themselves (Settings → Boot & login).
 - **Voice typing** (`Super+H`) — Voxtype with a multilingual Whisper model: press, speak Russian or English, press again — the text is typed where the cursor is.
 - **On-screen indicator** — slides up from the bottom when volume, microphone or brightness change and while voice typing listens.
 - **Software** — install apps from pacman and AUR: categories, editors' picks, screenshots, search across repositories and AUR, one-click install, remove and update (password via the polkit dialog). Opens from the launcher.
@@ -71,7 +71,7 @@ The installer:
 4. applies the settings preset from `state/` (scheme, bar, modules);
 5. sets up the Rexlink service (phone link) and opens its ports in ufw;
 6. optionally sets up the Steam theme, OpenTabletDriver, CUPS and the phone webcam;
-7. sets up the login screen (LightDM, niri session by default), makes zsh the login shell and enables Bluetooth.
+7. sets up the Rexilone login screen (greetd + Quickshell, niri session by default), makes zsh the login shell and enables Bluetooth.
 
 Then reboot, enter your password on the login screen — niri and the bar start by themselves.
 

@@ -2,13 +2,16 @@
 """Загрузка и вход в стиле Rexilone Shell (запускается от root).
 
   rexilone-boot scan           найти системы на всех дисках (Windows, другие Linux…) и добавить их в меню Limine
-  rexilone-boot apply          оформить меню Limine и экран входа LightDM по теме шелла
+  rexilone-boot apply          оформить меню Limine и экран входа по теме шелла
+  rexilone-boot dm rexilone|lightdm   какой экран входа включить (действует со следующей загрузки)
   rexilone-boot all            scan + apply (при загрузке и выключении — rexilone-boot.service)
   rexilone-boot hide|show <id> убрать систему из меню или вернуть
   rexilone-boot forget <id>    забыть систему (диск отключён навсегда)
   rexilone-boot status         состояние в JSON (то же пишется в /var/lib/rexilone/boot-status.json)
 
-Тему готовит шелл пользователя: ~/.local/state/rexilone/boot/{theme.json, wallpaper.jpg, greeter.jpg}.
+Тему готовит шелл пользователя: ~/.local/state/rexilone/boot/{theme.json, wallpaper.jpg, greeter.jpg, avatar.jpg}.
+Экран входа Rexilone — greetd → niri → Quickshell (/usr/local/share/rexilone/greeter); его тема и
+настройки niri (мониторы, раскладка из ~/.config/niri/qs-settings.kdl) — в /var/lib/rexilone/greeter.
 Пользователь — из /etc/rexilone/boot.conf (user=…). Эти файлы — данные, а не код: цвета и числа
 проверяются, картинки принимаются только JPEG и не больше 16 МБ.
 
@@ -30,6 +33,9 @@ STATE = "/var/lib/rexilone"
 SYSTEMS = f"{STATE}/boot-systems.json"
 STATUS = f"{STATE}/boot-status.json"
 GREETER_DIR = f"{STATE}/greeter"
+GREETER_APP = "/usr/local/share/rexilone/greeter"
+GREETER_BIN = "/usr/local/lib/rexilone/rexilone-greeter"
+GREETD_CONF = "/etc/greetd/config.toml"
 CONF = "/etc/rexilone/boot.conf"
 ESP_TYPE = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 LIMINE_CANDIDATES = ["/boot/limine.conf", "/boot/limine/limine.conf", "/boot/EFI/limine/limine.conf",
@@ -77,6 +83,16 @@ def write_file(path, data, mode=0o644, binary=False):
 
 # ── пользователь и его тема ──────────────────────────────────────────
 
+def config_user():
+    try:
+        for line in open(CONF):
+            if line.strip().startswith("user="):
+                return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return ""
+
+
 def user_home():
     user = ""
     try:
@@ -96,6 +112,10 @@ def user_home():
 def hexc(v, default):
     v = str(v or "")
     return v.lstrip("#").lower() if HEX.match(v) else default
+
+
+def num(v, default, lo, hi):
+    return max(lo, min(hi, v)) if isinstance(v, (int, float)) and not isinstance(v, bool) else default
 
 
 def load_theme():
@@ -121,6 +141,14 @@ def load_theme():
         "greeterBlur": bool(raw.get("greeterBlur", True)),
         "greeterClock": bool(raw.get("greeterClock", True)),
         "greeterUserImage": bool(raw.get("greeterUserImage", False)),
+        "line": hexc(c.get("line"), "3a3a3a"), "faint": hexc(c.get("faint"), "333333"),
+        "lang": "ru" if raw.get("lang") == "ru" else "en",
+        "barStyle": raw.get("barStyle") if raw.get("barStyle") in ("flat", "floating", "pills") else "flat",
+        "barHeight": num(raw.get("barHeight"), 32, 24, 56),
+        "uiScale": num(raw.get("uiScale"), 1, 0.8, 1.6),
+        "transparency": bool(raw.get("transparency", False)),
+        "opacity": num(raw.get("opacity"), 0.85, 0.5, 1),
+        "primary": re.sub(r"[^\w.-]", "", str(raw.get("primary") or ""))[:40],
         "found": bool(raw),
     }
     to = t["timeout"]
@@ -597,7 +625,6 @@ def greeter_conf(t, background):
 
 def apply_greeter(t):
     if not os.path.isdir("/etc/lightdm"):
-        log("LightDM не установлен — экран входа не меняю")
         return False
     os.makedirs(GREETER_DIR, exist_ok=True)
     os.chmod(STATE, 0o755)
@@ -622,6 +649,133 @@ def apply_greeter(t):
     return True
 
 
+# ── экран входа Rexilone (greetd → niri → Quickshell) ─────────────────
+
+NIRI_OUTPUT_KEYS = re.compile(r'^(mode|scale|transform|position|variable-refresh-rate|focus-at-startup|off)( [\w ".@=:-]*)?$')
+NIRI_XKB = re.compile(r'^(layout|variant|options|model) "[\w,:()+ -]*"$')
+
+
+def niri_user_bits():
+    """Мониторы и раскладка из настроек niri пользователя — только безопасные строки."""
+    home = user_home()
+    outputs, xkb, numlock = [], [], False
+    for name in ("qs-settings.kdl", "config.kdl"):
+        p = os.path.join(home or "/nonexistent", ".config/niri", name)
+        try:
+            if os.path.islink(p) and not os.path.realpath(p).startswith((home or "/nonexistent") + "/"):
+                continue
+            text = open(p).read(256 << 10)
+        except OSError:
+            continue
+        path, cur = [], None
+        for raw in text.splitlines():
+            line = raw.split("//", 1)[0].strip()
+            if not line:
+                continue
+            if line.endswith("{"):
+                head = line[:-1].strip()
+                path.append(head)
+                if len(path) == 1 and re.match(r'^output "[\w .-]+"$', head):
+                    cur = [head]
+                    outputs.append(cur)
+                continue
+            if line == "}":
+                if path:
+                    path.pop()
+                if not path:
+                    cur = None
+                continue
+            if cur is not None and len(path) == 1 and NIRI_OUTPUT_KEYS.match(line):
+                cur.append(line)
+            elif path == ["input", "keyboard", "xkb"] and NIRI_XKB.match(line):
+                xkb.append(line)
+            elif path == ["input", "keyboard"] and line == "numlock":
+                numlock = True
+        if outputs or xkb:
+            break
+    return outputs, xkb, numlock
+
+
+def greeter_niri():
+    outputs, xkb, numlock = niri_user_bits()
+    out = ["// сгенерировано rexilone-boot — niri для экрана входа Rexilone", "input {", "    keyboard {", "        xkb {"]
+    out += [f"            {l}" for l in (xkb or ['layout "us,ru"', 'options "grp:caps_toggle"'])]
+    out += ["        }"] + (["        numlock"] if numlock else []) + ["    }", "    touchpad {", "        tap", "    }", "}", ""]
+    for o in outputs:
+        out += [o[0] + " {"] + [f"    {l}" for l in o[1:]] + ["}", ""]
+    out += ["hotkey-overlay {", "    skip-at-startup", "}", "",
+            "gestures {", "    hot-corners {", "        off", "    }", "}", "",
+            "// Quickshell закрылся (вход выполнен или сбой) — закрыть и niri, дальше решает greetd",
+            f'spawn-at-startup "sh" "-c" "qs -p {GREETER_APP}; niri msg action quit --skip-confirmation"', ""]
+    return "\n".join(out)
+
+
+def apply_rexilone_greeter(t):
+    os.makedirs(GREETER_DIR, exist_ok=True)
+    os.chmod(STATE, 0o755)
+    os.chmod(GREETER_DIR, 0o755)
+    theme = {
+        "colors": {k: "#" + t[k] for k in ("bg", "surface", "surfaceHi", "surfaceHi2", "line", "fg", "muted",
+                                          "dim", "faint", "accent", "urgent", "warn")},
+        "font": t["font"], "lang": t["lang"], "barStyle": t["barStyle"], "barHeight": t["barHeight"],
+        "uiScale": t["uiScale"], "transparency": t["transparency"], "opacity": t["opacity"],
+        "primary": t["primary"], "greeterClock": t["greeterClock"], "user": config_user(),
+    }
+    img = user_jpeg(t, "greeter.jpg" if t["greeterBlur"] else "wallpaper.jpg") or user_jpeg(t, "wallpaper.jpg")
+    if img:
+        write_file(os.path.join(GREETER_DIR, "background.jpg"), img, 0o644, binary=True)
+        theme["background"] = "background.jpg"
+    avatar = user_jpeg(t, "avatar.jpg") if t["greeterUserImage"] else None
+    if avatar:
+        write_file(os.path.join(GREETER_DIR, "avatar.jpg"), avatar, 0o644, binary=True)
+        theme["avatar"] = "avatar.jpg"
+    write_file(os.path.join(GREETER_DIR, "theme.json"), json.dumps(theme, ensure_ascii=False, indent=1), 0o644)
+    write_file(os.path.join(GREETER_DIR, "niri.kdl"), greeter_niri(), 0o644)
+    return True
+
+
+def current_dm():
+    try:
+        return os.path.basename(os.path.realpath("/etc/systemd/system/display-manager.service")).removesuffix(".service")
+    except OSError:
+        return ""
+
+
+def dms_available():
+    out = []
+    if os.path.exists("/usr/bin/greetd") and os.path.exists(GREETER_BIN) and os.path.isfile(f"{GREETER_APP}/shell.qml"):
+        out.append("rexilone")
+    if os.path.exists("/usr/bin/lightdm"):
+        out.append("lightdm")
+    return out
+
+
+def greetd_conf():
+    return ("# сгенерировано rexilone-boot — экран входа Rexilone (Настройки → Загрузка и вход)\n"
+            "[terminal]\nvt = 1\n\n[default_session]\n"
+            f'command = "{GREETER_BIN}"\nuser = "greeter"\n')
+
+
+def set_dm(which):
+    if which not in dms_available():
+        log(f"экран входа «{which}» не установлен")
+        return False
+    if which == "rexilone":
+        if os.path.isfile(GREETD_CONF) and not os.path.exists(GREETD_CONF + ".orig"):
+            shutil.copy2(GREETD_CONF, GREETD_CONF + ".orig")
+        write_file(GREETD_CONF, greetd_conf(), 0o644)
+        unit = "greetd.service"
+    else:
+        unit = "lightdm.service"
+    r = run(["systemctl", "enable", "-f", unit])
+    if r.returncode != 0:
+        log(f"не удалось включить {unit}: {r.stderr.strip()}")
+        return False
+    run(["systemctl", "set-default", "graphical.target"])
+    log(f"экран входа: {which} (со следующей загрузки)")
+    return True
+
+
 # ── команды ───────────────────────────────────────────────────────────
 
 def write_status(extra):
@@ -639,6 +793,13 @@ def main():
     if cmd == "status":
         print(json.dumps(load_json(STATUS, {}), ensure_ascii=False))
         return
+    if cmd == "dm":
+        os.makedirs(STATE, exist_ok=True)
+        ok = set_dm(sys.argv[2] if len(sys.argv) > 2 else "")
+        st = load_json(STATUS, {})
+        st.update(dm=current_dm(), dms=dms_available(), log=log_lines[-20:])
+        write_file(STATUS, json.dumps(st, ensure_ascii=False, indent=1), 0o644)
+        sys.exit(0 if ok else 1)
     if cmd not in ("scan", "apply", "all", "hide", "show", "forget"):
         print(__doc__)
         return
@@ -657,9 +818,11 @@ def main():
         write_file(SYSTEMS, json.dumps(known, ensure_ascii=False, indent=1))
     extra = edit_limine(limine_theme(t, limine_conf()), systems_block(known, t))
     if cmd in ("apply", "all"):
-        extra["greeter"] = apply_greeter(t)
+        extra["greeter"] = apply_rexilone_greeter(t)
+        apply_greeter(t)                     # LightDM — если стоит (можно вернуться к нему в Настройках)
     else:
         extra["greeter"] = load_json(STATUS, {}).get("greeter", False)
+    extra["dm"], extra["dms"] = current_dm(), dms_available()
     extra["themeFound"] = t["found"]
     write_status(extra)
 

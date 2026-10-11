@@ -230,9 +230,13 @@ if (( PACKAGES )); then
     run sudo systemctl enable --now bluetooth.service || true
     (( PRINTERS )) && { run sudo systemctl enable --now cups.service || true; }
 
-    # экран входа: LightDM с GTK-greeter, по умолчанию — сессия niri.
-    # Без него система грузится в tty и просит логин/пароль текстом.
-    if [[ -f /usr/share/xgreeters/lightdm-gtk-greeter.desktop ]]; then
+    # экран входа: свой, в стиле шелла (greetd → niri → Quickshell), по умолчанию — сессия niri.
+    # Прежний (LightDM, gdm, sddm…) отключается; вернуть LightDM — Настройки → Загрузка и вход.
+    # Без экрана входа система грузится в tty и просит логин/пароль текстом.
+    if [[ -x /usr/bin/greetd && -x /usr/local/lib/rexilone/rexilone-boot ]]; then
+        info "Экран входа: Rexilone (greetd) → niri"
+        run sudo /usr/local/lib/rexilone/rexilone-boot dm rexilone
+    elif [[ -f /usr/share/xgreeters/lightdm-gtk-greeter.desktop ]]; then
         info "Экран входа: LightDM → niri"
         conf=$'[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nuser-session=niri\n'
         if (( DRY )); then
@@ -270,7 +274,7 @@ fi
 bold "Готово"
 if (( PACKAGES )); then
     cat <<EOF
-  Перезагрузитесь: появится экран входа (LightDM), введите пароль — запустится niri.
+  Перезагрузитесь: появится экран входа Rexilone, введите пароль — запустится niri.
   Бар запускается сам (spawn-at-startup "qs" в ~/.config/niri/config.kdl).
   Super+D — приложения, Super+I — настройки, Super+Shift+E — питание.
 EOF

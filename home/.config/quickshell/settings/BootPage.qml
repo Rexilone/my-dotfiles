@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import qs.services
 
-// Загрузка и вход: меню Limine и экран входа LightDM в стиле шелла, системы на других дисках
+// Загрузка и вход: меню Limine и экран входа (свой на greetd или LightDM) в стиле шелла, системы на других дисках
 Page {
     id: page
 
@@ -146,6 +146,26 @@ Page {
     SSection { text: I18n.tr("Login screen") }
 
     SCard {
+        visible: BootTheme.installed && (page.st.dms ?? []).length > 0
+        icon: String.fromCodePoint(0xF0306)
+        title: "Login screen"
+        desc: page.st.dm === "greetd" ? "Rexilone — like the shell: the bar, the card, the colors and the wallpaper. Takes effect on the next boot"
+            : "LightDM — the classic GTK login screen. Takes effect on the next boot"
+        SChoice {
+            options: [{ value: "rexilone", label: "Rexilone" }].concat((page.st.dms ?? []).includes("lightdm") ? [{ value: "lightdm", label: "LightDM" }] : [])
+            current: page.st.dm === "greetd" ? "rexilone" : page.st.dm === "lightdm" ? "lightdm" : ""
+            enabled: !BootTheme.busy
+            onPicked: v => BootTheme.setDm(v)
+        }
+    }
+    SCard {
+        visible: BootTheme.installed && !(page.st.dms ?? []).includes("rexilone")
+        icon: String.fromCodePoint(0xF0026)
+        title: "The Rexilone login screen isn't installed"
+        desc: "Needs the greetd package: Settings → Updates installs missing packages, then Update the boot service above"
+    }
+
+    SCard {
         icon: String.fromCodePoint(0xF0E09)
         title: "Blurred wallpaper"
         desc: "Otherwise the wallpaper as is"
@@ -156,7 +176,7 @@ Page {
     }
     SCard {
         icon: String.fromCodePoint(0xF0954)
-        title: "Clock in the top bar"
+        title: "Date and time in the top bar"
         SSwitch {
             checked: Settings.greeterClock
             onToggled: v => Settings.greeterClock = v

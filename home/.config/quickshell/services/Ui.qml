@@ -39,7 +39,7 @@ Singleton {
         { name: "About", keys: "device name account specs version hostname developer", icon2: 0xF02FD },
         { name: "Plugins", keys: "plugins developer extensions", icon2: 0xF0431, dev: true },
         { name: "Updates", keys: "update upgrade version git github dotfiles packages pacman", icon2: 0xF06B0 },
-        { name: "Boot & login", keys: "boot limine bootloader menu login lightdm greeter password screen windows dual other systems disk", icon2: 0xF0342 },
+        { name: "Boot & login", keys: "boot limine bootloader menu login lightdm greetd greeter password screen windows dual other systems disk", icon2: 0xF0342 },
     ]
 
     // порядок в боковой панели Настроек — по группам
