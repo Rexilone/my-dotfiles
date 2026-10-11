@@ -226,6 +226,18 @@ PanelWindow {
         open = false;
     }
 
+    // выбор мышью — только когда мышь правда двигали: при открытии курсор может стоять над строкой,
+    // а при листании стрелками под неподвижный курсор подъезжают другие строки — выбор не должен прыгать
+    property bool mouseArmed: false
+    property point lastMouse: Qt.point(-1, -1)
+    function mouseMoved(item, x, y) {
+        const p = item.mapToItem(null, x, y);
+        const moved = lastMouse.x >= 0 && Math.hypot(p.x - lastMouse.x, p.y - lastMouse.y) > 2;
+        lastMouse = p;
+        if (moved) mouseArmed = true;
+        return mouseArmed;
+    }
+
     Timer {
         id: toastTimer
         interval: 1800
@@ -243,6 +255,8 @@ PanelWindow {
             list.currentIndex = 0;
             list.positionViewAtBeginning();
             browsing = false;
+            mouseArmed = false;
+            lastMouse = Qt.point(-1, -1);
             shown = true;
             input.forceActiveFocus();
         } else {
@@ -416,6 +430,8 @@ PanelWindow {
                     const ctrl = event.modifiers & Qt.ControlModifier;
                     const cur = root.current;
                     const k = event.key;
+                    // клавиатура — выбор снова за ней, пока мышь не сдвинут
+                    if ([Qt.Key_Up, Qt.Key_Down, Qt.Key_Tab, Qt.Key_Backtab, Qt.Key_PageUp, Qt.Key_PageDown].includes(k)) root.mouseArmed = false;
                     if (k === Qt.Key_Escape) {
                         if (root.actionsFor) root.actionsFor = null;
                         else if (root.browsing) root.browsing = false;
@@ -537,7 +553,7 @@ PanelWindow {
                 highlightMoveDuration: 120
                 highlightResizeDuration: 0
                 highlightFollowsCurrentItem: true
-                keyNavigationWraps: true
+                keyNavigationWraps: false
                 currentIndex: 0
 
                 highlight: Item {
@@ -641,13 +657,16 @@ PanelWindow {
                     }
 
                     MouseArea {
+                        id: rowArea
                         y: row.headerHeight
                         width: parent.width
                         height: root.rowH
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        onEntered: list.currentIndex = row.index
+                        onPositionChanged: mouse => {
+                            if (root.mouseMoved(rowArea, mouse.x, mouse.y) && list.currentIndex !== row.index) list.currentIndex = row.index;
+                        }
                         onClicked: mouse => {
                             if (mouse.button === Qt.RightButton) {
                                 if (row.modelData.entry) root.togglePin(row.modelData.entry);
