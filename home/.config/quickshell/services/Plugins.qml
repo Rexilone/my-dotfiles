@@ -61,7 +61,9 @@ Singleton {
         command: ["sh", "-c", `
             for f in "$1"/*/plugin.json; do
                 [ -f "$f" ] || continue
-                printf '@@PLUGIN %s\\n' "$(dirname "$f")"
+                # настоящий путь: плагин может быть ссылкой (~/plugins/install.sh), а Qt по пути через
+                # ссылку файлы не грузит («File name case mismatch»)
+                printf '@@PLUGIN %s\\n' "$(readlink -f "$(dirname "$f")")"
                 cat "$f"
                 printf '\\n'
             done`, "sh", root.dir]

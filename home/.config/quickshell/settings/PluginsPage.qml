@@ -114,7 +114,7 @@ Page {
             desc: "Rescan plugins after adding one; restart the shell after changing plugin code"
 
             SButton { text: Plugins.scanning ? "…" : "Rescan"; onClicked: Plugins.reload() }
-            SButton { text: I18n.tr("Restart shell"); onClicked: Quickshell.execDetached(["sh", "-c", "pkill -x qs; sleep 0.3; setsid -f qs"]) }
+            SButton { text: I18n.tr("Restart shell"); onClicked: Dotfiles.restartShell() }
         }
 
         SCard {

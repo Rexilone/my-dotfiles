@@ -10,3 +10,8 @@ home/.config/yazi/theme.toml
 **/__pycache__/
 nixos/hosts/*/hardware-configuration.nix
 nixos/result
+# плагины из отдельного репозитория (~/plugins/install.sh ставит их ссылками сюда)
+home/.config/quickshell/plugins/*
+!home/.config/quickshell/plugins/hello-world/
+!home/.config/quickshell/plugins/.template/
+!home/.config/quickshell/plugins/README.md

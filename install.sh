@@ -262,7 +262,8 @@ fi
 # (проверяем именно экземпляр с этим конфигом: `qs list`, а не любой процесс qs)
 if [[ -n "${WAYLAND_DISPLAY:-}" && -z "${REXILONE_UPDATER:-}" ]] && qs list 2>/dev/null | grep -q '^Instance' && (( ! DRY )); then
     info "Перезапускаю шелл…"
-    setsid -f sh -c 'sleep 2; qs kill >/dev/null 2>&1; sleep 0.7; qs list 2>/dev/null | grep -q "^Instance" || niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs' >/dev/null 2>&1
+    # все экземпляры (после падения Quickshell перезапускается под именем quickshell), потом один новый
+    setsid -f sh -c 'sleep 1.5; sleep 0.5; pkill -x qs; pkill -x quickshell; for i in 1 2 3 4 5 6 7 8 9 10; do pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null || break; sleep 0.3; done; pkill -9 -x qs; pkill -9 -x quickshell; niri msg action spawn -- qs >/dev/null 2>&1 || setsid -f qs' >/dev/null 2>&1
     SHELL_RESTART=1
 fi
 
