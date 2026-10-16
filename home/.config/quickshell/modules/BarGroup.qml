@@ -15,10 +15,8 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 3
-        anchors.bottomMargin: 3
         visible: root.pill
-        radius: height / 2
+        radius: Theme.radius
         color: Theme.panel
         border.width: 1
         border.color: Theme.surfaceHi2

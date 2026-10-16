@@ -18,7 +18,7 @@ PanelWindow {
 
     // стиль: flat — сплошной, floating — плавающий со скруглением, pills — группы на плашках
     readonly property string style: Settings.barStyle
-    readonly property int gap: style === "flat" ? 0 : 6
+    readonly property int gap: style === "flat" ? 0 : style === "pills" ? 4 : 6
 
     Connections {
         target: Ui
@@ -70,15 +70,15 @@ PanelWindow {
         id: blurReg
         item: bar.style === "pills" ? null : barBg
         radius: barBg.radius
-        Region { item: bar.style === "pills" && gLaunch.visible ? gLaunch : null; radius: gLaunch.height / 2 }
-        Region { item: bar.style === "pills" && gWs.visible ? gWs : null; radius: gWs.height / 2 }
-        Region { item: bar.style === "pills" && gWin.visible ? gWin : null; radius: gWin.height / 2 }
-        Region { item: bar.style === "pills" && gMedia.visible ? gMedia : null; radius: gMedia.height / 2 }
-        Region { item: bar.style === "pills" && gClock.visible ? gClock : null; radius: gClock.height / 2 }
-        Region { item: bar.style === "pills" && gInd.visible ? gInd : null; radius: gInd.height / 2 }
-        Region { item: bar.style === "pills" && gTray.visible ? gTray : null; radius: gTray.height / 2 }
-        Region { item: bar.style === "pills" && gPlug.visible ? gPlug : null; radius: gPlug.height / 2 }
-        Region { item: bar.style === "pills" && gStatus.visible ? gStatus : null; radius: gStatus.height / 2 }
+        Region { item: bar.style === "pills" && gLaunch.visible ? gLaunch : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gWs.visible ? gWs : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gWin.visible ? gWin : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gMedia.visible ? gMedia : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gClock.visible ? gClock : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gInd.visible ? gInd : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gTray.visible ? gTray : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gPlug.visible ? gPlug : null; radius: Theme.radius }
+        Region { item: bar.style === "pills" && gStatus.visible ? gStatus : null; radius: Theme.radius }
     }
 
     // фон бара
@@ -99,8 +99,8 @@ PanelWindow {
         id: inner
         anchors.fill: parent
         anchors.topMargin: bar.gap
-        anchors.leftMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 8 : 0
-        anchors.rightMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 8 : 0
+        anchors.leftMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 4 : 0
+        anchors.rightMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 4 : 0
 
         // ── слева
         Row {

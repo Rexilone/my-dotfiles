@@ -7,8 +7,8 @@ Item {
 
     property bool main: false
     readonly property string style: G.barStyle
-    readonly property int gap: style === "flat" ? 0 : 6
-    readonly property int side: style === "floating" ? 10 : style === "pills" ? 8 : 0
+    readonly property int gap: style === "flat" ? 0 : style === "pills" ? 4 : 6
+    readonly property int side: style === "floating" ? 10 : style === "pills" ? 4 : 0
     property string armed: ""            // действие питания, ждущее второго нажатия
 
     implicitHeight: G.barHeight + gap
@@ -138,10 +138,8 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            anchors.topMargin: 2
-            anchors.bottomMargin: 2
             visible: pill.pills
-            radius: height / 2
+            radius: G.radius
             color: G.panel
             border.width: 1
             border.color: G.surfaceHi2
