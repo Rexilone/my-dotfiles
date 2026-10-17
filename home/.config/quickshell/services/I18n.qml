@@ -319,7 +319,8 @@ Singleton {
         // ── Система
         "Monitors": "Мониторы", "Devices and apps": "Устройства и приложения", "Keyboard, mouse, tablet, gamepads": "Клавиатура, мышь, планшет, геймпады",
         "About this PC": "Об этом компьютере", "Device name, account and specifications": "Имя устройства, учётная запись и характеристики",
-        "Reload the bar and all menus": "Перезагрузить бар и все меню", "Open niri config": "Открыть конфиг niri",
+        "Reload the bar and all menus": "Перезагрузить бар и все меню",
+        "Shell engine": "Движок шелла", "amane — the same shell in Rust (beta): bar, menus, notifications. Super+Alt+S switches back": "amane — тот же шелл на Rust (бета): бар, меню, уведомления. Назад — Super+Alt+S", "Open niri config": "Открыть конфиг niri",
 
         // ── Время и язык
         "Time zone, clock format and system language": "Часовой пояс, формат часов и язык системы",

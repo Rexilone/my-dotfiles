@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# Rexilone Shell: какой шелл запускать — Quickshell (~/.config/quickshell) или amane (~/.config/amane).
+#
+#   rexilone-shell                      какой выбран и запущен
+#   rexilone-shell use quickshell|amane выбрать и сразу переключить (в сеансе niri)
+#   rexilone-shell start                запустить выбранный (spawn-at-startup в niri)
+#   rexilone-shell stop | restart
+#   rexilone-shell build                собрать amane (amane compile)
+#   rexilone-shell ipc <цель> <функция> [аргументы…]   вызов в запущенный шелл (бинды niri)
+#
+# Если amane не установлен или не собирается — запускается Quickshell, чтобы не остаться без шелла.
+set -u
+# amane ставится через cargo — niri запускает бинды без ~/.cargo/bin в PATH
+[[ ":$PATH:" == *":$HOME/.cargo/bin:"* ]] || PATH="$HOME/.cargo/bin:$PATH"
+
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}"
+CHOICE_FILE="$CONF/rexilone/shell"
+AMANE_DIR="$CONF/amane"
+AMANE_BIN="${XDG_CACHE_HOME:-$HOME/.cache}/amane/amane-shell"
+SHELLS="quickshell amane"
+# версия amane, с которой шелл проверен (ставится через cargo при первом переключении)
+AMANE_GIT="https://github.com/MystiaFin/amane"
+AMANE_REV="72e23ebdb6b7692e78a28d7e2662094bf0e780b1"
+
+say() { printf '%s\n' "$*"; }
+warn() {
+    printf 'rexilone-shell: %s\n' "$*" >&2
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "Rexilone Shell" "Rexilone Shell" "$*" >/dev/null 2>&1
+    return 0
+}
+
+chosen() {
+    local c=""
+    [[ -r "$CHOICE_FILE" ]] && read -r c < "$CHOICE_FILE"
+    case "$c" in amane) say amane ;; *) say quickshell ;; esac
+}
+
+save() {
+    mkdir -p "$(dirname "$CHOICE_FILE")" && printf '%s\n' "$1" > "$CHOICE_FILE"
+}
+
+qs_running() { pgrep -x qs >/dev/null 2>&1 || pgrep -x quickshell >/dev/null 2>&1; }
+amane_running() { pgrep -xf "$AMANE_BIN" >/dev/null 2>&1; }
+
+running() {
+    if amane_running; then say amane
+    elif qs_running; then say quickshell
+    else say none
+    fi
+}
+
+# процесс шелла — потомок niri, а не этого скрипта (иначе умрёт вместе с терминалом)
+detach() {
+    if [[ -n "${NIRI_SOCKET:-}" ]] && command -v niri >/dev/null 2>&1; then
+        niri msg action spawn -- "$@" >/dev/null 2>&1 && return 0
+    fi
+    setsid -f "$@" >/dev/null 2>&1
+}
+
+wait_gone() {
+    local i
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        "$@" || return 0
+        sleep 0.3
+    done
+    return 1
+}
+
+stop_qs() {
+    qs_running || return 0
+    pkill -x qs; pkill -x quickshell
+    wait_gone qs_running || { pkill -9 -x qs; pkill -9 -x quickshell; }
+    return 0
+}
+
+stop_amane() {
+    amane_running || return 0
+    pkill -xf "$AMANE_BIN"
+    wait_gone amane_running || pkill -9 -xf "$AMANE_BIN"
+    return 0
+}
+
+stop_all() { stop_amane; stop_qs; }
+
+install_amane() {
+    command -v cargo >/dev/null 2>&1 || { warn "для amane нужен Rust: sudo pacman -S rust"; return 1; }
+    say "Ставлю amane…"
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "Rexilone Shell" "Rexilone Shell" "Ставлю amane (несколько минут)…" >/dev/null 2>&1
+    cargo install --locked --git "$AMANE_GIT" --rev "$AMANE_REV" amane-cli || { warn "amane не установился — смотрите: rexilone-shell build"; return 1; }
+}
+
+# собрать amane, если сборки нет или исходники новее
+build_amane() {
+    command -v amane >/dev/null 2>&1 || install_amane || return 1
+    [[ -f "$AMANE_DIR/src/main.rs" ]] || { warn "нет $AMANE_DIR/src/main.rs"; return 1; }
+    if [[ "${1:-}" != force && -x "$AMANE_BIN" ]] && [[ -z "$(find "$AMANE_DIR/src" "$AMANE_DIR/data" -newer "$AMANE_BIN" -print -quit 2>/dev/null)" ]]; then
+        return 0
+    fi
+    say "Собираю amane…"
+    # из бинда терминала нет — пусть будет видно, что идёт сборка (первая — пара минут)
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "Rexilone Shell" "Rexilone Shell" "Собираю amane…" >/dev/null 2>&1
+    AMANE_CONFIG="$AMANE_DIR" amane compile || { warn "amane не собрался — смотрите: rexilone-shell build"; return 1; }
+}
+
+start_qs() { qs_running || detach qs; }
+
+start_amane() {
+    build_amane || return 1
+    amane_running && return 0
+    detach "$AMANE_BIN"
+    # упал сразу после запуска — не оставлять без шелла
+    sleep 2
+    amane_running
+}
+
+start() {
+    if [[ "$(chosen)" == amane ]]; then
+        start_amane && return 0
+        warn "amane не запустился — запускаю Quickshell"
+    fi
+    start_qs
+}
+
+use() {
+    local want="${1:-}"
+    [[ " $SHELLS " == *" $want "* ]] || { say "использование: rexilone-shell use quickshell|amane" >&2; return 2; }
+    # сначала собрать: если amane не собирается, текущий шелл остаётся на месте
+    if [[ "$want" == amane ]]; then
+        build_amane || return 1
+    fi
+    save "$want"
+    stop_all
+    start
+    say "шелл: $want"
+}
+
+ipc() {
+    (( $# >= 1 )) || { say "использование: rexilone-shell ipc <цель> <функция> [аргументы…]" >&2; return 2; }
+    if amane_running; then
+        local out
+        out="$(amane ipc call "$@" 2>&1)"
+        if [[ "$out" == "no handler named"* ]]; then
+            warn "в amane пока нет «$1» — откройте это в Quickshell (rexilone-shell use quickshell)"
+            return 1
+        fi
+        [[ -n "$out" ]] && say "$out"
+    else
+        qs ipc call "$@"
+    fi
+}
+
+case "${1:-status}" in
+    status)
+        say "выбран: $(chosen)"
+        say "запущен: $(running)"
+        ;;
+    current) chosen ;;
+    running) running ;;
+    use) shift; use "$@" ;;
+    toggle) if [[ "$(chosen)" == amane ]]; then use quickshell; else use amane; fi ;;
+    start) start ;;
+    stop) stop_all ;;
+    restart) stop_all; start ;;
+    build) build_amane force ;;
+    ipc) shift; ipc "$@" ;;
+    -h|--help|help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) say "неизвестная команда: $1 (rexilone-shell help)" >&2; exit 2 ;;
+esac

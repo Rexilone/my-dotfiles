@@ -1,5 +1,5 @@
 // перенесено в qs-settings.kdl (управляется из Настроек Quickshell, Super+I)
-/-input {
+input {
     keyboard {
         xkb {
             layout "us,ru"
@@ -56,6 +56,12 @@
     scale 1
     transform "normal"
     position x=0 y=0
+}
+
+/-output "Smithay Winit Unknown" {
+    mode "1680x1050@60.000"
+    scale 1.0
+    transform "normal"
 }
 
 /-output "HDMI-A-1" {
@@ -222,7 +228,8 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-spawn-at-startup "qs"
+// шелл: Quickshell или amane — какой выбран (rexilone-shell use quickshell|amane)
+spawn-sh-at-startup "$HOME/.local/bin/rexilone-shell start"
 // история буфера обмена: текст и картинки
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
@@ -330,6 +337,9 @@ window-rule {
     match app-id=r#"^org\.quickshell$"# title="^Software$"
     // окна плагинов (драйвер мыши LAMZU и т.п.)
     match app-id=r#"^org\.quickshell$"# title="^LAMZU Maya X$"
+    // то же в шелле на amane
+    match app-id=r#"^amane$"# title="^Settings$"
+    match app-id=r#"^amane$"# title="^Software$"
     open-floating true
 }
 
@@ -351,7 +361,7 @@ binds {
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: foot" { spawn "foot"; }
     Mod+B hotkey-overlay-title="Open a browser: Chromium" { spawn "chromium"; }
-    Mod+D hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "toggle"; }
+    Mod+D hotkey-overlay-title="Run an Application" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc launcher toggle"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
@@ -447,7 +457,7 @@ binds {
     Mod+Page_Down      { focus-workspace-down; }
     Mod+Page_Up        { focus-workspace-up; }
     Mod+U              { focus-workspace-down; }
-    Mod+I hotkey-overlay-title="Settings" { spawn "qs" "ipc" "call" "settings" "toggle"; }
+    Mod+I hotkey-overlay-title="Settings" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc settings toggle"; }
     // голосовой ввод (Voxtype): нажать — говорить, нажать ещё раз — текст напечатается (русский и английский)
     Mod+H hotkey-overlay-title="Voice typing" { spawn "voxtype" "record" "toggle"; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
@@ -582,15 +592,15 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     // Move the focused window between the floating and the tiling layout.
-    Alt+Z hotkey-overlay-title="Screen Recorder" { spawn "qs" "ipc" "call" "recorder" "toggle"; }
-    Mod+V hotkey-overlay-title="Clipboard" { spawn "qs" "ipc" "call" "clipboard" "toggle"; }
+    Alt+Z hotkey-overlay-title="Screen Recorder" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc recorder toggle"; }
+    Mod+V hotkey-overlay-title="Clipboard" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc clipboard toggle"; }
     Mod+Shift+V { toggle-window-floating; }
     Mod+Ctrl+V  { switch-focus-between-floating-and-tiling; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
     // rather than stacked on top of each other.
-    Mod+W hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "toggle"; }
+    Mod+W hotkey-overlay-title="Wallpapers" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc wallpaper toggle"; }
     Mod+Shift+W { toggle-column-tabbed-display; }
 
     // Actions to switch layouts.
@@ -616,8 +626,9 @@ binds {
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
 
     // The quit action will show a confirmation dialog to avoid accidental exits.
+    Mod+Alt+S hotkey-overlay-title="Switch Shell (Quickshell / amane)" { spawn-sh "$HOME/.local/bin/rexilone-shell toggle"; }
     Mod+G hotkey-overlay-title="Hide Window From Screencast" { spawn-sh "$HOME/.local/bin/niri-cast-toggle"; }
-    Mod+Shift+E hotkey-overlay-title="Power Menu" { spawn "qs" "ipc" "call" "power" "toggle"; }
+    Mod+Shift+E hotkey-overlay-title="Power Menu" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc power toggle"; }
     Ctrl+Alt+Delete { quit; }
 
     // Powers off the monitors. To turn them back on, do any input like

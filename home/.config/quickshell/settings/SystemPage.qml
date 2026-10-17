@@ -192,6 +192,20 @@ Page {
             clickable: true
             onClicked: Quickshell.execDetached(["sh", "-c", "pkill -x qs; sleep 0.3; setsid -f qs"])
         }
+        // тот же шелл на Rust (~/.config/amane); переключатель — rexilone-shell, назад — Super+Alt+S
+        SCard {
+            icon: String.fromCodePoint(0xF04E1)
+            title: "Shell engine"
+            desc: "amane — the same shell in Rust (beta): bar, menus, notifications. Super+Alt+S switches back"
+            SChoice {
+                options: [{ value: "quickshell", label: "Quickshell" }, { value: "amane", label: "amane" }]
+                current: "quickshell"
+                onPicked: v => {
+                    if (v === "amane")
+                        Quickshell.execDetached(["sh", "-c", '"$HOME/.local/bin/rexilone-shell" use amane']);
+                }
+            }
+        }
         SCard {
             icon: String.fromCodePoint(0xF0B85)
             title: "Open niri config"

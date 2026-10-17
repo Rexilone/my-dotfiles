@@ -54,6 +54,10 @@ if (( PACKAGES )); then
     (( STEAM )) && pkgs+=( $(list "$DOTS/packages/steam.txt") )
     (( PRINTERS )) && pkgs+=( $(list "$DOTS/packages/printers.txt") )
     (( WEBCAM )) && pkgs+=( $(list "$DOTS/packages/webcam.txt") )
+    # Rust через rustup уже стоит — пакет rust с ним конфликтует
+    if pacman -Qq rustup >/dev/null 2>&1; then
+        keep=(); for p in "${pkgs[@]}"; do [[ "$p" == rust ]] || keep+=( "$p" ); done; pkgs=( "${keep[@]}" )
+    fi
 
     # Rexlink раньше ставился отдельным приложением (пакет rexlink) — теперь это служба системы.
     # Без -s: его зависимости (pyside6, ffmpeg…) нужны службе и помечаются установленными явно ниже
@@ -121,7 +125,7 @@ link() {
 }
 
 link "$DOTS/home/.zshrc" "$HOME/.zshrc"
-for d in quickshell niri foot nvim yazi voxtype; do
+for d in quickshell amane niri foot nvim yazi voxtype; do
     link "$DOTS/home/.config/$d" "$HOME/.config/$d"
 done
 for f in "$DOTS"/home/.local/bin/*; do

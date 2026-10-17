@@ -1,6 +1,14 @@
 # ── основа: композитор, оболочка, порталы
 niri
 quickshell
+# amane — тот же шелл на Rust (rexilone-shell use amane): компилятор и библиотеки для сборки
+rust
+pkgconf
+vulkan-icd-loader
+wayland
+libxkbcommon
+fontconfig
+freetype2
 xwayland-satellite
 xdg-desktop-portal-gnome
 xdg-utils
@@ -8,6 +16,7 @@ polkit
 upower
 libnotify
 swaylock
+swayidle
 # ── терминал и консоль
 foot
 foot-terminfo
