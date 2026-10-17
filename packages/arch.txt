@@ -17,6 +17,11 @@ upower
 libnotify
 swaylock
 swayidle
+# amane: трей и polkit-агент (python-dbus), выбор области записи, значки магазина
+python-dbus
+python-gobject
+slurp
+libjxl
 # ── терминал и консоль
 foot
 foot-terminfo

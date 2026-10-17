@@ -52,7 +52,7 @@ pub fn view(m: &Monitor) -> LayerWindow {
 
     let content = Stack::new(children![
         Row::new(children![left(&t, &ns, &m.name)]).width(Parent).height(h).justify(Start).align(Center),
-        Row::new(children![middle(&t)]).width(Parent).height(h).justify(Center).align(Center),
+        Row::new(children![middle(&t, &m.name)]).width(Parent).height(h).justify(Center).align(Center),
         Row::new(children![right(&t, &ns, &m.name)]).width(Parent).height(h).justify(End).align(Center),
     ])
     .width(Parent)
@@ -90,7 +90,7 @@ pub fn view(m: &Monitor) -> LayerWindow {
 }
 
 // группа модулей; в стиле pills — на своей плашке (BarGroup.qml)
-fn group(t: &Tk, items: Vec<Box<dyn Widget>>, spacing: f32) -> Option<Rectangle> {
+pub fn group(t: &Tk, items: Vec<Box<dyn Widget>>, spacing: f32) -> Option<Rectangle> {
     if items.is_empty() {
         return None;
     }
@@ -114,9 +114,19 @@ fn row_of(groups: Vec<Option<Rectangle>>) -> Row {
 }
 
 // текст с наведением (BarText.qml): ярче под мышью, тусклее, если «неактивен»
-fn bar_text(t: &Tk, id: &str, s: String, size: f32, active: bool, icon_like: bool) -> Rectangle {
+pub fn bar_text(t: &Tk, id: &str, s: String, size: f32, active: bool, icon_like: bool) -> Rectangle {
     let hov = ui::hovered::<BAR>(id);
     let color = if hov || active { t.p.fg } else { t.p.dim };
+    bar_text_with(t, id, s, size, active, icon_like, color)
+}
+
+// модуль своего цвета (предупреждение, запись и т. п.)
+pub fn bar_text_c(t: &Tk, id: &str, s: String, size: f32, active: bool, icon_like: bool, color: amane::Color) -> Rectangle {
+    bar_text_with(t, id, s, size, active, icon_like, color)
+}
+
+fn bar_text_with(t: &Tk, id: &str, s: String, size: f32, active: bool, icon_like: bool, color: amane::Color) -> Rectangle {
+    let hov = ui::hovered::<BAR>(id);
     let txt = Text::new(s).font(&t.font).size(size).color(color);
     let txt = if icon_like { txt.tight() } else { txt };
     let w = width_of(&txt);
@@ -145,7 +155,7 @@ fn left(t: &Tk, s: &niri::State, output: &str) -> Row {
     row_of(groups)
 }
 
-fn middle(t: &Tk) -> Row {
+fn middle(t: &Tk, output: &str) -> Row {
     let mut groups = Vec::new();
     if t.c.module_on("media", false) {
         let m = Media::read();
@@ -157,7 +167,9 @@ fn middle(t: &Tk) -> Row {
             let hov = ui::hovered::<BAR>("media:title");
             let txt = Text::new(label).font(&t.font).size(t.fs - 1.0).color(if hov || playing { t.p.fg } else { t.p.dim });
             let w = width_of(&txt).min(280.0);
+            let o = output.to_string();
             let title = ui::track::<BAR>(Rectangle::new().width(w).height(t.bar_h).align_child(Start, Center).clip().child(txt.elide()), "media:title")
+                .on_click(move |_| popups::open_dash(1, &o))
                 .on_scroll(|s| if s.y < 0.0 { Media::previous() } else { Media::next() });
             groups.push(group(t, children![play, title], 8.0));
         }
@@ -165,14 +177,31 @@ fn middle(t: &Tk) -> Row {
     let clock = Clock::read();
     let text = clock.text(&t.c.clock_format, t.c.ru());
     let open = Popups::read().open == "calendar";
-    let c = bar_text(t, "clock", text, t.fs, !open, false).on_click(|_| popups::toggle("calendar"));
-    groups.push(group(t, children![c], 14.0));
+    let o = output.to_string();
+    let c = bar_text(t, "clock", text, t.fs, !open, false).on_click(move |_| popups::open_dash(0, &o));
+    let mut g: Vec<Box<dyn Widget>> = vec![Box::new(c)];
+    // погода: иконка и температура; клик — вкладка погоды
+    if t.c.module_on("weather", false) {
+        let wt = crate::weather::Weather::read();
+        if let (true, Some(cur)) = (wt.configured(), wt.current.as_ref()) {
+            let (icon, _) = crate::weather::info(cur.code, cur.is_day);
+            let s = format!("{} {}°", ui::glyph(icon), cur.temp);
+            let o = output.to_string();
+            g.push(Box::new(bar_text(t, "weather", s, t.fs, true, false).on_click(move |_| popups::open_dash(2, &o))));
+        }
+    }
+    groups.push(group(t, g, 14.0));
     row_of(groups)
 }
 
 fn right(t: &Tk, ns: &niri::State, output: &str) -> Row {
     let mut status: Vec<Box<dyn Widget>> = Vec::new();
     let out = output.to_string();
+    let ind = indicators(t, output);
+    let phone = phone_module(t, output);
+    if let Some(p) = phone {
+        status.push(Box::new(p));
+    }
 
     if t.c.module("keyboard") && !ns.layouts.is_empty() {
         let code = niri::layout_code(ns.layout_name());
@@ -246,7 +275,116 @@ fn right(t: &Tk, ns: &niri::State, output: &str) -> Row {
         status.push(Box::new(w.on_click(move |_| popups::toggle_at("control", &o))));
     }
 
-    row_of(vec![group(t, status, 14.0)])
+    row_of(vec![group(t, ind, 10.0), crate::tray::bar_group(t, output), group(t, status, 14.0)])
+}
+
+// группа индикаторов (видна, только если в ней что-то есть): скрытые с демонстрации,
+// «не засыпать», ночной свет, запись, нагрузка, обновления
+fn indicators(t: &Tk, output: &str) -> Vec<Box<dyn Widget>> {
+    let mut v: Vec<Box<dyn Widget>> = Vec::new();
+    if t.c.module_on("castHidden", true) {
+        if let Some(w) = crate::casthide::bar_icon(t, output) {
+            v.push(Box::new(w));
+        }
+    }
+    if crate::idle::Idle::read().caffeine {
+        v.push(Box::new(bar_text_c(t, "caffeine", ui::glyph(0xF0176), t.icon, true, true, t.p.warn).on_click(|_| crate::idle::set_caffeine(false))));
+    }
+    if crate::nightlight::on() {
+        v.push(Box::new(bar_text_c(t, "nightlight", ui::glyph(0xF0335), t.icon, true, true, t.p.warn).on_click(|_| crate::nightlight::toggle())));
+    }
+    if let Some(w) = crate::recorder::bar_indicator(t) {
+        v.push(Box::new(w));
+    }
+    if t.c.module_on("stats", false) {
+        crate::sysstats::need();
+        let s = crate::sysstats::SysStats::read().clone();
+        let cpu = (s.cpu * 100.0).round() as i64;
+        let ram = if s.ram_total > 0.0 { (s.ram_used / s.ram_total * 100.0).round() as i64 } else { 0 };
+        let txt = format!("{} {cpu}%  {} {ram}%", ui::glyph(0xF061A), ui::glyph(0xF035B));
+        let c = if cpu > 90 { t.p.urgent } else if cpu > 75 { t.p.warn } else { t.p.fg };
+        let o = output.to_string();
+        v.push(Box::new(bar_text_c(t, "stats", txt, t.fs - 1.0, true, false, c).on_click(move |_| popups::open_dash(3, &o))));
+    }
+    if t.c.module_on("updates", false) {
+        let u = crate::dotfiles::PkgUpdates::read();
+        let (inst, n, checking) = (u.installed, u.list.len(), u.checking);
+        drop(u);
+        if !inst || n > 0 || checking {
+            let txt = if !inst {
+                format!("{} ?", ui::glyph(0xF06B0))
+            } else if checking && n == 0 {
+                ui::glyph(0xF06B0)
+            } else {
+                format!("{} {n}", ui::glyph(0xF06B0))
+            };
+            let w = bar_text_c(t, "updates", txt, t.fs, n > 0, false, if n > 0 { t.p.accent } else { t.p.dim }).on_click(move |b| {
+                if !inst {
+                    crate::dotfiles::pkg_install_tool()
+                } else if b == Button::Right {
+                    crate::dotfiles::pkg_refresh()
+                } else {
+                    crate::dotfiles::pkg_upgrade()
+                }
+            });
+            v.push(Box::new(w));
+        }
+    }
+    v
+}
+
+// телефон (Rexlink): заряд, уведомления, звонок; ЛКМ — меню телефона, ПКМ — найти, СКМ — Настройки
+fn phone_module(t: &Tk, output: &str) -> Option<Rectangle> {
+    use crate::rexlink::{self as rl, Rexlink};
+    if !t.c.module_on("phone", true) {
+        return None;
+    }
+    let r = Rexlink::read();
+    let online = r.online();
+    if !r.connected || !(online || t.c.module_on("phoneOffline", false)) {
+        return None;
+    }
+    let dev = r.dev();
+    let kind = dev.as_ref().map(|d| d.kind.clone()).unwrap_or_default();
+    let level = r.status.get("battery").num().map(|x| x as i64).or(dev.as_ref().map(|d| d.battery)).unwrap_or(-1);
+    let charging = r.status.get("charging").bool_or(false);
+    let ringing = r.ringing();
+    let who = Some(r.call.get("name").str_or("")).filter(|x| !x.is_empty()).unwrap_or_else(|| r.call.get("number").str_or(""));
+    let notifs = r.notifs.arr().len();
+    drop(r);
+    let text = if !online {
+        format!("{} —", ui::glyph(rl::kind_icon(&kind)))
+    } else if ringing {
+        format!("{} {}", ui::glyph(0xF03F2), if who.is_empty() { t.t("Call") } else { who })
+    } else {
+        let pct = if t.c.module_on("phonePercent", true) && level >= 0 { format!(" {level}%") } else { String::new() };
+        let n = if notifs > 0 { format!("  {} {notifs}", ui::glyph(0xF009A)) } else { String::new() };
+        format!("{} {}{pct}{n}", ui::glyph(rl::kind_icon(&kind)), ui::glyph(rl::battery_icon(level, charging)))
+    };
+    let color = if ringing {
+        t.p.warn
+    } else if level >= 0 && level <= 15 && !charging {
+        t.p.urgent
+    } else if online {
+        t.p.fg
+    } else {
+        t.p.dim
+    };
+    // мигание при входящем звонке
+    let op = if ringing {
+        amane::request_frame();
+        let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0) % 900;
+        let x = if ms < 450 { ms as f32 / 450.0 } else { (900 - ms) as f32 / 450.0 };
+        1.0 - 0.65 * x
+    } else {
+        1.0
+    };
+    let o = output.to_string();
+    Some(bar_text_c(t, "phone", text, t.fs, online, false, color).opacity(op).on_click(move |b| match b {
+        Button::Right => rl::ring(""),
+        Button::Middle => rl::show("overview"),
+        Button::Left => popups::toggle_at("phone", &o),
+    }))
 }
 
 // колесо: ±5% (тачпад даёт мелкие шаги — копим до целой строки)

@@ -421,16 +421,15 @@ fn bar_panel(t: &Tk, w: f32, raw: &Json) -> Vec<W> {
 
 // ── виджеты рабочего стола
 fn widgets_panel(t: &Tk, w: f32, raw: &Json) -> Vec<W> {
-    let editing = Prefs::flag("widgets-editing");
+    let editing = crate::desk::Desk::read().editing;
     let mut items: Vec<W> = vec![bx(Card::new(
         0xF0B92,
         if editing { "Editing — drag widgets on the desktop" } else { "Arrange widgets" },
         "Widgets float above windows while editing. Press Done to lock them in place.",
     )
     .ctrl(Btn::new(if editing { "Done" } else { "Edit layout" }).primary().build(t, "widgets-edit", || {
-        Prefs::toggle_flag("widgets-editing");
-        let on = Prefs::flag("widgets-editing");
-        crate::settings::save_key("widgetsEditing", Json::Bool(on));
+        let on = !crate::desk::Desk::read().editing;
+        crate::desk::Desk::write().editing = on;
     }))
     .build(t, w))];
     let (fonts, _) = fonts();

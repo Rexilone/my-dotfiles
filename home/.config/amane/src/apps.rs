@@ -163,6 +163,38 @@ pub fn launch_cmd(e: &Entry, exec: &str) -> String {
     format!("cd {} && setsid -f {cmd} >/dev/null 2>&1", crate::niri::sh_quote(&dir))
 }
 
+// .desktop по app-id окна (как DesktopEntries.heuristicLookup)
+pub fn lookup(app_id: &str) -> Option<Entry> {
+    let l = AppList::read();
+    let a = app_id.to_lowercase();
+    let short = a.rsplit('.').next().unwrap_or(&a).to_string();
+    l.list
+        .iter()
+        .find(|e| e.id == app_id)
+        .or_else(|| l.list.iter().find(|e| e.id.to_lowercase() == a))
+        .or_else(|| l.list.iter().find(|e| e.icon.to_lowercase() == a))
+        .or_else(|| l.list.iter().find(|e| e.id.to_lowercase().rsplit('.').next() == Some(short.as_str())))
+        .or_else(|| l.list.iter().find(|e| e.name.to_lowercase() == a))
+        .cloned()
+}
+
+// файл значка: путь как есть, иначе из темы (через список amane) или по имени
+pub fn icon_file(icon: &str) -> Option<PathBuf> {
+    if icon.is_empty() {
+        return None;
+    }
+    if icon.starts_with('/') {
+        return Some(PathBuf::from(icon));
+    }
+    let themed = amane::Apps::read().list().iter().find(|a| a.icon() == Some(icon)).and_then(|a| a.icon_path().map(|p| p.to_path_buf()));
+    themed.or_else(|| crate::icons::resolve(icon))
+}
+
+// значок окна по app-id
+pub fn icon_for(app_id: &str) -> Option<PathBuf> {
+    lookup(app_id).and_then(|e| icon_file(&e.icon)).or_else(|| crate::icons::resolve(app_id)).or_else(|| crate::icons::resolve("application-x-executable"))
+}
+
 pub struct AppList {
     pub list: Vec<Entry>,
 }

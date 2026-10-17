@@ -4,7 +4,7 @@
 use std::time::Duration;
 
 use amane::{
-    Animation, Center, Color, Column, Full, Key, Keyboard, Layer, LayerWindow, Parent, Rectangle, Row, Service, Widget,
+    Animation, Center, Color, Column, End, Full, Key, Keyboard, Layer, LayerWindow, Parent, Rectangle, Row, Service, Widget,
     Zone, children,
 };
 
@@ -210,12 +210,12 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
     }
     let row = Row::new(buttons).gap(10.0);
     let (rw, _) = ui::size_of(&row);
-    let head = Rectangle::new().width(rw).height(t.fs + 8.0).align_child(Center, Center).child(ui::text(
+    let head = Rectangle::new().width(rw).height(crate::prefs::w::line_h(t.fs) + 4.0).align_child(Center, End).child(ui::text(
         &t,
         format!("{}  {} {}", ui::glyph(0xF0954), t.tr("up", "работает"), format_uptime(up, t.c.ru())),
         t.p.dim,
     ));
-    let content = Column::new(children![ui::spacer(1.0, 4.0), head, row]).gap(12.0);
+    let content = Column::new(children![head, row]).gap(12.0);
     let (cw, ch) = ui::size_of(&content);
     let card = Rectangle::new()
         .width(cw + 32.0)

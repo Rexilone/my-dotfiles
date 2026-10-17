@@ -340,19 +340,19 @@ fn common(t: &Tk, w: f32, items: &mut Vec<W>) {
 fn tile(t: &Tk, w: f32, icon: u32, value: &str, label: &str, progress: f32, tint: amane::Color, click: Option<&'static str>) -> Rectangle {
     let id = format!("ph-tile:{label}");
     let h = click.is_some() && w::hov(&id);
-    let mut layers: Vec<W> = vec![bx(Rectangle::new().width(w).height(84.0).padding(14.0).child(
+    let mut layers: Vec<W> = vec![bx(Rectangle::new().width(w).height(96.0).padding(14.0).child(
         Column::new(children![
-            ui::icon(t, icon, t.icon + 2.0, tint),
-            w::gap(12.0),
+            Rectangle::new().width(28.0).height(28.0).radius(14.0).fill(alpha(tint, 0.14)).align_child(Center, Center).child(ui::icon(t, icon, t.icon, tint)),
+            w::gap(4.0),
             w::line(t, value, t.fs + 1.0, t.p.fg, w - 28.0, true),
             w::line(t, label, t.fs - 3.0, t.p.dim, w - 28.0, false)
         ])
         .gap(2.0),
     ))];
     if progress >= 0.0 {
-        layers.push(bx(Rectangle::new().width(w).height(84.0).align_child(Start, End).padding(1.0).child(Rectangle::new().width((w - 2.0) * progress.clamp(0.0, 1.0)).height(3.0).radius(2.0).fill(tint))));
+        layers.push(bx(Rectangle::new().width(w).height(96.0).align_child(Start, End).padding(1.0).child(Rectangle::new().width((w - 2.0) * progress.clamp(0.0, 1.0)).height(3.0).radius(2.0).fill(tint))));
     }
-    let r = Rectangle::new().width(w).height(84.0).radius(10.0).fill(if h { t.p.surface_hi2 } else { t.p.surface_hi }).child(Stack::new(layers));
+    let r = Rectangle::new().width(w).height(96.0).radius(12.0).fill(if h { t.p.surface_hi } else { t.p.surface }).clip().child(Stack::new(layers));
     match click {
         Some(k) => w::clickable(r, &id, w::act(move || set_tab(PAGE, k))),
         None => r,
@@ -389,29 +389,106 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
             .build(t, w)));
     }
 
-    // ── устройство: имя, адрес, состояние
+    // ── устройство: рисунок телефона с зарядом, имя и состояние, быстрые действия
     if let Some(d) = &me {
-        let iw = w - 40.0;
-        let mut hero: Vec<W> = Vec::new();
-        let sub = if online {
-            [d.model.clone(), mraw.get("address").str_or(""), t.t("secure connection")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join("   ·   ")
-        } else {
-            t.t("Offline — connects by itself once it's on the same network")
-        };
-        let find_w = if online { 90.0 } else { 0.0 };
-        let mut head: Vec<W> = vec![
-            bx(Rectangle::new().width(52.0).height(52.0).radius(14.0).fill(t.p.surface_hi).align_child(Center, Center).child(ui::icon(t, rl::kind_icon(&d.kind), 28.0, if online { t.p.accent } else { t.p.dim }))),
-            bx(Column::new(children![w::line(t, &d.name, t.fs + 5.0, t.p.fg, iw - 52.0 - 32.0 - find_w, true), w::line(t, &sub, t.fs - 2.0, t.p.dim, iw - 52.0 - 32.0 - find_w, false)]).gap(2.0)),
-        ];
-        if online {
-            let id = d.id.clone();
-            head.push(bx(Btn::new("Find").icon(0xF08D3).build(t, "ph-find", move || rl::ring(&id))));
+        let iw = w - 48.0;
+        let lvl = s.get("battery").num().map(|x| x as i64).unwrap_or(d.battery);
+        let charging = s.get("charging").bool_or(false);
+        let low = lvl >= 0 && lvl <= 15 && !charging;
+        let tint = if !online { t.p.dim } else if low { t.p.urgent } else { t.p.accent };
+        // телефон: корпус, «чёлка», экран с зарядом
+        let (pw, ph) = if d.kind == "tablet" { (150.0, 108.0) } else if d.kind == "watch" { (92.0, 104.0) } else { (88.0, 168.0) };
+        let fill_h = (ph - 22.0) * (lvl.max(0) as f32 / 100.0);
+        let screen = Rectangle::new().width(pw - 12.0).height(ph - 12.0).radius(13.0).fill(t.p.surface_hi).clip().child(Stack::new(children![
+            Rectangle::new().width(pw - 12.0).height(ph - 12.0).align_child(Start, End).child(Rectangle::new().width(pw - 12.0).height(fill_h).fill(alpha(tint, 0.18))),
+            Rectangle::new().width(pw - 12.0).height(ph - 12.0).align_child(Center, Center).child(
+                Column::new(children![
+                    ui::icon(t, if charging { 0xF0084 } else { rl::battery_icon(lvl, charging) }, t.icon + 4.0, tint),
+                    ui::bold(t, if lvl >= 0 && online { format!("{lvl}%") } else { "—".into() }, t.p.fg).size(t.fs + 6.0)
+                ])
+                .gap(2.0)
+                .align(Center)
+            )
+        ]));
+        let mut body: Vec<W> = vec![bx(screen)];
+        if d.kind != "tablet" && d.kind != "watch" {
+            body.push(bx(Rectangle::new().width(pw).height(ph).align_child(Center, Start).padding(Padding { top: 10.0, right: 0.0, bottom: 0.0, left: 0.0 }).child(Rectangle::new().width(22.0).height(5.0).radius(3.0).fill(t.p.surface_hi2))));
         }
-        hero.push(bx(Row::new(head).gap(16.0).height(52.0).align(Center)));
+        let phone = Rectangle::new().width(pw).height(ph).radius(18.0).fill(t.p.bg).border(2.0, if online { tint } else { t.p.surface_hi2 }).align_child(Center, Center).child(Stack::new(body));
+
+        let tw = iw - pw - 24.0;
+        let chip = |icon: u32, text: String, c: amane::Color| -> W {
+            let l = Row::new(children![ui::icon(t, icon, t.fs - 1.0, c), ui::text(t, text, c).size(t.fs - 2.0)]).gap(6.0).align(Center);
+            let (lw, _) = w::wh(&l);
+            bx(Rectangle::new().width(lw + 18.0).height(24.0).radius(12.0).fill(alpha(c, 0.12)).align_child(Center, Center).child(l))
+        };
+        let mut chips: Vec<W> = vec![chip(0xF0765, t.t(if online { "connected" } else { "offline" }), if online { t.p.accent } else { t.p.dim })];
         if online {
-            // плитки состояния
-            let lvl = s.get("battery").num_or(0.0) as i64;
-            let charging = s.get("charging").bool_or(false);
+            chips.push(chip(0xF033E, t.t("secure connection"), t.p.muted));
+            let addr = mraw.get("address").str_or("");
+            if !addr.is_empty() {
+                chips.push(chip(0xF0318, addr, t.p.muted));
+            }
+        }
+        let mut right: Vec<W> = vec![
+            bx(w::line(t, &d.name, t.fs + 8.0, t.p.fg, tw - if online { 96.0 } else { 0.0 }, true)),
+            bx(w::line(t, &[t.t(kind_name(&d.kind)), d.model.clone()].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join("  ·  "), t.fs - 1.0, t.p.dim, tw, false)),
+            bx(Row::new(chips).gap(6.0)),
+        ];
+        if !online {
+            right.push(bx(w::para(t, &t.t("Offline — connects by itself once it's on the same network"), t.fs - 2.0, t.p.dim, tw)));
+        }
+        if online {
+            // быстрые действия: плитки с иконкой
+            let n = 5.0;
+            let aw = ((tw - 8.0 * (n - 1.0)) / n).floor();
+            let qa = |id: &'static str, icon: u32, label: &str, on: bool, f: Box<dyn Fn()>| -> W {
+                let hov = w::hov(id);
+                let r = Rectangle::new()
+                    .width(aw)
+                    .height(64.0)
+                    .radius(12.0)
+                    .fill(if on { t.p.accent } else if hov { t.p.surface_hi2 } else { t.p.surface_hi })
+                    .align_child(Center, Center)
+                    .child(Column::new(children![ui::icon(t, icon, t.icon + 2.0, if on { t.p.bg } else { t.p.fg }), Rectangle::new().width(aw - 8.0).height(16.0).align_child(Center, Center).clip().child(ui::text(t, t.t(label), if on { t.p.bg } else { t.p.muted }).size(t.fs - 3.0))]).gap(5.0).align(Center));
+                bx(w::clickable(r, id, w::act(f)))
+            };
+            let (c1, c2, c3) = (d.id.clone(), d.id.clone(), d.id.clone());
+            let ringing = mraw.get("ringing").bool_or(false);
+            right.push(bx(Rectangle::new().width(tw).height(6.0)));
+            right.push(bx(Row::new(vec![
+                qa("ph-q-find", 0xF08D3, "Find", ringing, Box::new(move || rl::ring(&c1))),
+                qa("ph-q-send", 0xF0552, "Send files", false, Box::new(pick_files)),
+                qa(
+                    "ph-q-screen",
+                    0xF0379,
+                    "Screen",
+                    screen_on,
+                    Box::new(move || {
+                        set_tab(PAGE, "screen");
+                        if !screen_on {
+                            rl::screen_start(&c2);
+                        }
+                    }),
+                ),
+                qa("ph-q-cam", 0xF05A0, if camera_on { "Webcam on" } else { "Webcam" }, camera_on, Box::new(move || if camera_on { rl::camera_stop() } else { rl::camera_start(&c3) })),
+                qa("ph-q-clip", 0xF014D, "Clipboard", false, Box::new(|| rl::clipboard_pull(""))),
+            ])
+            .gap(8.0)));
+        }
+        let rc = Column::new(right).gap(6.0);
+        let (_, rh) = w::wh(&rc);
+        let hh = rh.max(ph);
+        items.push(bx(Rectangle::new()
+            .width(w)
+            .height(hh + 44.0)
+            .radius(16.0)
+            .fill(t.p.surface)
+            .padding(Padding { top: 22.0, right: 24.0, bottom: 22.0, left: 24.0 })
+            .child(Row::new(vec![bx(Rectangle::new().width(pw).height(hh).align_child(Center, Center).child(phone)), bx(Rectangle::new().width(tw).height(hh).align_child(Start, Center).child(rc))]).gap(24.0))));
+
+        if online {
+            // плашки состояния
             let blabel = if charging {
                 t.t(match s.get("plug").str().unwrap_or("") {
                     "ac" => "Charging · mains",
@@ -438,45 +515,18 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
             let op = cell.get("operator").str_or("");
             let show_cell = caps.arr().iter().any(|c| c.str() == Some("calls")) || !op.is_empty();
             let n = if show_cell { 4.0 } else { 3.0 };
-            let tw = ((iw - 8.0 * (n - 1.0)) / n).floor();
+            let sw = ((w - 8.0 * (n - 1.0)) / n).floor();
             let mut tiles: Vec<W> = vec![
-                bx(tile(t, tw, rl::battery_icon(lvl, charging), &format!("{lvl}%"), &blabel, lvl as f32 / 100.0, if lvl <= 15 && !charging { t.p.urgent } else { t.p.accent }, None)),
-                bx(tile(t, tw, nicon, &nval, &nlab, -1.0, t.p.accent, None)),
+                bx(tile(t, sw, rl::battery_icon(lvl, charging), &format!("{}%", lvl.max(0)), &blabel, lvl.max(0) as f32 / 100.0, tint, None)),
+                bx(tile(t, sw, nicon, &nval, &nlab, -1.0, t.p.accent, None)),
             ];
             if show_cell {
                 let (v, l) = if op.is_empty() { (t.t("No SIM"), t.t("Cellular")) } else { (op.clone(), format!("{} · {}/4", cell.get("gen").str_or(""), cell.get("level").num_or(0.0))) };
-                tiles.push(bx(tile(t, tw, rl::cell_icon(cell.get("level").num_or(0.0) as i64), &v, &l, -1.0, t.p.muted, None)));
+                tiles.push(bx(tile(t, sw, rl::cell_icon(cell.get("level").num_or(0.0) as i64), &v, &l, -1.0, t.p.muted, None)));
             }
-            tiles.push(bx(tile(t, tw, 0xF009A, &notifs.to_string(), &plural_n(t, notifs), -1.0, t.p.accent, Some("notifications"))));
-            hero.push(bx(Row::new(tiles).gap(8.0)));
-            // быстрые действия
-            let bw = ((iw - 18.0) / 4.0).floor();
-            let qa = |label: &str, icon: u32, id: &str, f: Box<dyn Fn()>| -> W {
-                bx(Rectangle::new().width(bw).height(36.0).align_child(Center, Center).child(Btn::new(label).icon(icon).build(t, id, f)))
-            };
-            let cur = d.id.clone();
-            let c2 = cur.clone();
-            hero.push(bx(Row::new(vec![
-                qa("Send files", 0xF0552, "ph-q-send", Box::new(pick_files)),
-                qa(
-                    "Show screen",
-                    0xF0379,
-                    "ph-q-screen",
-                    Box::new(move || {
-                        set_tab(PAGE, "screen");
-                        if !screen_on {
-                            rl::screen_start(&cur);
-                        }
-                    }),
-                ),
-                qa(if camera_on { "Stop webcam" } else { "Webcam" }, 0xF05A0, "ph-q-cam", Box::new(move || if camera_on { rl::camera_stop() } else { rl::camera_start(&c2) })),
-                qa("Get clipboard", 0xF014D, "ph-q-clip", Box::new(|| rl::clipboard_pull(""))),
-            ])
-            .gap(6.0)));
+            tiles.push(bx(tile(t, sw, 0xF009A, &notifs.to_string(), &plural_n(t, notifs), -1.0, t.p.accent, Some("notifications"))));
+            items.push(bx(Row::new(tiles).gap(8.0)));
         }
-        let col = Column::new(hero).gap(16.0);
-        let (_, hh) = w::wh(&col);
-        items.push(bx(Rectangle::new().width(w).height(hh + 36.0).radius(12.0).fill(t.p.surface).padding(Padding { top: 18.0, right: 20.0, bottom: 18.0, left: 20.0 }).child(col)));
     }
 
     // ── медиа
@@ -586,10 +636,12 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
         items.push(bx(r.child(Row::new(vec![bx(ui::icon(t, rl::kind_icon(&d.kind), t.icon + 6.0, if d.online { t.p.accent } else { t.p.dim })), mid, bx(crow)]).gap(14.0).height(64.0).align(Center))));
     }
 
-    // ── разделы
+    // ── разделы: плитки в две колонки
     items.push(bx(w::section(t, "Features", w)));
     let ringing = call.get("state").str() == Some("ringing");
     let clip_on = st.get("clipboard").bool_or(true);
+    let cw = w::width_for(2, w, 8.0);
+    let mut tiles: Vec<W> = Vec::new();
     for (key, label, icon) in SECTIONS {
         let desc = match key {
             "notifications" => if notifs > 0 { format!("{notifs} {}", plural_n(t, notifs)) } else { t.t("No notifications") },
@@ -608,8 +660,9 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
             "screen" => t.t(if screen_on { "Showing" } else { "See and control the device screen with mouse and keyboard" }),
             _ => t.t("Sync, screen quality, files folder, bar, screencast"),
         };
-        items.push(bx(Card::new(icon, label, &desc).id(&format!("ph-sec:{key}")).click(move || set_tab(PAGE, key)).build(t, w)));
+        tiles.push(bx(w::tile(t, &format!("ph-sec:{key}"), cw, icon, label, &desc, move || set_tab(PAGE, key))));
     }
+    items.push(bx(w::grid(tiles, 2, 8.0)));
 }
 
 // плеер: обложка, название, позиция, кнопки (телефон — с перемоткой, ПК — без)
@@ -1489,11 +1542,28 @@ fn screen_tab(t: &Tk, w: f32, h: f32, items: &mut Vec<W>) {
             (0xF0493, "quick"),
             (0xF033E, "lock"),
             (0xF0104, "screenshot"),
+            // Ctrl+V: вставить на устройстве текст из буфера компьютера
+            (0xF0192, "paste"),
         ];
         let btns: Vec<W> = keys.into_iter().map(|(i, k): (u32, &'static str)| bx(Btn::new("").icon(i).build(t, &format!("scr-k:{k}"), move || rl::key(k)))).collect();
         row.push(bx(Rectangle::new().width(58.0).height(bh).radius(12.0).fill(t.p.surface).padding(Padding { top: 12.0, right: 0.0, bottom: 0.0, left: 0.0 }).align_child(Center, Start).child(Column::new(btns).gap(6.0).align(Center))));
     }
     items.push(bx(Row::new(row).gap(10.0)));
+}
+
+// несколько карточек одним блоком: общий фон, тонкие разделители
+fn group(t: &Tk, w: f32, cards: Vec<W>) -> Rectangle {
+    let mut col: Vec<W> = Vec::new();
+    let n = cards.len();
+    for (i, c) in cards.into_iter().enumerate() {
+        col.push(c);
+        if i + 1 < n {
+            col.push(bx(Rectangle::new().width(w).height(1.0).padding(Padding { top: 0.0, right: 18.0, bottom: 0.0, left: 56.0 }).child(Rectangle::new().width(w - 74.0).height(1.0).fill(t.p.surface_hi))));
+        }
+    }
+    let c = Column::new(col);
+    let (_, h) = w::wh(&c);
+    Rectangle::new().width(w).height(h).radius(14.0).fill(t.p.surface).clip().child(c)
 }
 
 // ═════════ настройки Rexlink
@@ -1503,37 +1573,40 @@ fn options_tab(t: &Tk, w: f32, items: &mut Vec<W>) {
     let connected = r.connected;
     let autostart = r.autostart;
     let apk = r.apk.get("versionName").str_or("");
+    let mut g: Vec<W> = Vec::new();
     drop(r);
     let tg = |key: &'static str, icon: u32, title: &str, desc: &str, def: bool| bx(Card::new(icon, title, desc).id(&format!("rl:{key}")).ctrl(sw_rl(t, &format!("rl-{key}"), key, def)).build(t, w));
     let shell = |key: &'static str, icon: u32, title: &str, desc: &str, def: bool| bx(Card::new(icon, title, desc).id(&format!("sh:{key}")).ctrl(sw_shell(t, key, def)).build(t, w));
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "What to sync", w)));
-    items.push(tg("notifications", 0xF009A, "Phone notifications", "Get notifications from the device", true));
-    items.push(tg("mirrorToDesktop", 0xF0379, "Show them on the desktop", "As regular pop-up notifications, with actions and quick reply", true));
-    items.push(tg("calls", 0xF03F2, "Calls", "Notifications about incoming and missed calls", true));
-    items.push(tg("sms", 0xF0369, "New SMS", "Notify about incoming messages", true));
+    g.push(tg("notifications", 0xF009A, "Phone notifications", "Get notifications from the device", true));
+    g.push(tg("mirrorToDesktop", 0xF0379, "Show them on the desktop", "As regular pop-up notifications, with actions and quick reply", true));
+    g.push(tg("calls", 0xF03F2, "Calls", "Notifications about incoming and missed calls", true));
+    g.push(tg("sms", 0xF0369, "New SMS", "Notify about incoming messages", true));
     let wl = st.get("wlClipboard").bool() == Some(false);
-    items.push(tg("clipboard", 0xF014D, "Shared clipboard", if wl { "Needs the wl-clipboard package" } else { "Text and images both ways" }, true));
-    items.push(tg("media", 0xF075A, "Device media", "Control what plays on the device", true));
+    g.push(tg("clipboard", 0xF014D, "Shared clipboard", if wl { "Needs the wl-clipboard package" } else { "Text and images both ways" }, true));
+    g.push(tg("media", 0xF075A, "Device media", "Control what plays on the device", true));
     let pctl = st.get("playerctl").bool() == Some(false);
-    items.push(tg("pcMedia", 0xF0379, "PC player on the device", if pctl { "Needs the playerctl package" } else { "Control the computer's music from the phone's notification shade (MPRIS)" }, true));
+    g.push(tg("pcMedia", 0xF0379, "PC player on the device", if pctl { "Needs the playerctl package" } else { "Control the computer's music from the phone's notification shade (MPRIS)" }, true));
 
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "Device screen", w)));
     let scr = st.get("screen").clone();
     let adb_ok = st.get("adb").bool_or(false) && st.get("scrcpy").bool_or(false);
-    items.push(bx(Card::new(0xF00E4, "Capture over ADB", if adb_ok { "Like scrcpy, no prompt on the device — when it's on USB or wireless debugging. Otherwise Android asks “Start”" } else { "Needs the android-tools and scrcpy packages" })
+    g.push(bx(Card::new(0xF00E4, "Capture over ADB", if adb_ok { "Like scrcpy, no prompt on the device — when it's on USB or wireless debugging. Otherwise Android asks “Start”" } else { "Needs the android-tools and scrcpy packages" })
         .ctrl(w::switch(t, "rl-scr-adb", scr.get("adb").bool() != Some(false), |v| rl::set("screen", obj(&[("adb", Json::Bool(v))]))))
         .build(t, w)));
-    items.push(bx(Card::new(0xF05A8, "Keep the device screen on while showing", "The device doesn't sleep or lock while its screen is shown here")
+    g.push(bx(Card::new(0xF05A8, "Keep the device screen on while showing", "The device doesn't sleep or lock while its screen is shown here")
         .ctrl(w::switch(t, "rl-scr-awake", scr.get("keepAwake").bool() != Some(false), |v| rl::set("screen", obj(&[("keepAwake", Json::Bool(v))]))))
         .build(t, w)));
-    items.push(bx(Card::new(0xF0379, "Maximum size", "Long side of the picture, in pixels")
+    g.push(bx(Card::new(0xF0379, "Maximum size", "Long side of the picture, in pixels")
         .id("rl-maxsize")
         .ctrl(w::choice(t, "rl-scr-max", &[("960", "960"), ("1280", "1280"), ("1600", "1600"), ("1920", "1920")], &format!("{}", scr.get("maxSize").num_or(1280.0) as i64), |v| {
             rl::set("screen", obj(&[("maxSize", Json::Num(v.parse().unwrap_or(1280.0)))]))
         }))
         .build(t, w)));
     let ru = t.c.ru();
-    items.push(bx(Card::new(0xF040A, "Bitrate", "")
+    g.push(bx(Card::new(0xF040A, "Bitrate", "")
         .ctrl(w::choice(
             t,
             "rl-scr-br",
@@ -1543,6 +1616,7 @@ fn options_tab(t: &Tk, w: f32, items: &mut Vec<W>) {
         ))
         .build(t, w)));
 
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "Devices", w)));
     let desc = if apk.is_empty() {
         t.t("rexlink.apk not found next to the service")
@@ -1554,31 +1628,37 @@ fn options_tab(t: &Tk, w: f32, items: &mut Vec<W>) {
         ctrl.push(bx(Btn::new("Show file").icon(FOLDER).build(t, "rl-apk", show_apk)));
     }
     ctrl.push(bx(w::switch(t, "rl-autoupd", st.get("autoUpdateDevices").bool() != Some(false), |v| rl::set("autoUpdateDevices", Json::Bool(v)))));
-    items.push(bx(Card::new(0xF01DA, "Update the app on devices", &desc).ctrl(Row::new(ctrl).gap(8.0).align(Center)).build(t, w)));
+    g.push(bx(Card::new(0xF01DA, "Update the app on devices", &desc).ctrl(Row::new(ctrl).gap(8.0).align(Center)).build(t, w)));
 
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "In the shell", w)));
-    items.push(shell("phone", 0xF011C, "Phone in the bar", "Battery and notifications; click for the phone menu, right-click to find it", true));
-    items.push(shell("phonePercent", 0xF0079, "Battery percent", "Show the number next to the battery icon", true));
-    items.push(shell("phoneOffline", 0xF0318, "Show when offline", "Keep the icon in the bar when the phone isn't connected", false));
-    items.push(shell("phoneCalls", 0xF03F2, "Incoming call card", "Answer or decline calls from the desktop", true));
+    g.push(shell("phone", 0xF011C, "Phone in the bar", "Battery and notifications; click for the phone menu, right-click to find it", true));
+    g.push(shell("phonePercent", 0xF0079, "Battery percent", "Show the number next to the battery icon", true));
+    g.push(shell("phoneOffline", 0xF0318, "Show when offline", "Keep the icon in the bar when the phone isn't connected", false));
+    g.push(shell("phoneCalls", 0xF03F2, "Incoming call card", "Answer or decline calls from the desktop", true));
 
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "Screen sharing", w)));
-    items.push(shell("phoneCastHideCalls", 0xF03F2, "Hide calls from screencast", "Viewers see an empty spot instead of the incoming call card. You still see it", true));
-    items.push(shell("phoneCastHideNotifs", 0xF0209, "Hide phone notifications from screencast", "Phone notifications and the phone menu in the bar are blacked out for viewers", true));
+    g.push(shell("phoneCastHideCalls", 0xF03F2, "Hide calls from screencast", "Viewers see an empty spot instead of the incoming call card. You still see it", true));
+    g.push(shell("phoneCastHideNotifs", 0xF0209, "Hide phone notifications from screencast", "Phone notifications and the phone menu in the bar are blacked out for viewers", true));
 
+    if !g.is_empty() { items.push(bx(group(t, w, std::mem::take(&mut g)))); }
     items.push(bx(w::section(t, "Service", w)));
     let ips: Vec<String> = st.get("ips").arr().iter().filter_map(|x| x.str().map(String::from)).collect();
     let desc = if connected { format!("{} «{}»   ·   {}   ·   {} 47820", t.t("Computer"), st.get("name").str_or(""), ips.join(", "), t.t("port")) } else { "rexlink.service".into() };
-    items.push(bx(Card::new(0xF0493, if connected { "Rexlink service is running" } else { "Rexlink service is not running" }, &desc)
+    g.push(bx(Card::new(0xF0493, if connected { "Rexlink service is running" } else { "Rexlink service is not running" }, &desc)
         .ctrl(Btn::new(if connected { "Restart" } else { "Start" }).primary_if(!connected).build(t, "rl-svc", move || if connected { rl::restart() } else { rl::start() }))
         .build(t, w)));
-    items.push(bx(Card::new(0xF0412, "Start with the system", "Runs the service after login (rexlink.service)").ctrl(w::switch(t, "rl-auto", autostart, rl::set_autostart)).build(t, w)));
+    g.push(bx(Card::new(0xF0412, "Start with the system", "Runs the service after login (rexlink.service)").ctrl(w::switch(t, "rl-auto", autostart, rl::set_autostart)).build(t, w)));
     if connected {
-        items.push(bx(Card::new(0xF0498, "Certificate fingerprint", &st.get("fingerprint").str_or("")).build(t, w)));
+        g.push(bx(Card::new(0xF0498, "Certificate fingerprint", &st.get("fingerprint").str_or("")).build(t, w)));
         let comps = [("ffmpeg", "ffmpeg"), ("wl-clipboard", "wlClipboard"), ("playerctl", "playerctl"), ("adb", "adb"), ("scrcpy", "scrcpy")];
         let mut parts: Vec<String> = comps.iter().map(|(n, k)| format!("{n} {}", if st.get(k).bool_or(false) { "✓" } else { "✗" })).collect();
         parts.push(format!("v4l2loopback {}", if st.get("webcamResolved").str_or("").is_empty() { "✗" } else { "✓" }));
-        items.push(bx(Card::new(0xF02FD, "Components", &parts.join("   ·   ")).build(t, w)));
+        g.push(bx(Card::new(0xF02FD, "Components", &parts.join("   ·   ")).build(t, w)));
+    }
+    if !g.is_empty() {
+        items.push(bx(group(t, w, g)));
     }
 }
 

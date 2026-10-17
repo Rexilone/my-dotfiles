@@ -38,7 +38,23 @@ pub fn level(target: &str, sink: bool) -> f32 {
     wanted().lock().unwrap().insert(target.to_string(), (sink, Instant::now()));
     // кадры, пока идёт уровень
     amane::request_frame();
-    Meter::read().levels.get(target).copied().unwrap_or(0.0)
+    let goal = Meter::read().levels.get(target).copied().unwrap_or(0.0);
+    ease(target, goal)
+}
+
+// показ плавно догоняет уровень (как Behavior on width, 70 мс в Quickshell)
+fn ease(target: &str, goal: f32) -> f32 {
+    static SHOWN: OnceLock<Mutex<HashMap<String, (f32, Instant)>>> = OnceLock::new();
+    let mut m = SHOWN.get_or_init(|| Mutex::new(HashMap::new())).lock().unwrap();
+    let e = m.entry(target.to_string()).or_insert((goal, Instant::now()));
+    let dt = e.1.elapsed().as_secs_f32();
+    e.0 = approach(e.0, goal, dt);
+    e.1 = Instant::now();
+    e.0
+}
+
+pub fn approach(from: f32, to: f32, dt: f32) -> f32 {
+    from + (to - from) * (1.0 - (-dt / 0.035).exp())
 }
 
 impl Service for Meter {
@@ -102,6 +118,14 @@ impl Service for Meter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn eases_toward_level() {
+        assert!((approach(0.0, 1.0, 0.0)).abs() < 1e-6);
+        let half = approach(0.0, 1.0, 0.035);
+        assert!(half > 0.6 && half < 0.66);
+        assert!((approach(0.0, 1.0, 1.0) - 1.0).abs() < 1e-3);
+    }
 
     #[test]
     fn decibel_scale() {

@@ -28,6 +28,12 @@ pub struct Popups {
     pub password: String,
     pub anim: Animation,
     pub notif_scroll: f32,
+    // окно часов: вкладка, выбранный день, выбранный плеер
+    pub dash: usize,
+    pub sel: Option<(i64, u32, u32)>,
+    pub player: usize,
+    // меню трея: какой значок
+    pub tray_key: String,
 }
 
 impl Service for Popups {
@@ -41,6 +47,10 @@ impl Service for Popups {
             password: String::new(),
             anim: crate::look::anim(0.0, 220),
             notif_scroll: 0.0,
+            dash: 0,
+            sel: None,
+            player: 0,
+            tray_key: String::new(),
         }
     }
 
@@ -67,6 +77,7 @@ pub fn toggle_at(name: &str, output: &str) {
         p.shown = name.to_string();
         p.output = output.to_string();
         p.month = 0;
+        p.sel = None;
         p.ask_ssid.clear();
         p.notif_scroll = 0.0;
         if !switching {
@@ -78,6 +89,22 @@ pub fn toggle_at(name: &str, output: &str) {
     if name == "network" {
         Network::scan();
     }
+}
+
+// окно часов сразу на нужной вкладке (часы — календарь, плеер, погода, нагрузка)
+pub fn open_dash(tab: usize, output: &str) {
+    let open = {
+        let p = Popups::read();
+        p.open == "calendar" && p.output == output && p.dash == tab
+    };
+    if open {
+        close();
+        return;
+    }
+    if Popups::read().open != "calendar" || Popups::read().output != output {
+        toggle_at("calendar", output);
+    }
+    Popups::write().dash = tab;
 }
 
 pub fn close() {
@@ -113,12 +140,19 @@ pub fn view(m: &Monitor) -> LayerWindow {
         (10.0, Box::new(ui::spacer(1.0, 1.0)))
     } else {
         match name.as_str() {
-            "calendar" => (300.0, Box::new(calendar(&t))),
+            "calendar" => (crate::dash::WIDTH, Box::new(crate::dash::view(&t))),
             "output" => (340.0, Box::new(mixer(&t, false))),
             "input" => (340.0, Box::new(mixer(&t, true))),
             "network" => (320.0, Box::new(network(&t))),
             "notifications" => (380.0, Box::new(center(&t))),
             "control" => (380.0, Box::new(control(&t))),
+            "cast" => (340.0, Box::new(crate::casthide::menu(&t))),
+            "trayBox" => {
+                let b = crate::tray::box_view(&t);
+                (ui::size_of(&b).0, Box::new(b))
+            }
+            "tray" => (300.0, Box::new(crate::tray::menu_view(&t))),
+            "phone" => (crate::phonemenu::WIDTH, Box::new(crate::phonemenu::view(&t))),
             _ => (10.0, Box::new(ui::spacer(1.0, 1.0))),
         }
     };

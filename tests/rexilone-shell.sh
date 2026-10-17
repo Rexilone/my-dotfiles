@@ -171,9 +171,9 @@ t_ipc_routes() {
     run ipc launcher toggle
     check "ipc в amane" logged "amane ipc launcher toggle"
     check "ответ amane выведен" test "$OUT" = ok
-    run ipc store toggle
+    run ipc plugins reload
     check "нет в amane: ошибка" test "$CODE" != 0
-    check "нет в amane: уведомление" logged "в amane пока нет «store»"
+    check "нет в amane: уведомление" logged "в amane пока нет «plugins»"
     teardown
 }
 

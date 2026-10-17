@@ -146,8 +146,52 @@ impl Pw {
     }
 }
 
+// громкость, которую только что задали: ползунок показывает её сразу, не дожидаясь PipeWire;
+// wpctl — по одному за раз и только с последним значением (при перетаскивании событий много)
+fn pending() -> &'static (std::sync::Mutex<std::collections::HashMap<i64, (f64, std::time::Instant, bool)>>, std::sync::Condvar) {
+    static P: std::sync::OnceLock<(std::sync::Mutex<std::collections::HashMap<i64, (f64, std::time::Instant, bool)>>, std::sync::Condvar)> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        std::thread::spawn(volume_worker);
+        (std::sync::Mutex::new(std::collections::HashMap::new()), std::sync::Condvar::new())
+    })
+}
+
+fn volume_worker() {
+    let (m, cv) = pending();
+    loop {
+        let job = {
+            let mut g = m.lock().unwrap();
+            loop {
+                if let Some((id, (v, _, sent))) = g.iter_mut().find(|(_, x)| !x.2) {
+                    *sent = true;
+                    break (*id, *v);
+                }
+                g = cv.wait(g).unwrap();
+            }
+        };
+        amane::output(&format!("wpctl set-volume {} {:.3}", job.0, job.1));
+    }
+}
+
 pub fn set_volume(id: i64, v: f64) {
-    amane::spawn(&format!("wpctl set-volume {id} {:.3}", v.clamp(0.0, 1.5)));
+    let (m, cv) = pending();
+    m.lock().unwrap().insert(id, (v.clamp(0.0, 1.5), std::time::Instant::now(), false));
+    cv.notify_one();
+    amane::request_frame();
+}
+
+// что показывать: только что заданное значение (секунду), потом — как в PipeWire
+pub fn shown_volume(id: i64, actual: f64) -> f64 {
+    let (m, _) = pending();
+    let mut g = m.lock().unwrap();
+    match g.get(&id) {
+        Some((v, at, _)) if at.elapsed() < std::time::Duration::from_millis(1000) => *v,
+        Some((_, _, true)) => {
+            g.remove(&id);
+            actual
+        }
+        _ => actual,
+    }
 }
 
 pub fn set_mute(id: i64, muted: bool) {

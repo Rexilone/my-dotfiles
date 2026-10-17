@@ -3,6 +3,18 @@
 
 mod apps;
 mod bar;
+mod store;
+mod storewin;
+mod desk;
+mod polkit;
+mod calls;
+mod tray;
+mod sysstats;
+mod recorder;
+mod phonemenu;
+mod notes;
+mod dash;
+mod casthide;
 mod boottheme;
 mod clipboard;
 mod clock;
@@ -65,6 +77,12 @@ fn theme(_: &[String]) -> String {
 }
 
 fn control(args: &[String]) -> String {
+    // «calendar 2» — окно часов сразу на вкладке (0 календарь, 1 плеер, 2 погода, 3 система)
+    if let (Some("calendar"), Some(n)) = (args.first().map(String::as_str), args.get(1).and_then(|x| x.parse().ok())) {
+        let out = niri::Niri::read().s.focused_output().to_string();
+        popups::open_dash(n, &out);
+        return String::from("ok");
+    }
     popups::toggle(args.first().map(String::as_str).unwrap_or("control"));
     String::from("ok")
 }
@@ -80,11 +98,17 @@ fn main() {
         drop(dotfiles::PkgUpdates::read());
         drop(boottheme::BootTheme::read());
         drop(devices::Devices::read());
+        drop(notes::Notes::read());
+        drop(store::Store::read());
+        drop(polkit::Polkit::read());
+        drop(casthide::CastHide::read());
+        drop(tray::Tray::read());
         drop(otd::Tablet::read());
     }
     let font = settings::Settings::read().c.font.clone();
     App::new()
         .font(&font)
+        .window_per_monitor(desk::view)
         .window_per_monitor(bar::view)
         .window_per_monitor(popups::view)
         .window_per_monitor(notifs::view)
@@ -93,6 +117,10 @@ fn main() {
         .window_per_monitor(clipboard::view)
         .window_per_monitor(wallpaper::view)
         .window_per_monitor(power::view)
+        .window_per_monitor(recorder::view)
+        .window_per_monitor(calls::call_view)
+        .window_per_monitor(calls::reply_view)
+        .window_per_monitor(polkit::view)
         .ipc("launcher", launcher::ipc)
         .ipc("power", power::ipc)
         .ipc("clipboard", clipboard::ipc)
@@ -103,5 +131,9 @@ fn main() {
         .ipc("settings", prefs::ipc)
         .ipc("idle", idle::ipc)
         .ipc("updates", dotfiles::ipc)
+        .ipc("recorder", recorder::ipc)
+        .ipc("cast", casthide::ipc)
+        .ipc("widgets", desk::ipc)
+        .ipc("store", storewin::ipc)
         .run();
 }

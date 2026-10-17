@@ -16,6 +16,12 @@ pub struct Idle {
 
 pub const LOCK: &str = "pgrep -x swaylock >/dev/null || swaylock -f -c 151515";
 
+pub fn set_caffeine(on: bool) {
+    if Idle::read().caffeine != on {
+        Idle::write().caffeine = on;
+    }
+}
+
 pub fn lock() {
     amane::spawn(LOCK);
 }

@@ -192,3 +192,8 @@ pub fn appear(key: &'static str, open: bool, start: fn()) {
         });
     }
 }
+
+// проверка рядом с Quickshell: фоновые службы (напоминания и т. п.) молчат
+pub fn no_services() -> bool {
+    std::env::var_os("REXILONE_NO_SERVICES").is_some()
+}

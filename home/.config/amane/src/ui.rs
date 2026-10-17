@@ -144,7 +144,7 @@ mod tests {
 }
 
 // размер виджета, если он фиксированный (Row/Column из фиксированных детей измеряются сами)
-pub fn size_of(w: &impl amane::Widget) -> (f32, f32) {
+pub fn size_of(w: &(impl amane::Widget + ?Sized)) -> (f32, f32) {
     let f = |s: amane::Size| match s {
         amane::Size::Fixed(v) => v,
         amane::Size::Parent => 0.0,

@@ -59,7 +59,8 @@ fn meter_target(n: &Node) -> (String, bool) {
 
 // строка громкости: [мьют] [ползунок] [проценты]
 pub fn volume_row<const H: u8>(t: &Tk, n: &Node, width: f32, input: bool, meters: bool) -> Row {
-    let vol_pct = (n.volume * 100.0).round() as u8;
+    let volume = pw::shown_volume(n.id, n.volume);
+    let vol_pct = (volume * 100.0).round() as u8;
     let mid = format!("mute:{}", n.id);
     let id = n.id;
     let muted = n.muted;
@@ -77,7 +78,7 @@ pub fn volume_row<const H: u8>(t: &Tk, n: &Node, width: f32, input: bool, meters
         meter::level(&target, sink)
     });
     let sw = width - 18.0 - 38.0 - 20.0;
-    let s = slider::<H>(t, &format!("vol:{}", n.id), sw, n.volume, muted, level, move |v| pw::set_volume(id, v));
+    let s = slider::<H>(t, &format!("vol:{}", n.id), sw, volume, muted, level, move |v| pw::set_volume(id, v));
     let pct = Rectangle::new().width(38.0).height(20.0).align_child(End, Center).child(ui::text(t, format!("{vol_pct}%"), if muted { t.p.dim } else { t.p.fg }));
     Row::new(children![mute, s, pct]).gap(10.0).align(Center)
 }
