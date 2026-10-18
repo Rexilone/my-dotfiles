@@ -119,6 +119,13 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
             look::go(&mut x.anim, 1.0);
         }
     });
+    // голосовой ввод (Voxtype): пока слушает или распознаёт — индикатор вместо громкости
+    let vstate = crate::voice::Voice::read().state.clone();
+    let vactive = vstate == "recording" || vstate == "transcribing";
+    let kv = look::smooth("osd:voice", if vactive && here { 1.0 } else { 0.0 }, 0.06);
+    if kv > 0.01 {
+        return voice_card(&t, &vstate, kv);
+    }
     let l = levels();
     let (level, muted, label) = match kind {
         Kind::Volume => (l.vol, l.mute, t.tr("Volume", "Громкость")),
@@ -188,6 +195,68 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
         .namespace("rexilone-osd")
         .click_through()
         .visible(open || k > 0.01)
+        .child(Rectangle::new().width(Parent).height(Parent).padding(amane::Padding { top: 30.0, right: 20.0, bottom: 24.0, left: 20.0 }).child(card))
+}
+
+fn voice_card(t: &crate::look::Tk, state: &str, k: f32) -> LayerWindow {
+    amane::request_frame();
+    let rec = state == "recording";
+    let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let w = 380.0 - 40.0;
+    let inner = w - 18.0 - 20.0 - 24.0 - 14.0;
+    let tint = if rec { t.p.rec } else { t.p.accent };
+    // запись — точка «дышит», распознавание — значок крутится
+    let period = if rec { 1600 } else { 900 };
+    let ph = (ms % period) as f32 / period as f32;
+    let pulse = 0.5 - 0.5 * (ph * std::f32::consts::TAU).cos();
+    let icon = Rectangle::new()
+        .width(24.0)
+        .height(24.0)
+        .rotate(if rec { 0.0 } else { ph * 360.0 })
+        .opacity(if rec { 0.55 + 0.45 * pulse } else { 1.0 })
+        .align_child(Center, Center)
+        .child(ui::icon(t, if rec { 0xF036C } else { 0xF0772 }, t.icon + 4.0, tint));
+    let label = if rec { t.tr("Listening…", "Слушаю…") } else { t.tr("Recognizing…", "Распознаю…") };
+    // полоска: бегущий отрезок
+    let seg = inner * 0.3;
+    let bar = Rectangle::new().width(inner).height(4.0).radius(2.0).fill(t.p.faint).clip().child(Rectangle::new().width(seg).height(4.0).radius(2.0).fill(tint).translate(ph * (inner + seg) - seg, 0.0));
+    let card = Rectangle::new()
+        .width(w)
+        .height(56.0)
+        .radius(Full)
+        .fill(t.panel)
+        .border(1.0, if rec { t.p.rec } else { t.p.surface_hi2 })
+        .shadow(Shadow::drop("#000000").opacity(0.44).blur(24.0).offset(0.0, 6.0))
+        .padding(amane::Padding { top: 0.0, right: 20.0, bottom: 0.0, left: 18.0 })
+        .opacity(k)
+        .translate(0.0, (1.0 - k) * 90.0)
+        .child(
+            Row::new(children![
+                icon,
+                Column::new(children![
+                    Row::new(children![
+                        Rectangle::new().width(inner - 70.0).height(t.fs + 2.0).align_child(Start, Center).child(ui::bold(t, label, t.p.fg).size(t.fs - 1.0)),
+                        ui::text(t, if rec { "Super+H" } else { "" }, t.p.dim).size(t.fs - 2.0)
+                    ])
+                    .width(inner)
+                    .justify(SpaceBetween)
+                    .align(Center),
+                    bar
+                ])
+                .gap(6.0)
+            ])
+            .gap(14.0)
+            .height(56.0)
+            .align(Center),
+        );
+    LayerWindow::new()
+        .width(380.0)
+        .height(110.0)
+        .anchor_vertical(Vertical::Bottom)
+        .layer(Layer::Overlay)
+        .space(Zone::Ignore)
+        .namespace("rexilone-osd")
+        .click_through()
         .child(Rectangle::new().width(Parent).height(Parent).padding(amane::Padding { top: 30.0, right: 20.0, bottom: 24.0, left: 20.0 }).child(card))
 }
 

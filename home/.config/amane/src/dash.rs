@@ -33,6 +33,13 @@ fn tile(t: &Tk, w: f32, pad: f32, body: impl Widget + 'static) -> Rectangle {
     Rectangle::new().width(w).height(h + pad * 2.0).radius(16.0).fill(t.p.surface).padding(pad).child(body)
 }
 
+// шестерёнка: закрыть меню и открыть Настройки на последней странице
+pub fn open_settings() {
+    popups::close();
+    let page = crate::prefs::Prefs::read().page;
+    crate::prefs::show(page);
+}
+
 pub fn set_tab(i: usize) {
     let mut p = Popups::write();
     p.dash = i.min(3);
@@ -74,10 +81,7 @@ pub fn view(t: &Tk) -> Column {
                 .child(Rectangle::new().width(24.0).height(24.0).rotate(if gh { 60.0 } else { 0.0 }).align_child(Center, Center).child(ui::icon(t, 0xF0493, t.icon + 1.0, if gh { t.p.fg } else { t.p.dim }))),
             "dash:gear",
         ),
-        || {
-            popups::close();
-            crate::prefs::show(crate::prefs::Prefs::read().page);
-        },
+        open_settings,
     );
     let bar = Rectangle::new()
         .width(WIDTH)

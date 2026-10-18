@@ -459,7 +459,7 @@ binds {
     Mod+U              { focus-workspace-down; }
     Mod+I hotkey-overlay-title="Settings" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc settings toggle"; }
     // голосовой ввод (Voxtype): нажать — говорить, нажать ещё раз — текст напечатается (русский и английский)
-    Mod+H hotkey-overlay-title="Voice typing" { spawn "voxtype" "record" "toggle"; }
+    Mod+H hotkey-overlay-title="Voice typing" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc voice toggle"; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
     Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
     Mod+Ctrl+U         { move-column-to-workspace-down; }

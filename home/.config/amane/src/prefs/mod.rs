@@ -31,7 +31,7 @@ const fn pg(name: &'static str, keys: &'static str, icon: u32) -> Page {
 }
 
 // порядок = номер страницы (на него ссылаются страницы и IPC), как Ui.settingsPages
-pub const PAGES: [Page; 20] = [
+pub const PAGES: [Page; 21] = [
     pg("System", "home overview", 0xF0493),
     pg("Display", "monitor screen resolution refresh hz scale rotation position vrr", 0xF0379),
     pg("Sound", "audio volume speaker microphone output input level", 0xF057E),
@@ -52,12 +52,13 @@ pub const PAGES: [Page; 20] = [
     Page { name: "Plugins", keys: "plugins developer extensions", icon: 0xF0431, dev: true, go: None },
     pg("Updates", "update upgrade version git github dotfiles packages pacman", 0xF06B0),
     pg("Boot & login", "boot limine bootloader menu login lightdm greetd greeter password screen windows dual other systems disk", 0xF0342),
+    pg("Voice typing", "voxtype voice dictation speech microphone whisper голос диктовка", 0xF036C),
 ];
 
 // группы боковой панели
 pub const NAV: [(&str, &[usize]); 5] = [
     ("", &[0]),
-    ("Hardware", &[1, 2, 10, 14]),
+    ("Hardware", &[1, 2, 20, 10, 14]),
     ("Connections", &[3, 4, 5]),
     ("Look & feel", &[7, 15]),
     ("System", &[11, 12, 13, 18, 19, 16, 17]),
@@ -165,7 +166,10 @@ pub fn toggle() {
 // rexilone-shell ipc settings toggle | open | hide | page <имя> | scheme <схема>
 pub fn ipc(args: &[String]) -> String {
     match args.first().map(String::as_str) {
-        Some("open") => show(Prefs::read().page),
+        Some("open") => {
+            let page = Prefs::read().page;
+            show(page)
+        }
         Some("hide") | Some("close") => close(),
         Some("page") => {
             let n = args.get(1).map(|s| s.to_lowercase()).unwrap_or_default();

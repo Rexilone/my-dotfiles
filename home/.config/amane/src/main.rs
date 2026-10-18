@@ -3,6 +3,7 @@
 
 mod apps;
 mod bar;
+mod voice;
 mod store;
 mod storewin;
 mod desk;
@@ -83,6 +84,10 @@ fn control(args: &[String]) -> String {
         popups::open_dash(n, &out);
         return String::from("ok");
     }
+    if args.first().map(String::as_str) == Some("dash-settings") {
+        dash::open_settings();
+        return String::from("ok");
+    }
     popups::toggle(args.first().map(String::as_str).unwrap_or("control"));
     String::from("ok")
 }
@@ -135,5 +140,6 @@ fn main() {
         .ipc("cast", casthide::ipc)
         .ipc("widgets", desk::ipc)
         .ipc("store", storewin::ipc)
+        .ipc("voice", voice::ipc)
         .run();
 }

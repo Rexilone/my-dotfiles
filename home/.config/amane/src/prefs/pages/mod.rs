@@ -16,6 +16,7 @@ mod powerpage;
 mod sound;
 mod time;
 mod updates;
+mod voicepage;
 mod system;
 
 use super::w::{self, W, bx};
@@ -78,6 +79,7 @@ pub fn build(page: usize, t: &Tk, width: f32) -> Vec<W> {
         17 => plugins::page(t, width),
         18 => updates::page(t, width),
         19 => boot::page(t, width),
+        20 => voicepage::page(t, width),
         _ => Out::new(vec![bx(w::Card::new(0xF0026, "Coming soon", "This page is being moved to amane").build(t, width))]),
     };
     let mut v: Vec<W> = vec![header(t, p.name, &out.crumb, &out.subtitle, width, move || set_tab(page, ""))];

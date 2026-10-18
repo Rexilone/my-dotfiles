@@ -205,16 +205,7 @@ run systemctl --user daemon-reload || true
 run systemctl --user enable rexlink.service || true
 
 # ─────────────────────────── голосовой ввод (Voxtype, Super+H)
-if command -v voxtype >/dev/null; then
-    bold "Голосовой ввод"
-    # многоязычная модель Whisper (русский + английский), ~470 МБ — один раз
-    if [[ ! -f "$HOME/.local/share/voxtype/models/ggml-small.bin" ]]; then
-        info "скачиваю модель распознавания (small, ~470 МБ)…"
-        run voxtype setup --download --model small --quiet || info "не вышло — повторите: voxtype setup --download --model small"
-    fi
-    run systemctl --user enable voxtype.service || true
-    [[ -n "${WAYLAND_DISPLAY:-}" ]] && { run systemctl --user restart voxtype.service || true; }
-fi
+# не ставится и не запускается сам: установка, модель, включение и автозапуск — Настройки → Голосовой ввод
 # в работающем сеансе — сразу перезапустить на новую версию
 if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
     run systemctl --user restart rexlink.service || true
