@@ -410,7 +410,7 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
                 .align(Center)
             )
         ]));
-        let mut body: Vec<W> = vec![bx(screen)];
+        let mut body: Vec<W> = vec![bx(Rectangle::new().width(pw).height(ph).align_child(Center, Center).child(screen))];
         if d.kind != "tablet" && d.kind != "watch" {
             body.push(bx(Rectangle::new().width(pw).height(ph).align_child(Center, Start).padding(Padding { top: 10.0, right: 0.0, bottom: 0.0, left: 0.0 }).child(Rectangle::new().width(22.0).height(5.0).radius(3.0).fill(t.p.surface_hi2))));
         }

@@ -197,3 +197,32 @@ pub fn appear(key: &'static str, open: bool, start: fn()) {
 pub fn no_services() -> bool {
     std::env::var_os("REXILONE_NO_SERVICES").is_some()
 }
+
+fn smooth_map() -> &'static std::sync::Mutex<std::collections::HashMap<String, (f32, std::time::Instant)>> {
+    static M: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, (f32, std::time::Instant)>>> = std::sync::OnceLock::new();
+    M.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+// забыть — следующее значение встанет сразу, без анимации (окно открыли заново)
+pub fn smooth_reset(key: &str) {
+    smooth_map().lock().unwrap().remove(key);
+}
+
+// значение плавно догоняет цель (как Behavior в QML): tau — секунды до ~63% пути
+pub fn smooth(key: &str, target: f32, tau: f32) -> f32 {
+    use std::time::Instant;
+    if no_anim() {
+        return target;
+    }
+    let mut m = smooth_map().lock().unwrap();
+    let e = m.entry(key.to_string()).or_insert((target, Instant::now()));
+    let dt = e.1.elapsed().as_secs_f32().min(0.25);
+    e.0 += (target - e.0) * (1.0 - (-dt / tau.max(0.001)).exp());
+    e.1 = Instant::now();
+    if (target - e.0).abs() > 0.0015 {
+        amane::request_frame();
+    } else {
+        e.0 = target;
+    }
+    e.0
+}

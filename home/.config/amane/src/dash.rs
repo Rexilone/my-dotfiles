@@ -40,6 +40,8 @@ pub fn set_tab(i: usize) {
 
 pub fn view(t: &Tk) -> Column {
     let cur = Popups::read().dash;
+    // подсветка вкладки едет к выбранной (260 мс, OutCubic в Quickshell)
+    let pos = crate::look::smooth("dash:tab", cur as f32, 0.07);
     // ── вкладки
     let tw = (WIDTH - 8.0 - 44.0) / 4.0;
     let mut tabs: Vec<W> = Vec::new();
@@ -54,7 +56,6 @@ pub fn view(t: &Tk) -> Column {
             .width(tw)
             .height(32.0)
             .radius(9.0)
-            .fill(if sel { t.p.surface_hi2 } else { amane::Color::TRANSPARENT })
             .cursor(Pointer)
             .align_child(Center, Center)
             .child(Row::new(children![ui::icon(t, *icon, t.icon, c), lab]).gap(8.0).align(Center));
@@ -85,14 +86,22 @@ pub fn view(t: &Tk) -> Column {
         .fill(t.p.surface)
         .padding(Padding { top: 4.0, right: 4.0, bottom: 4.0, left: 4.0 })
         .on_scroll(move |s| set_tab(if s.y < 0.0 { cur.saturating_sub(1) } else { (cur + 1).min(3) }))
-        .child(Row::new(vec![bx(Row::new(tabs)), bx(Rectangle::new().width(WIDTH - 8.0 - 4.0 * tw - 36.0).height(32.0)), bx(gear)]));
+        .child(Stack::new(children![
+            Rectangle::new().width(tw).height(32.0).radius(9.0).fill(t.p.surface_hi2).translate(pos * tw, 0.0),
+            Row::new(vec![bx(Row::new(tabs)), bx(Rectangle::new().width(WIDTH - 8.0 - 4.0 * tw - 36.0).height(32.0)), bx(gear)])
+        ]));
     let page: W = match cur {
         1 => bx(media_page(t)),
         2 => bx(weather_page(t)),
         3 => bx(system_page(t)),
         _ => bx(calendar_page(t)),
     };
-    Column::new(vec![bx(bar), page]).gap(12.0)
+    // страница въезжает на 40 px и проявляется, высота меняется плавно
+    let (_, ph) = ui::size_of(page.as_ref());
+    let h = crate::look::smooth("dash:height", ph, 0.07);
+    let d = cur as f32 - pos;
+    let page = Rectangle::new().width(WIDTH).height(h).clip().child(Rectangle::new().width(WIDTH).height(ph).translate(d.clamp(-1.0, 1.0) * 40.0, 0.0).opacity(1.0 - d.abs().min(1.0)).child(Column::new(vec![page])));
+    Column::new(vec![bx(bar), bx(page)]).gap(12.0)
 }
 
 // ═════════ календарь + заметки выбранного дня
@@ -572,7 +581,7 @@ fn pick(r: &weather::Place) {
 
 pub fn ring(t: &Tk, value: f32, label: &str, sub: &str, battery: bool) -> Column {
     let size = 108.0;
-    let v = value.clamp(0.0, 1.0);
+    let v = crate::look::smooth(&format!("ring:{label}:{battery}"), value.clamp(0.0, 1.0), 0.3);
     let arc_c = if battery {
         if v <= 0.15 { t.p.urgent } else if v <= 0.3 { t.p.warn } else { t.p.accent }
     } else if v > 0.9 {

@@ -197,11 +197,12 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
             .on_click(move |_| activate(i))
             .child(
                 Column::new(children![
-                    Rectangle::new().width(90.0).height(34.0).align_child(Center, Center).child(ui::icon(&t, a.icon, 30.0, color)),
-                    Rectangle::new().width(100.0).height(t.fs + 4.0).align_child(Center, Center).child(ui::text(&t, label, color)),
-                    Rectangle::new().width(90.0).height(t.fs).align_child(Center, Center).child(ui::text(&t, a.key.to_uppercase().to_string(), t.p.faint).size(t.fs - 2.0))
+                    Rectangle::new().width(104.0).height(34.0).align_child(Center, Center).child(ui::icon(&t, a.icon, 30.0, color).tight()),
+                    Rectangle::new().width(104.0).height(t.fs + 4.0).align_child(Center, Center).child(ui::text(&t, label, color)),
+                    Rectangle::new().width(104.0).height(t.fs).align_child(Center, Center).child(ui::text(&t, a.key.to_uppercase().to_string(), t.p.faint).size(t.fs - 2.0))
                 ])
-                .gap(10.0),
+                .gap(10.0)
+                .align(Center),
             );
         if is_armed {
             b = b.border(1.0, t.p.urgent);

@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use amane::{
     Animation, Apps, Button, Center, Color, Column, Full, Image, Key, Keyboard, Layer, LayerWindow, Padding, Parent,
-    Rectangle, Row, Service, Stack, Start, TextInput, Weight, Widget, Zone,
+    Rectangle, Row, Service, Stack, Start, Weight, Widget, Zone,
 };
 
 use crate::apps::{self, AppList, Entry};
@@ -138,7 +138,6 @@ pub fn set_open(open: bool) {
         l.usage = load_usage();
         l.anim = crate::look::anim(0.0, 220);
         // появление — после первого кадра (look::appear)
-        TextInput::set_text("launcher", "");
     } else {
         crate::look::go(&mut l.anim, 0.0);
     }
@@ -202,7 +201,68 @@ fn move_sel(delta: i64) {
     l.scroll = keep_visible(&hs, l.sel, l.scroll, view);
 }
 
+fn set_query(f: impl FnOnce(&mut String)) {
+    let mut l = Launcher::write();
+    f(&mut l.query);
+    if l.query.is_empty() {
+        l.browsing = false;
+    }
+    l.sel = 0;
+    l.scroll = 0.0;
+}
+
+// → — действия выбранного приложения, ← — назад
+fn show_actions() {
+    let ru = crate::settings::Settings::read().c.ru();
+    let apps = AppList::read();
+    let l = Launcher::read();
+    let expanded = !l.query.trim().is_empty() || l.browsing || l.actions_for.is_some();
+    let it = current_items(&l, &apps.list, ru).get(l.sel).cloned();
+    let has = |i: usize| apps.list.get(i).is_some_and(|e| !e.actions.is_empty());
+    let target = match it.map(|i| i.kind) {
+        Some(Kind::App(i)) if expanded && l.actions_for.is_none() && has(i) => Some(i),
+        _ => None,
+    };
+    drop((l, apps));
+    if let Some(i) = target {
+        let mut l = Launcher::write();
+        l.actions_for = Some(i);
+        l.sel = 0;
+        l.scroll = 0.0;
+    }
+}
+
 fn on_key(k: Key) {
+    match k {
+        Key::Character(c) => return set_query(|q| q.push(c)),
+        Key::Space => return set_query(|q| q.push(' ')),
+        Key::Backspace => {
+            // пусто и открыты действия — назад к списку
+            let back = Launcher::read().query.is_empty() && Launcher::read().actions_for.is_some();
+            if back {
+                let mut l = Launcher::write();
+                l.actions_for = None;
+                l.sel = 0;
+            } else {
+                set_query(|q| {
+                    q.pop();
+                });
+            }
+            return;
+        }
+        Key::Enter => return submit(),
+        Key::Right => return show_actions(),
+        Key::Left => {
+            let mut l = Launcher::write();
+            if l.actions_for.is_some() {
+                l.actions_for = None;
+                l.sel = 0;
+                l.scroll = 0.0;
+            }
+            return;
+        }
+        _ => {}
+    }
     let expanded = {
         let l = Launcher::read();
         !l.query.trim().is_empty() || l.browsing || l.actions_for.is_some()
@@ -409,21 +469,18 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
     let input_w = WIDTH - 6.0 - (t.icon + 4.0) - 12.0 * 3.0 - pins_w - 6.0;
     bar.push(Box::new(
         Rectangle::new().width(input_w).height(BAR_H).align_child(Start, Center).child(
-            TextInput::new("launcher")
-                .focused()
-                .size(t.fs + 4.0)
-                .color(t.p.fg)
-                .placeholder(t.tr("Type to search…", "Начните вводить…"))
-                .on_change(|text| {
-                    let mut l = Launcher::write();
-                    if text.is_empty() {
-                        l.browsing = false;
-                    }
-                    l.query = text;
-                    l.sel = 0;
-                    l.scroll = 0.0;
-                })
-                .on_submit(|_| submit()),
+            // своё поле ввода: курсор всегда в конце, а стрелки ←/→ достаются меню (действия приложения)
+            {
+                let shown = if l.query.is_empty() { t.tr("Type to search…", "Начните вводить…").to_string() } else { l.query.clone() };
+                let txt = ui::text(&t, shown, if l.query.is_empty() { t.p.dim } else { t.p.fg }).size(t.fs + 4.0);
+                let (tw, _) = ui::size_of(&txt);
+                let caret = Rectangle::new().width(2.0).height(t.fs + 8.0).radius(1.0).fill(t.p.accent);
+                let caret_x = if l.query.is_empty() { 0.0 } else { tw.min(input_w - 4.0) + 1.0 };
+                Stack::new(amane::children![
+                    Rectangle::new().width(input_w).height(BAR_H).align_child(Start, Center).clip().child(txt),
+                    Rectangle::new().width(input_w).height(BAR_H).align_child(Start, Center).child(caret.translate(caret_x, 0.0))
+                ])
+            },
         ),
     ));
     if !expanded && !pins.is_empty() {
@@ -491,7 +548,7 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
             line.push(Box::new(ui::icon(&t, 0xF0403, t.icon - 3.0, t.p.faint)));
         }
         line.push(Box::new(hint_t));
-        // действия приложения — стрелка мышью (Right занят полем ввода)
+        // действия приложения — стрелка мышью или →
         if has_actions && l.actions_for.is_none() {
             if let Kind::App(a) = it.kind {
                 let aid = format!("act:{a}");

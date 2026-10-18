@@ -80,6 +80,10 @@ pub fn toggle_at(name: &str, output: &str) {
         p.sel = None;
         p.ask_ssid.clear();
         p.notif_scroll = 0.0;
+        if name == "calendar" {
+            crate::look::smooth_reset("dash:tab");
+            crate::look::smooth_reset("dash:height");
+        }
         if !switching {
             // появление — после первого кадра (look::appear)
             p.anim = crate::look::anim(0.0, 220);

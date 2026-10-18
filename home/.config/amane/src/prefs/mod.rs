@@ -338,6 +338,34 @@ pub fn header(t: &Tk, title: &str, crumb: &str, subtitle: &str, w: f32, back: im
     bx(Column::new(col).gap(6.0))
 }
 
+// плавная прокрутка: колесо двигает цель (15 px на строку, как ScrollArea), показ её догоняет
+fn targets() -> &'static std::sync::Mutex<std::collections::HashMap<&'static str, f32>> {
+    static T: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<&'static str, f32>>> = std::sync::OnceLock::new();
+    T.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+pub fn smooth_scroll(id: &'static str, child: Rectangle, w: f32, h: f32, content_h: f32) -> Rectangle {
+    let max = (content_h - h).max(0.0);
+    let target = {
+        let mut t = targets().lock().unwrap();
+        let v = t.entry(id).or_insert(0.0);
+        *v = v.clamp(0.0, max);
+        *v
+    };
+    let off = look::smooth(id, target, 0.07).clamp(0.0, max);
+    Rectangle::new()
+        .width(w)
+        .height(h)
+        .clip()
+        .on_scroll(move |s| {
+            let mut t = targets().lock().unwrap();
+            let v = t.entry(id).or_insert(0.0);
+            *v = (*v + s.y * 15.0).clamp(0.0, max);
+            amane::request_frame();
+        })
+        .child(child.translate(0.0, -off))
+}
+
 pub fn view() -> Window {
     let t = look::tk();
     let (ww, wh) = amane::window_size();
@@ -364,7 +392,7 @@ pub fn view() -> Window {
         .fill(panel_fill)
         .border(1.0, t.p.surface_hi)
         .clip()
-        .child(ScrollArea::new(scroll_id, page_col).width(panel_w).height(panel_h));
+        .child(smooth_scroll(scroll_id, page_col, panel_w, panel_h, ch + 56.0));
     Window::new()
         .title("Settings")
         .size(1100.0, 760.0)

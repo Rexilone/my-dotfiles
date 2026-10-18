@@ -3,7 +3,7 @@
 
 use std::time::SystemTime;
 
-use amane::{Center, Column, End, Image, Key, Padding, Parent, Pointer, Rectangle, Row, ScrollArea, Service, Stack, Start, Weight, Window, children, close_window, open_window};
+use amane::{Center, Column, End, Image, Key, Padding, Parent, Pointer, Rectangle, Row, ScrollArea, Service, Stack, Start, Window, children, close_window, open_window};
 
 use crate::look::{self, Tk};
 use crate::prefs::Prefs;
