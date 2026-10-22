@@ -1,0 +1,45 @@
+#!/bin/bash
+# Rexlink: свободный разъём видеокарты как монитор с подставным EDID — под экран планшета/телефона.
+# Ставится в /usr/local/lib/rexlink/, вызывается службой через pkexec (правило polkit — без пароля).
+#   rexlink-display on  card1-HDMI-A-1 < edid.bin
+#   rexlink-display off card1-HDMI-A-1
+set -eu
+act=${1:-} name=${2:-}
+[[ $name =~ ^card[0-9]+-[A-Za-z]+(-[A-Za-z])?-[0-9]+$ ]] || { echo "плохое имя разъёма: $name" >&2; exit 2; }
+sys=/sys/class/drm/$name
+[[ -w $sys/status ]] || { echo "нет разъёма $name" >&2; exit 2; }
+card=${name%%-*} conn=${name#*-}
+mountpoint -q /sys/kernel/debug || mount -t debugfs debugfs /sys/kernel/debug
+dbg=""
+for d in "/sys/kernel/debug/dri/${card#card}/$conn" /sys/kernel/debug/dri/*/"$conn"; do
+    [[ -e $d/edid_override ]] && { dbg=$d; break; }
+done
+[[ -n $dbg ]] || { echo "ядро не даёт подменить EDID ($conn): нет edid_override в debugfs" >&2; exit 3; }
+
+case $act in
+on)
+    # «connected» без монитора — наш прошлый запуск; настоящий монитор узнаём по EDID не от Rexlink
+    if [[ $(cat "$sys/status") != disconnected ]] && ! grep -qa Rexlink "$sys/edid" 2>/dev/null; then
+        echo "к $conn подключён монитор" >&2; exit 4
+    fi
+    tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
+    head -c 1024 > "$tmp"
+    size=$(stat -c %s "$tmp")
+    (( size >= 128 && size % 128 == 0 )) || { echo "плохой EDID" >&2; exit 2; }
+    cat "$tmp" > "$dbg/edid_override"
+    echo on > "$sys/status"
+    # композитор узнаёт о мониторах по udev-событию видеокарты; даём ядру выставить EDID,
+    # иначе композитор прочитает монитор как «Unknown»
+    sleep 0.5
+    echo change > "/sys/class/drm/$card/uevent"
+    ;;
+off)
+    echo detect > "$sys/status"
+    echo reset > "$dbg/edid_override" 2>/dev/null || true
+    # amdgpu: заново проверить разъём, чтобы он снова стал «отключён»
+    [[ -e $dbg/trigger_hotplug ]] && echo 1 > "$dbg/trigger_hotplug" 2>/dev/null || true
+    echo change > "/sys/class/drm/$card/uevent"
+    ;;
+*)
+    echo "использование: rexlink-display on|off <card-разъём>" >&2; exit 2 ;;
+esac

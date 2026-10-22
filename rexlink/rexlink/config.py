@@ -45,6 +45,9 @@ DEFAULTS = {
     "webcamDevice": "auto",
     "camera": {"facing": "back", "width": 1280, "height": 720, "fps": 30, "bitrate": 6000000},
     "screen": {"maxSize": 1280, "bitrate": 8000000, "fps": 60},
+    # устройство как второй монитор: длинная сторона, битрейт (Wi-Fi / USB), разъём видеокарты
+    "display": {"maxSize": 2560, "fps": 60, "bitrate": 12000000, "usbBitrate": 30000000, "connector": "auto",
+                "via": "auto", "encoder": "auto"},
 }
 
 

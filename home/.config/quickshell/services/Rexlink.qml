@@ -183,6 +183,8 @@ Singleton {
         show("screen");
     }
     function screenStop(id) { cmd("screen_stop", dev_(id)); }
+    // второй монитор: по USB, если устройство подключено кабелем с отладкой, иначе по Wi-Fi
+    function displayToggle(id) { cmd(screen.display?.running ? "display_stop" : "display_start", dev_(id)); }
     function screenOff(off, id) { cmd("screen_off", Object.assign({ off }, dev_(id))); }
     function input(ev) { cmd("input", ev); }
     function key(k) { cmd("input", { kind: "key", key: k }); }
@@ -355,6 +357,13 @@ Singleton {
         case "screen_state":
             root.screens = d;
             break;
+        case "display": {
+            // устройство как второй монитор ПК
+            const s = Object.assign({}, screens);
+            s[d.device] = Object.assign({}, s[d.device] ?? {}, { display: d });
+            root.screens = s;
+            break;
+        }
         case "frame": {
             const f = Object.assign({}, frames);
             f[d.channel] = d;

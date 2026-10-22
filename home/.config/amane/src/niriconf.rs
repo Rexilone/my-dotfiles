@@ -50,13 +50,25 @@ pub fn from_live(live: &Json) -> Json {
     Json::Obj(live.obj().iter().map(|(n, o)| (n.clone(), from_live_one(o))).collect())
 }
 
+// виртуальный монитор Rexlink (планшет как второй экран): свободный разъём с EDID «Rexlink»
+pub fn is_virtual(name: &str, live: &Json) -> bool {
+    id_of(live.get(name)).contains("Rexlink")
+        || std::fs::read_dir("/sys/class/drm")
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().split_once('-').map(|(c, n)| c.starts_with("card") && n == name).unwrap_or(false))
+        .any(|e| std::fs::read(e.path().join("edid")).map(|b| b.windows(7).any(|w| w == b"Rexlink")).unwrap_or(false))
+}
+
 // сохранённые настройки для подключённого монитора: по порту, а если там другой — по id
 pub fn saved_for<'a>(saved: &'a Json, live: &Json, name: &str) -> Option<(&'a str, &'a Json)> {
     let id = id_of(live.get(name));
     for (k, s) in saved.obj() {
         if k == name {
             let sid = s.get("id").str().unwrap_or("");
-            if sid.is_empty() || sid == id {
+            // запись без id — от монитора, что раньше стоял на этом порту; виртуальному она чужая
+            if (sid.is_empty() && !is_virtual(name, live)) || sid == id {
                 return Some((k.as_str(), s));
             }
         }
@@ -300,10 +312,15 @@ pub fn kdl(s: &Json, live: &Json, primary: &str) -> String {
 
     // подключённые — по порту, отключённые — по id (если известен)
     let saved = s.get("outputs");
-    let mut outs = current(saved, live);
+    // виртуальный монитор Rexlink без своих настроек — на усмотрение niri и Rexlink (поворот, масштаб, место)
+    let mut outs: Vec<(String, Json)> = current(saved, live).into_iter().filter(|(n, _)| saved_for(saved, live, n).is_some() || !is_virtual(n, live)).collect();
     for (k, o) in disconnected(saved, live) {
         let id = o.get("id").str_or("");
         let n = if id.is_empty() { k.clone() } else { id };
+        // безымянная запись порта, занятого виртуальным монитором, применилась бы к нему
+        if o.get("id").str_or("").is_empty() && !live.get(&k).is_null() {
+            continue;
+        }
         if !outs.iter().any(|(on, oo)| oo.get("id").str() == Some(n.as_str()) || *on == n) {
             outs.push((n, o));
         }

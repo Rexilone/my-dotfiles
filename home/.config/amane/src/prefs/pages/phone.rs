@@ -371,6 +371,7 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
     let pc_media = r.pc_media.clone();
     let camera_on = r.camera.get("running").bool_or(false);
     let screen_on = r.screens.get(&r.current).get("running").bool_or(false);
+    let display_on = r.screens.get(&r.current).get("display").get("running").bool_or(false);
     let devices = r.devices.arr().to_vec();
     let apk = r.apk.get("versionName").str_or("");
     let call = r.call.clone();
@@ -440,7 +441,7 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
         }
         if online {
             // быстрые действия: плитки с иконкой
-            let n = 5.0;
+            let n = 6.0;
             let aw = ((tw - 8.0 * (n - 1.0)) / n).floor();
             let qa = |id: &'static str, icon: u32, label: &str, on: bool, f: Box<dyn Fn()>| -> W {
                 let hov = w::hov(id);
@@ -453,7 +454,7 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
                     .child(Column::new(children![ui::icon(t, icon, t.icon + 2.0, if on { t.p.bg } else { t.p.fg }), Rectangle::new().width(aw - 8.0).height(16.0).align_child(Center, Center).clip().child(ui::text(t, t.t(label), if on { t.p.bg } else { t.p.muted }).size(t.fs - 3.0))]).gap(5.0).align(Center));
                 bx(w::clickable(r, id, w::act(f)))
             };
-            let (c1, c2, c3) = (d.id.clone(), d.id.clone(), d.id.clone());
+            let (c1, c2, c3, c4) = (d.id.clone(), d.id.clone(), d.id.clone(), d.id.clone());
             let ringing = mraw.get("ringing").bool_or(false);
             right.push(bx(Rectangle::new().width(tw).height(6.0)));
             right.push(bx(Row::new(vec![
@@ -473,6 +474,8 @@ fn home(t: &Tk, w: f32, items: &mut Vec<W>) {
                 ),
                 qa("ph-q-cam", 0xF05A0, if camera_on { "Webcam on" } else { "Webcam" }, camera_on, Box::new(move || if camera_on { rl::camera_stop() } else { rl::camera_start(&c3) })),
                 qa("ph-q-clip", 0xF014D, "Clipboard", false, Box::new(|| rl::clipboard_pull(""))),
+                // второй монитор: по USB, если устройство подключено кабелем с отладкой, иначе по Wi-Fi
+                qa("ph-q-display", 0xF04F7, "Monitor", display_on, Box::new(move || if display_on { rl::display_stop(&c4) } else { rl::display_start(&c4) })),
             ])
             .gap(8.0)));
         }

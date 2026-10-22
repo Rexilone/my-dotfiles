@@ -433,6 +433,7 @@ Page {
                             { icon: 0xF0379, label: "Show screen", act: () => { page.openTab("screen"); if (!Rexlink.screen.running) Rexlink.screenStart(); } },
                             { icon: 0xF05A0, label: Rexlink.camera.running ? "Stop webcam" : "Webcam", act: () => Rexlink.cameraToggle() },
                             { icon: 0xF014D, label: "Get clipboard", act: () => Rexlink.clipboardPull() },
+                            { icon: 0xF04F7, label: Rexlink.screen.display?.running ? "Stop monitor" : "Monitor", act: () => Rexlink.displayToggle() },
                         ]
                         SButton {
                             required property var modelData

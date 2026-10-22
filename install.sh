@@ -194,6 +194,10 @@ if (( PACKAGES )); then
         run sudo ufw allow 47821/udp comment Rexlink >/dev/null
         info "порты Rexlink открыты в ufw"
     fi
+    # планшет/телефон как второй монитор: включение свободного разъёма видеокарты (без пароля — polkit)
+    run sudo install -Dm755 "$DOTS/rexlink/system/rexlink-display" /usr/local/lib/rexlink/rexlink-display
+    run sudo install -Dm644 "$DOTS/rexlink/system/dev.rexilone.rexlink.display.policy" \
+        /usr/share/polkit-1/actions/dev.rexilone.rexlink.display.policy
     if (( WEBCAM )); then
         run sudo install -Dm644 "$DOTS/rexlink/system/rexlink-v4l2loopback.conf" /etc/modprobe.d/rexlink-v4l2loopback.conf
         run sudo install -Dm644 "$DOTS/rexlink/system/rexlink-modules-load.conf" /etc/modules-load.d/rexlink.conf

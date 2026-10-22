@@ -258,6 +258,13 @@ pub fn screen_start(id: &str) {
 pub fn screen_stop(id: &str) {
     cmd("screen_stop", with_dev(id, vec![]));
 }
+// устройство как второй монитор ПК (via: "" — сама служба выберет USB или Wi-Fi)
+pub fn display_start(id: &str) {
+    cmd("display_start", with_dev(id, vec![]));
+}
+pub fn display_stop(id: &str) {
+    cmd("display_stop", with_dev(id, vec![]));
+}
 pub fn screen_off(off: bool, id: &str) {
     cmd("screen_off", with_dev(id, vec![("off", Json::Bool(off))]));
 }
@@ -529,6 +536,14 @@ pub fn handle(s: &mut Rexlink, m: &Json) -> bool {
         "transfers" => s.transfers = d,
         "camera" | "camera_state" => s.camera = d,
         "screen_state" => s.screens = d,
+        "display" => {
+            let mut sc = s.screens.get(&dev).clone();
+            if sc.is_null() {
+                sc = Json::Obj(Vec::new());
+            }
+            sc.set("display", d);
+            s.screens.set(&dev, sc);
+        }
         "frame" => {
             let ch = d.get("channel").str_or("");
             s.frames.set(&ch, d);

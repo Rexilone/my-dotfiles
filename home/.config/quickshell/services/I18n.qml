@@ -560,6 +560,7 @@ Singleton {
         "text and images both ways": "текст и картинки в обе стороны",
         "Show file": "Показать файл",
         "Show screen": "Показать экран",
+        "Stop monitor": "Выключить монитор",
         "Showing": "Показывается",
         "Start it to connect your devices (rexlink.service)": "Запустите её, чтобы подключить устройства (rexlink.service)",
         "Starting the camera…": "Запуск камеры…",

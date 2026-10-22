@@ -239,6 +239,15 @@ class Api(QObject):
             return True
         if cmd == "camera":
             return b.camera
+        # устройство как второй монитор: via = auto | usb | wifi
+        if cmd == "display_start":
+            b.startDisplayFor(self._online(req), str(req.get("via", "")))
+            return True
+        if cmd == "display_stop":
+            b.stopDisplayFor(self._dev(req))
+            return True
+        if cmd == "display":
+            return b.devs[self._dev(req)]["display"]
         if cmd == "screen_start":
             b.startScreenFor(self._online(req))
             return True

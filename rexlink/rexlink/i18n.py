@@ -10,6 +10,8 @@ EN = {
     "Сопряжение: {}": "Pairing: {}",
     "Код: {}. Сверьте его с устройством.": "Code: {}. Check that it matches the device.",
     "Принять": "Accept",
+    "Второй монитор: {}": "Extra monitor: {}",
+    "Подключите устройство кабелем и разрешите отладку по USB": "Connect the device with a cable and allow USB debugging",
     "Отклонить": "Decline",
     "Открыть": "Open",
     "Телефон": "Phone",

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Property, QTimer, QUrl, Signal, Slot
 
-from . import firewall, updates, video
+from . import PORT, display, firewall, updates, video
 from .i18n import set_lang, tr
 from .adb import Adb, ScrcpyVideo
 from .clipboard import Clipboard
@@ -55,7 +55,7 @@ def new_dev(did, entry):
             "model": entry.get("model", ""), "caps": [], "address": entry.get("address", ""), "online": False,
             "lastSeen": entry.get("lastSeen", 0), "status": {}, "notifs": [], "media": {}, "call": {},
             "threads": [], "messages": [], "thread": {}, "screen": {"running": False, "w": 0, "h": 0},
-            "adb": {"ports": {}}, "app": {}}
+            "display": {"running": False}, "adb": {"ports": {}}, "app": {}}
 
 
 class Backend(QObject):
@@ -103,6 +103,7 @@ class Backend(QObject):
         self._pair_nids = {}
         self._cam_stream = None
         self._screen_streams = {}   # устройство -> VideoStream
+        self._display = None        # (устройство, display.Session) — монитор один на всех
         self._pending_off = ""
         self._apk = updates.bundled_apk()
 
@@ -146,9 +147,13 @@ class Backend(QObject):
         self.mpris.start()
         self._check_firewall()
         self._fw_timer.start()
+        threading.Thread(target=display.cleanup_stale, daemon=True).start()
         self._write_state()
 
     def shutdown(self):
+        if self._display:
+            self._display[1].stop()
+        display.cleanup_stale()
         self.adb.stop_all()
         self.server.stop()
         for d in self.devs.values():
@@ -208,7 +213,7 @@ class Backend(QObject):
         d = self.dev(did)
         return dict(d["screen"], off=self.adb.is_off(d["id"]), adbSerial=d["adb"].get("serial", ""),
                     adbPorts=d["adb"].get("ports", {}), adbNeedPair=bool(d["adb"].get("needPair")),
-                    adbWireless=bool(d["adb"].get("wireless")))
+                    adbWireless=bool(d["adb"].get("wireless")), display=dict(d["display"]))
 
     screen = Property("QVariantMap", _get_screen, notify=screenChanged)
 
@@ -310,6 +315,8 @@ class Backend(QObject):
         if self._camera.get("owner") == did:
             self._stop_camera_local()
         self._stop_screen_local(did)
+        if self._display and self._display[0] == did:
+            self._display[1].stop()
         for s in (self.stateChanged, self.statusChanged, self.notifsChanged, self.mediaChanged, self.callChanged,
                   self.devicesChanged):
             s.emit()
@@ -881,6 +888,16 @@ class Backend(QObject):
                 self.devs[did]["screen"] = dict(self.devs[did]["screen"], running=True, starting=False,
                                                 w=cfg["w"], h=cfg["h"])
                 self._emit(did, self.screenChanged)
+        elif kind == "display_state":
+            did, sess, st = data
+            if did in self.devs:
+                self.devs[did]["display"] = dict(self.devs[did]["display"], **st)
+                if not st.get("running") and self._display and self._display[1] is sess:
+                    self._display = None
+                if st.get("error"):
+                    self.toast.emit(tr("Второй монитор: {}", st["error"]))
+                self._emit(did, self.screenChanged)
+                self.event.emit("display", dict(self.devs[did]["display"], device=did))
         elif kind == "screen_end":
             did, stream = data
             if self._screen_streams.get(did) is stream:
@@ -1008,6 +1025,62 @@ class Backend(QObject):
                 return
             stream.run(sock, first)
         threading.Thread(target=run, daemon=True, name="scrcpy-video").start()
+
+    # ── устройство как второй монитор (display.py)
+    @Slot(str, str)
+    def startDisplayFor(self, did, via=""):
+        """via: auto (USB, если устройство подключено кабелем с отладкой), usb или wifi."""
+        if not self.server.online(did):
+            raise ValueError(tr("Устройство не подключено"))
+        if self._display:
+            if self._display[0] == did:
+                return
+            self._display[1].stop()
+        dc = self.config["display"]
+        via = via or dc.get("via", "auto")
+        d = self.devs[did]
+        serial = self.adb.find(d["address"], d["model"]) if self.adb.adb and via != "wifi" else None
+        usb = bool(serial) and ":" not in serial and not serial.startswith("adb-")
+        if via == "usb" and not usb:
+            raise ValueError(tr("Подключите устройство кабелем и разрешите отладку по USB"))
+        cfg = dict(self.config.data, display=dict(dc, bitrate=dc["usbBitrate"] if usb else dc["bitrate"]))
+        sess = None
+
+        def state(st):
+            self._videoEvent.emit("display_state", (did, sess, dict(st, via="usb" if usb else "wifi")))
+
+        cleanup = None
+        msg = {"t": "display_start"}
+        if usb:
+            from .adb import _run
+            code, out = _run(["adb", "-s", serial, "reverse", f"tcp:{display.USB_PORT}", f"tcp:{PORT}"])
+            if code != 0:
+                raise ValueError(f"adb reverse: {out[-120:]}")
+            msg.update(host="127.0.0.1", port=display.USB_PORT)
+            cleanup = lambda: _run(["adb", "-s", serial, "reverse", "--remove", f"tcp:{display.USB_PORT}"])
+        sess = display.Session(cfg, state, cleanup)
+        self._display = (did, sess)
+        msg["sid"] = self.server.expect_stream(did, sess.run)
+        self.server.send(did, msg)
+        state({"running": True, "starting": True, "error": ""})
+
+    @Slot(str)
+    def stopDisplayFor(self, did):
+        if self._display and (not did or self._display[0] == did):
+            did, sess = self._display
+            self.server.send(did, {"t": "display_stop"})
+            sess.stop()
+
+    def _m_display_request(self, did, h, _):
+        """Устройство само просит стать монитором (кнопка в приложении)."""
+        try:
+            if h.get("on", True):
+                self.startDisplayFor(did, str(h.get("via", "")))
+            else:
+                self.stopDisplayFor(did)
+        except ValueError as e:
+            self.server.send(did, {"t": "toast", "text": str(e)})
+            self.toast.emit(str(e))
 
     @Slot()
     def stopScreen(self):
