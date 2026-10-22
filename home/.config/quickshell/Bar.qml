@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.SystemTray
+import Quickshell.Services.Mpris
 import qs.services
 import qs.modules
 
@@ -144,6 +145,39 @@ PanelWindow {
             anchors.centerIn: parent
             height: parent.height
             spacing: 10
+
+            // кот, спектр и текст песни (как в AngelOS)
+            BarGroup {
+                id: gFun
+                // не через visible детей: он зависит от visible группы
+                readonly property bool catOn: Settings.moduleOn("cat", false)
+                readonly property bool vizOn: Settings.moduleOn("visualizer", false) && Cava.installed
+                    && Mpris.players.values.some(p => p.isPlaying)
+                readonly property bool lyricsOn: lyrics.on && Lyrics.lines.length > 0
+                visible: catOn || vizOn || lyricsOn
+                spacing: 12
+
+                BarCat {
+                    id: cat
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: gFun.catOn
+                    onClicked: bar.openDash(3)
+                }
+                Visualizer {
+                    id: viz
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: gFun.vizOn
+                    count: 14
+                    barWidth: 3
+                    maxHeight: Theme.iconSize + 2
+                }
+                BarLyrics {
+                    id: lyrics
+                    anchors.verticalCenter: parent.verticalCenter
+                    on: Settings.moduleOn("lyrics", false)
+                    visible: gFun.lyricsOn
+                }
+            }
 
             BarGroup {
                 id: gMedia

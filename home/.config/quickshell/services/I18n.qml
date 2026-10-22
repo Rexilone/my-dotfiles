@@ -320,7 +320,7 @@ Singleton {
         "Monitors": "Мониторы", "Devices and apps": "Устройства и приложения", "Keyboard, mouse, tablet, gamepads": "Клавиатура, мышь, планшет, геймпады",
         "About this PC": "Об этом компьютере", "Device name, account and specifications": "Имя устройства, учётная запись и характеристики",
         "Reload the bar and all menus": "Перезагрузить бар и все меню",
-        "Shell engine": "Движок шелла", "amane — the same shell in Rust (beta): bar, menus, notifications. Super+Alt+S switches back": "amane — тот же шелл на Rust (бета): бар, меню, уведомления. Назад — Super+Alt+S", "Open niri config": "Открыть конфиг niri",
+        "Open niri config": "Открыть конфиг niri",
 
         // ── Время и язык
         "Time zone, clock format and system language": "Часовой пояс, формат часов и язык системы",
@@ -752,5 +752,17 @@ Singleton {
         "Pop-up at the bottom": "Всплывает снизу",
         "When volume, microphone or brightness change, and while voice typing listens (Super+H)": "Когда меняются громкость, микрофон или яркость, и пока идёт голосовой ввод (Super+H)",
         "Voice typing": "Голосовой ввод",
+        // из AngelOS: кот, спектр, текст песен, график CPU, углы экрана, пиксельный вид
+        "Cat": "Кот", "Sleeps while the CPU rests, runs under load; click for system stats": "Спит, пока процессор отдыхает, бежит под нагрузкой; клик — показатели системы",
+        "Audio visualizer": "Визуализатор звука", "Spectrum bars while music plays (cava)": "Столбики спектра, пока играет музыка (cava)",
+        "Lyrics": "Текст песни", "The line being sung now, synced (lrclib.net)": "Строка, которая звучит сейчас (lrclib.net)",
+        "CPU graph": "График CPU", "Load and temperature over the last two minutes": "Нагрузка и температура за последние две минуты",
+        "Spectrum of what's playing (cava)": "Спектр того, что играет (cava)", "Synced lyrics of the current song (lrclib.net)": "Синхронный текст текущей песни (lrclib.net)",
+        "Install cava for the visualizer": "Для визуализатора нужен cava",
+        "Screen corners": "Углы экрана", "Rounded screen corners": "Скруглённые углы экрана",
+        "Black rounded corners on every monitor, like a phone screen. Clicks pass through": "Чёрные скруглённые углы на каждом мониторе, как у экрана телефона. Клики проходят насквозь",
+        "Corner radius": "Радиус углов",
+        "Pixel look": "Пиксельный вид", "Undo": "Вернуть",
+        "Bold CozetteVector for the shell and GTK apps, as in AngelOS": "Жирный CozetteVector в шелле и GTK-приложениях, как в AngelOS",
     })
 }

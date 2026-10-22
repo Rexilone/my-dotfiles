@@ -22,6 +22,7 @@ Page {
         { key: "wallpaper", label: "Wallpaper", icon: 0xF0E09, desc: Wallpapers.current ? Wallpapers.current.split("/").pop() : "Pick a picture for the desktop" },
         { key: "transparency", label: "Transparency", icon: 0xF05CC, desc: Settings.transparency ? `${I18n.tr("On")}   ·   ${Math.round(Settings.opacity * 100)}%${Settings.blur ? ", " + I18n.tr("blur") : ""}` : "Off" },
         { key: "fonts", label: "Fonts", icon: 0xF06D6, desc: [Settings.font, Settings.monoFont].filter((v, i, a) => v && a.indexOf(v) === i).join("   ·   ") || "Interface and terminal fonts" },
+        { key: "corners", label: "Screen corners", icon: 0xF0607, desc: Settings.screenCorners.enabled ? `${I18n.tr("On")}   ·   ${Settings.screenCorners.radius} px` : "Off" },
         { key: "size", label: "Text size", icon: 0xF0284, desc: `${Math.round(Settings.uiScale * 100)}%   ·   bar and menus` },
         { key: "bar", label: "Bar", icon: 0xF0570, desc: `${({ flat: "Solid", floating: "Floating", pills: "Pills" })[Settings.barStyle] ?? Settings.barStyle}   ·   clock, modules, tray` },
         { key: "widgets", label: "Widgets", icon: 0xF0B92, desc: `${Object.values(Settings.widgets ?? {}).filter(w => w.enabled).length} ${I18n.ru ? "на рабочем столе" : "on the desktop"}   ·   ${I18n.tr("clock, weather, phone…")}` },
@@ -35,6 +36,7 @@ Page {
     readonly property var schemeList: ["dark", "light", "nord", "gruvbox", "rose", "wallpaper"]
 
     property var fonts: []
+    readonly property bool pixel: Settings.font.startsWith("CozetteVector")
     property var monoFonts: []
 
     Component.onCompleted: {
@@ -192,7 +194,7 @@ Page {
     // ═════════════════════════ оформление
     ColumnLayout {
         Layout.fillWidth: true
-        visible: ["colors", "wallpaper", "transparency", "fonts", "size"].includes(page.tab)
+        visible: ["colors", "wallpaper", "transparency", "fonts", "size", "corners"].includes(page.tab)
         spacing: 6
 
         Flow {
@@ -445,12 +447,60 @@ Page {
                 }
             }
 
+            // пиксельный вид из AngelOS: жирный Cozette в шелле и GTK-приложениях
+            SCard {
+                icon: String.fromCodePoint(0xF0E51)
+                title: "Pixel look"
+                desc: "Bold CozetteVector for the shell and GTK apps, as in AngelOS"
+
+                SButton {
+                    text: page.pixel ? "Undo" : "Apply"
+                    primary: !page.pixel
+                    onClicked: {
+                        Settings.font = page.pixel ? "JetBrainsMono Nerd Font" : "CozetteVectorBold";
+                        Settings.appFont = page.pixel ? "" : "CozetteVectorBold";
+                    }
+                }
+            }
+
             Text {
                 Layout.topMargin: 4
                 text: I18n.tr("Icons need a Nerd Font — if icons turn into boxes, pick a font with «Nerd Font» in the name.")
                 color: Theme.dim
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize - 2
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: page.tab === "corners"
+            spacing: 3
+
+            SCard {
+                icon: String.fromCodePoint(0xF0607)  // rounded-corner
+                title: "Rounded screen corners"
+                desc: "Black rounded corners on every monitor, like a phone screen. Clicks pass through"
+
+                SSwitch {
+                    checked: Settings.screenCorners.enabled
+                    onToggled: v => Settings.screenCorners = Object.assign({}, Settings.screenCorners, { enabled: v })
+                }
+            }
+
+            SCard {
+                visible: Settings.screenCorners.enabled
+                icon: String.fromCodePoint(0xF0AAB)
+                title: "Corner radius"
+
+                SSlider {
+                    from: 6
+                    to: 40
+                    step: 1
+                    value: Settings.screenCorners.radius ?? 18
+                    suffix: " px"
+                    onMoved: v => Settings.screenCorners = Object.assign({}, Settings.screenCorners, { radius: Math.round(v) })
+                }
             }
         }
 

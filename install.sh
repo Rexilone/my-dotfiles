@@ -125,12 +125,17 @@ link() {
 }
 
 link "$DOTS/home/.zshrc" "$HOME/.zshrc"
-for d in quickshell amane niri foot nvim yazi voxtype; do
+for d in quickshell niri foot nvim yazi voxtype; do
     link "$DOTS/home/.config/$d" "$HOME/.config/$d"
 done
 for f in "$DOTS"/home/.local/bin/*; do
     link "$f" "$HOME/.local/bin/$(basename "$f")"
 done
+# шрифты: пиксельные Cozette и Pixeloid (Настройки → Персонализация → Шрифты)
+for d in "$DOTS"/home/.local/share/fonts/*/; do
+    link "${d%/}" "$HOME/.local/share/fonts/$(basename "$d")"
+done
+command -v fc-cache >/dev/null && run fc-cache -f "$HOME/.local/share/fonts" >/dev/null
 # ярлыки в меню приложений («Программы»)
 for f in "$DOTS"/home/.local/share/applications/*; do
     link "$f" "$HOME/.local/share/applications/$(basename "$f")"

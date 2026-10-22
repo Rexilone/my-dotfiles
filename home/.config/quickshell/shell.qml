@@ -30,6 +30,8 @@ ShellRoot {
     // «Программы»: установка приложений (pacman + AUR), открывается из меню приложений
     StoreWindow {}
     DesktopWidgets {}
+    // скруглённые углы экрана (Персонализация → Углы экрана)
+    ScreenCorners {}
     PluginServices {}
     // входящий звонок с телефона (Rexlink)
     PhoneCall {}

@@ -23,9 +23,8 @@ Singleton {
     function apply(path) {
         if (!path) return;
         current = path;
-        Quickshell.execDetached(["awww", "img", path,
-            "--transition-type", "grow", "--transition-pos", "top",
-            "--transition-duration", "1.2", "--transition-fps", "180"]);
+        // движок (awww или swaybg) выбирает общий скрипт
+        Quickshell.execDetached(["sh", "-c", '"$HOME/.local/bin/rexilone-wallpaper" set "$1"', "sh", path]);
     }
 
     function random() {
@@ -66,7 +65,7 @@ Singleton {
     // текущие обои (с основного монитора, иначе с первого)
     Process {
         id: query
-        command: ["awww", "query"]
+        command: ["sh", "-c", 'f=$("$HOME/.local/bin/rexilone-wallpaper" current 2>/dev/null); [ -n "$f" ] && echo "image: $f" || awww query']
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.split("\n");

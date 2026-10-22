@@ -228,13 +228,14 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// шелл: Quickshell или amane — какой выбран (rexilone-shell use quickshell|amane)
+// шелл: Quickshell
 spawn-sh-at-startup "$HOME/.local/bin/rexilone-shell start"
 // история буфера обмена: текст и картинки
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "xwayland-satellite"
-spawn-at-startup "awww-daemon"
+// обои: awww или swaybg — Настройки → Персонализация → Обои
+spawn-sh-at-startup "$HOME/.local/bin/rexilone-wallpaper start"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -337,9 +338,6 @@ window-rule {
     match app-id=r#"^org\.quickshell$"# title="^Software$"
     // окна плагинов (драйвер мыши LAMZU и т.п.)
     match app-id=r#"^org\.quickshell$"# title="^LAMZU Maya X$"
-    // то же в шелле на amane
-    match app-id=r#"^amane$"# title="^Settings$"
-    match app-id=r#"^amane$"# title="^Software$"
     open-floating true
 }
 
@@ -626,7 +624,7 @@ binds {
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
 
     // The quit action will show a confirmation dialog to avoid accidental exits.
-    Mod+Alt+S hotkey-overlay-title="Switch Shell (Quickshell / amane)" { spawn-sh "$HOME/.local/bin/rexilone-shell toggle"; }
+    Mod+Alt+S hotkey-overlay-title="Restart Shell" { spawn-sh "$HOME/.local/bin/rexilone-shell restart"; }
     Mod+G hotkey-overlay-title="Hide Window From Screencast" { spawn-sh "$HOME/.local/bin/niri-cast-toggle"; }
     Mod+Shift+E hotkey-overlay-title="Power Menu" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc power toggle"; }
     Ctrl+Alt+Delete { quit; }

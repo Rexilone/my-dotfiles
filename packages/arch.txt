@@ -1,12 +1,6 @@
 # ── основа: композитор, оболочка, порталы
 niri
 quickshell
-# amane — тот же шелл на Rust (rexilone-shell use amane): компилятор и библиотеки для сборки
-rust
-pkgconf
-vulkan-icd-loader
-wayland
-libxkbcommon
 fontconfig
 freetype2
 xwayland-satellite
@@ -17,9 +11,7 @@ upower
 libnotify
 swaylock
 swayidle
-# amane: трей и polkit-агент (python-dbus), выбор области записи, значки магазина
-python-dbus
-python-gobject
+# выбор области записи, значки магазина
 slurp
 libjxl
 # ── терминал и консоль
@@ -55,6 +47,8 @@ gvfs-mtp
 wl-clipboard
 cliphist
 awww
+# второй движок обоев (Настройки → Персонализация → Обои): проще и легче, без анимации
+swaybg
 gpu-screen-recorder
 # ── звук
 pipewire
@@ -73,6 +67,8 @@ ufw
 pyside6
 ffmpeg
 playerctl
+# спектр звука в баре и на рабочем столе
+cava
 openssl
 glib2
 iproute2

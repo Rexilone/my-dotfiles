@@ -15,7 +15,3 @@ home/.config/quickshell/plugins/*
 !home/.config/quickshell/plugins/hello-world/
 !home/.config/quickshell/plugins/.template/
 !home/.config/quickshell/plugins/README.md
-# amane: Cargo.toml пишет `amane compile` (пути к кэшу этой машины), сборка — в ~/.cache/amane
-home/.config/amane/Cargo.toml
-home/.config/amane/Cargo.lock
-home/.config/amane/target/

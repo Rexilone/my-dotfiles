@@ -20,6 +20,9 @@ ColumnLayout {
         { id: "calendar", icon: 0xF00ED, name: "Calendar", desc: "Month view with notes" },
         { id: "notes", icon: 0xF0D2F, name: "Today's notes", desc: "Notes and reminders for today" },
         { id: "quote", icon: 0xF0757, name: "Quote of the day", desc: "Changes daily, click for next" },
+        { id: "graph", icon: 0xF012A, name: "CPU graph", desc: "Load and temperature over the last two minutes" },
+        { id: "visualizer", icon: 0xF0EA2, name: "Audio visualizer", desc: "Spectrum of what's playing (cava)" },
+        { id: "lyrics", icon: 0xF0BC2, name: "Lyrics", desc: "Synced lyrics of the current song (lrclib.net)" },
     ]
 
     Component.onCompleted: fontList.running = true

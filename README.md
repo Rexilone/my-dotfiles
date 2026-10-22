@@ -102,16 +102,6 @@ Install `rexlink/rexlink.apk` on the device, open it, pick the computer and chec
 
 The same page shows pacman updates.
 
-## Two shell engines: Quickshell and amane
-
-The shell also exists as a Rust program on [amane](https://github.com/MystiaFin/amane) (`home/.config/amane`). It shares the settings, theme, pinned apps and launch counts with Quickshell. Switch with **Settings → System → Shell engine**, `Super+Alt+S`, or:
-
-```sh
-rexilone-shell use amane        # or: use quickshell; rexilone-shell — what's chosen and running
-```
-
-The first switch installs the amane CLI with cargo and builds the shell (a few minutes). If amane fails to build or start, Quickshell starts instead. amane (beta) has the bar, launcher, clipboard, wallpapers, power menu, notifications, OSD, calendar, sound, network and the control center; Settings, the software store, screen recorder, phone (Rexlink), tray, desktop widgets and plugins are Quickshell-only so far.
-
 Tests: `bash tests/run.sh`.
 
 ## Keybindings
@@ -125,7 +115,7 @@ Tests: `bash tests/run.sh`.
 | `Super+G` | Hide the window from screencasts |
 | `Alt+Z` | Screen recorder |
 | `Super+Shift+E` | Power menu |
-| `Super+Alt+S` | Switch shell engine (Quickshell / amane) |
+| `Super+Alt+S` | Restart the shell |
 | `Super+T` | Terminal (foot) |
 | `Super+B` | Browser (Chromium) |
 | `Super+H` | Voice typing (Russian / English) |
@@ -155,4 +145,4 @@ All shortcuts can be changed in **Settings → Keyboard shortcuts**.
 
 ## Credits
 
-[niri](https://github.com/YaLTeR/niri) · [Quickshell](https://quickshell.org) · [amane](https://github.com/MystiaFin/amane) · [foot](https://codeberg.org/dnkl/foot) · [yazi](https://github.com/sxyazi/yazi) · [Neovim](https://neovim.io) · [Millennium](https://steambrew.app) · [OpenTabletDriver](https://opentabletdriver.net) · [gpu-screen-recorder](https://git.dec05eba.com/gpu-screen-recorder) · [JetBrains Mono Nerd Font](https://www.nerdfonts.com)
+[niri](https://github.com/YaLTeR/niri) · [Quickshell](https://quickshell.org) · [foot](https://codeberg.org/dnkl/foot) · [yazi](https://github.com/sxyazi/yazi) · [Neovim](https://neovim.io) · [Millennium](https://steambrew.app) · [OpenTabletDriver](https://opentabletdriver.net) · [gpu-screen-recorder](https://git.dec05eba.com/gpu-screen-recorder) · [JetBrains Mono Nerd Font](https://www.nerdfonts.com)

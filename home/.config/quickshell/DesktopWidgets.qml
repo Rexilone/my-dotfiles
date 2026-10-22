@@ -24,6 +24,9 @@ Variants {
             { id: "calendar", name: "Calendar" },
             { id: "notes", name: "Today's notes" },
             { id: "quote", name: "Quote of the day" },
+            { id: "graph", name: "CPU graph" },
+            { id: "visualizer", name: "Audio visualizer" },
+            { id: "lyrics", name: "Lyrics" },
         ]
         // плюс виджеты телефона — по экземпляру на каждый
         readonly property var allDefs: defs.concat(Settings.phoneWidgetIds.map(id => {
@@ -163,6 +166,7 @@ Variants {
                         sourceComponent: w.modelData.id.startsWith("phone-") ? phoneC : ({
                             clock: clockC, perf: perfC, weather: weatherC, media: mediaC,
                             calendar: calendarC, notes: notesC, quote: quoteC,
+                            graph: graphC, visualizer: vizC, lyrics: lyricsC,
                         })[w.modelData.id]
                         onLoaded: if (w.modelData.id.startsWith("phone-")) {
                             item.device = Qt.binding(() => w.cfg.device ?? "");
@@ -232,5 +236,8 @@ Variants {
         Component { id: notesC; DeskNotes {} }
         Component { id: quoteC; DeskQuote {} }
         Component { id: phoneC; DeskPhone {} }
+        Component { id: graphC; DeskGraph {} }
+        Component { id: vizC; DeskVisualizer {} }
+        Component { id: lyricsC; DeskLyrics {} }
     }
 }

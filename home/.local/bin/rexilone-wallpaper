@@ -1,0 +1,103 @@
+#!/bin/bash
+# Обои Rexilone: движок awww (по умолчанию — с анимацией перехода) или swaybg (проще и легче, без анимации).
+# Им пользуются Quickshell и запуск niri.
+#
+#   rexilone-wallpaper start          запустить выбранный движок с текущими обоями (при входе)
+#   rexilone-wallpaper set <файл>     поставить обои
+#   rexilone-wallpaper engine [awww|swaybg]   показать или сменить движок
+#   rexilone-wallpaper current        путь к текущим обоям
+#
+# Выбор движка — ~/.config/rexilone/wallpaper-engine, текущие обои — ~/.local/state/rexilone/wallpaper.
+
+set -u
+ENGINE_FILE="${REXILONE_WALL_ENGINE_FILE:-$HOME/.config/rexilone/wallpaper-engine}"
+STATE="${REXILONE_WALL_STATE:-$HOME/.local/state/rexilone/wallpaper}"
+
+engine() {
+    [[ "$(cat "$ENGINE_FILE" 2>/dev/null)" == swaybg ]] && echo swaybg || echo awww
+}
+
+current() {
+    local f
+    f="$(cat "$STATE" 2>/dev/null)"
+    if [[ -n "$f" && -f "$f" ]]; then
+        printf '%s\n' "$f"
+    else
+        # раньше обои знал только awww
+        awww query 2>/dev/null | sed -n 's/.*image: //p' | head -1
+    fi
+}
+
+remember() {
+    mkdir -p "${STATE%/*}"
+    printf '%s\n' "$1" > "$STATE"
+}
+
+# awww: демон один на сеанс; swaybg — убрать, чтобы не рисовал поверх
+start_awww() {
+    pkill -x swaybg 2>/dev/null
+    if ! pgrep -x awww-daemon >/dev/null; then
+        setsid -f awww-daemon >/dev/null 2>&1
+        for _ in $(seq 50); do awww query >/dev/null 2>&1 && break; sleep 0.1; done
+    fi
+}
+
+# swaybg: новый процесс — сначала, старый — после, чтобы не мигнул пустой фон
+start_swaybg() {
+    local f="$1" old
+    pkill -x awww-daemon 2>/dev/null
+    [[ -f "$f" ]] || return 0
+    old="$(pgrep -x swaybg)"
+    setsid -f swaybg -m fill -i "$f" >/dev/null 2>&1
+    if [[ -n "$old" ]]; then
+        sleep 0.4
+        env kill $old 2>/dev/null
+    fi
+}
+
+start() {
+    local f
+    f="$(current)"
+    if [[ "$(engine)" == swaybg ]]; then
+        start_swaybg "$f"
+    else
+        start_awww
+        # awww помнит свои последние обои; если их сменили через swaybg — поставить наши
+        if [[ -f "$f" ]] && ! awww query 2>/dev/null | grep -qF "image: $f"; then
+            awww img "$f" --transition-type none >/dev/null 2>&1
+        fi
+    fi
+}
+
+set_wall() {
+    local f="$1"
+    [[ -f "$f" ]] || { echo "нет файла: $f" >&2; return 1; }
+    remember "$f"
+    if [[ "$(engine)" == swaybg ]]; then
+        start_swaybg "$f"
+    else
+        start_awww
+        awww img "$f" --transition-type grow --transition-pos top --transition-duration 1.2 --transition-fps 180
+    fi
+}
+
+case "${1:-}" in
+    start) start ;;
+    set) set_wall "${2:-}" ;;
+    current) current ;;
+    engine)
+        if [[ -n "${2:-}" ]]; then
+            [[ "$2" == awww || "$2" == swaybg ]] || { echo "движок: awww или swaybg" >&2; exit 2; }
+            f="$(current)"
+            [[ -n "$f" ]] && remember "$f"
+            mkdir -p "${ENGINE_FILE%/*}"
+            printf '%s\n' "$2" > "$ENGINE_FILE"
+            start
+        fi
+        engine
+        ;;
+    *)
+        echo "использование: rexilone-wallpaper start | set <файл> | engine [awww|swaybg] | current" >&2
+        exit 2
+        ;;
+esac

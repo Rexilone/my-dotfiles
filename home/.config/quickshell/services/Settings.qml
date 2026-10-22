@@ -21,6 +21,8 @@ Singleton {
     property alias opacity: cfg.opacity            // 0.5..1 непрозрачность панелей
     property alias blur: cfg.blur                  // размытие под панелями (niri)
     property alias terminalOpacity: cfg.terminalOpacity
+    // ── скруглённые углы экрана: { enabled, radius }
+    property alias screenCorners: cfg.screenCorners
 
     // ── время и язык
     property alias weekStartsMonday: cfg.weekStartsMonday
@@ -216,6 +218,7 @@ Singleton {
             property real opacity: 0.85
             property bool blur: true
             property real terminalOpacity: 1
+            property var screenCorners: ({ enabled: false, radius: 18 })
 
             property bool weekStartsMonday: true
 
@@ -237,6 +240,9 @@ Singleton {
                 calendar: { enabled: false, screen: "", x: 1500, y: 90, background: true, size: 1 },
                 notes: { enabled: false, screen: "", x: 1500, y: 420, background: true, size: 1 },
                 quote: { enabled: false, screen: "", x: 460, y: 360, background: false, size: 1 },
+                graph: { enabled: false, screen: "", x: 80, y: 240, background: true, size: 1 },
+                visualizer: { enabled: false, screen: "", x: 80, y: 700, background: true, size: 1 },
+                lyrics: { enabled: false, screen: "", x: 700, y: 800, background: false, size: 1 },
             })
             property real uiScale: 1
 
