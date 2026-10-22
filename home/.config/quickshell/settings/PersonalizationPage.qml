@@ -336,6 +336,19 @@ Page {
             }
         }
 
+        SCard {
+            visible: page.tab === "wallpaper"
+            icon: String.fromCodePoint(0xF0E09)
+            title: "Wallpaper engine"
+            desc: Wallpapers.engine === "swaybg" ? "swaybg — simpler and lighter, no animation" : "awww — animated transition when the wallpaper changes"
+
+            SChoice {
+                options: [{ value: "awww", label: "awww" }, { value: "swaybg", label: "swaybg" }]
+                current: Wallpapers.engine
+                onPicked: v => Wallpapers.setEngine(v)
+            }
+        }
+
         ColumnLayout {
             Layout.fillWidth: true
             visible: page.tab === "transparency"

@@ -762,5 +762,7 @@ Singleton {
         "Screen corners": "Углы экрана", "Rounded screen corners": "Скруглённые углы экрана",
         "Black rounded corners on every monitor, like a phone screen. Clicks pass through": "Чёрные скруглённые углы на каждом мониторе, как у экрана телефона. Клики проходят насквозь",
         "Corner radius": "Радиус углов",
+        "Wallpaper engine": "Движок обоев", "swaybg — simpler and lighter, no animation": "swaybg — проще и легче, без анимации",
+        "awww — animated transition when the wallpaper changes": "awww — анимация при смене обоев",
     })
 }

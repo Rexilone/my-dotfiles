@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// обои через awww: список из папки, миниатюры в кэше, текущие обои
+// обои: список из папки, миниатюры в кэше, текущие обои; движок — awww или swaybg (rexilone-wallpaper)
 Singleton {
     id: root
 
@@ -13,11 +13,18 @@ Singleton {
     property var items: []          // [{ path, name, thumb, size }]
     property string current: ""
     property bool loading: false
+    property string engine: "awww"   // awww — с анимацией смены, swaybg — проще и легче
 
     function refresh() {
         loading = true;
         scan.running = true;
         query.running = true;
+        engineQuery.running = true;
+    }
+
+    function setEngine(name) {
+        engine = name;
+        Quickshell.execDetached(["sh", "-c", '"$HOME/.local/bin/rexilone-wallpaper" engine "$1"', "sh", name]);
     }
 
     function apply(path) {
@@ -73,6 +80,15 @@ Singleton {
                 const m = line.match(/image: (.+)$/);
                 if (m) root.current = m[1].trim();
             }
+        }
+    }
+
+    Process {
+        id: engineQuery
+        running: true
+        command: ["sh", "-c", '"$HOME/.local/bin/rexilone-wallpaper" engine']
+        stdout: StdioCollector {
+            onStreamFinished: root.engine = text.trim() === "swaybg" ? "swaybg" : "awww"
         }
     }
 }
