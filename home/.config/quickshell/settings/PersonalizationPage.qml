@@ -40,7 +40,12 @@ Page {
 
     Component.onCompleted: {
         if (!Wallpapers.items.length) Wallpapers.refresh();
-        fontList.running = true;
+        loadFonts();
+    }
+    // список шрифтов — при первом открытии вкладки «Шрифты»
+    onTabChanged: loadFonts()
+    function loadFonts() {
+        if (tab === "fonts" && !fonts.length && !fontList.running) fontList.running = true;
     }
 
     // шрифты из fontconfig: все и моноширинные
@@ -196,114 +201,119 @@ Page {
         visible: ["colors", "wallpaper", "transparency", "fonts", "size", "corners"].includes(page.tab)
         spacing: 6
 
-        Flow {
+        Loader {
             Layout.fillWidth: true
-            visible: page.tab === "colors"
-            spacing: 10
+            active: page.tab === "colors"
+            visible: active
+            sourceComponent: Component {
+                Flow {
+                    spacing: 10
 
-            Repeater {
-                model: page.schemeList
-
-                Rectangle {
-                    id: sc
-
-                    required property string modelData
-                    readonly property bool selected: Settings.scheme === modelData
-                    readonly property var p: modelData === "wallpaper"
-                        ? (WallColors.palette ?? { bg: "#202020", surface: "#2a2a2a", fg: "#dddddd", dim: "#777777", accent: "#aaaaaa", name: "Wallpaper" })
-                        : Theme.schemes[modelData]
-
-                    width: 168
-                    height: 128
-                    radius: 12
-                    color: Theme.surface
-                    border.width: selected ? 2 : 1
-                    border.color: selected ? Theme.accent : scArea.containsMouse ? Theme.line : Theme.surfaceHi2
-
-                    Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
-
-                    // мини-превью: фон, «окно», текст, акцент
-                    ClippingRectangle {
-                        x: 10
-                        y: 10
-                        width: parent.width - 20
-                        height: 80
-                        radius: 8
-                        color: sc.p.bg
-
-                        Image {
-                            visible: sc.modelData === "wallpaper" && !!Wallpapers.current
-                            anchors.fill: parent
-                            source: Wallpapers.current ? "file://" + Wallpapers.current : ""
-                            sourceSize.width: 300
-                            fillMode: Image.PreserveAspectCrop
-                            opacity: 0.55
-                            asynchronous: true
-                        }
+                    Repeater {
+                        model: page.schemeList
 
                         Rectangle {
-                            width: parent.width
-                            height: 12
-                            color: sc.p.bg
-                            opacity: 0.95
+                            id: sc
 
-                            Rectangle {
-                                x: 6
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 14
-                                height: 4
-                                radius: 2
-                                color: sc.p.accent
+                            required property string modelData
+                            readonly property bool selected: Settings.scheme === modelData
+                            readonly property var p: modelData === "wallpaper"
+                                ? (WallColors.palette ?? { bg: "#202020", surface: "#2a2a2a", fg: "#dddddd", dim: "#777777", accent: "#aaaaaa", name: "Wallpaper" })
+                                : Theme.schemes[modelData]
+
+                            width: 168
+                            height: 128
+                            radius: 12
+                            color: Theme.surface
+                            border.width: selected ? 2 : 1
+                            border.color: selected ? Theme.accent : scArea.containsMouse ? Theme.line : Theme.surfaceHi2
+
+                            Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
+
+                            // мини-превью: фон, «окно», текст, акцент
+                            ClippingRectangle {
+                                x: 10
+                                y: 10
+                                width: parent.width - 20
+                                height: 80
+                                radius: 8
+                                color: sc.p.bg
+
+                                Image {
+                                    visible: sc.modelData === "wallpaper" && !!Wallpapers.current
+                                    anchors.fill: parent
+                                    source: Wallpapers.current ? "file://" + Wallpapers.current : ""
+                                    sourceSize.width: 300
+                                    fillMode: Image.PreserveAspectCrop
+                                    opacity: 0.55
+                                    asynchronous: true
+                                }
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: 12
+                                    color: sc.p.bg
+                                    opacity: 0.95
+
+                                    Rectangle {
+                                        x: 6
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 14
+                                        height: 4
+                                        radius: 2
+                                        color: sc.p.accent
+                                    }
+                                }
+
+                                Rectangle {
+                                    x: 12
+                                    y: 22
+                                    width: parent.width - 24
+                                    height: 48
+                                    radius: 6
+                                    color: sc.p.surface
+
+                                    Column {
+                                        x: 8
+                                        y: 9
+                                        spacing: 6
+                                        Rectangle { width: 60; height: 5; radius: 2; color: sc.p.fg }
+                                        Rectangle { width: 90; height: 4; radius: 2; color: sc.p.dim }
+                                        Rectangle { width: 36; height: 8; radius: 4; color: sc.p.accent }
+                                    }
+                                }
+                            }
+
+                            Text {
+                                x: 12
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 11
+                                text: sc.modelData === "wallpaper" ? "From wallpaper" : sc.p.name
+                                color: Theme.fg
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSize - 1
+                                font.bold: sc.selected
+                            }
+
+                            Text {
+                                visible: sc.selected
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 11
+                                text: String.fromCodePoint(0xF012C)  // check
+                                color: Theme.accent
+                                font.family: Theme.font
+                                font.pixelSize: Theme.iconSize
+                            }
+
+                            MouseArea {
+                                id: scArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Settings.scheme = sc.modelData
                             }
                         }
-
-                        Rectangle {
-                            x: 12
-                            y: 22
-                            width: parent.width - 24
-                            height: 48
-                            radius: 6
-                            color: sc.p.surface
-
-                            Column {
-                                x: 8
-                                y: 9
-                                spacing: 6
-                                Rectangle { width: 60; height: 5; radius: 2; color: sc.p.fg }
-                                Rectangle { width: 90; height: 4; radius: 2; color: sc.p.dim }
-                                Rectangle { width: 36; height: 8; radius: 4; color: sc.p.accent }
-                            }
-                        }
-                    }
-
-                    Text {
-                        x: 12
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: 11
-                        text: sc.modelData === "wallpaper" ? "From wallpaper" : sc.p.name
-                        color: Theme.fg
-                        font.family: Theme.font
-                        font.pixelSize: Theme.fontSize - 1
-                        font.bold: sc.selected
-                    }
-
-                    Text {
-                        visible: sc.selected
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.margins: 11
-                        text: String.fromCodePoint(0xF012C)  // check
-                        color: Theme.accent
-                        font.family: Theme.font
-                        font.pixelSize: Theme.iconSize
-                    }
-
-                    MouseArea {
-                        id: scArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: Settings.scheme = sc.modelData
                     }
                 }
             }
@@ -515,60 +525,76 @@ Page {
     }
 
     // обои: сетка миниатюр по 4 в ряд, клик — поставить
-    Flow {
-        id: wallGrid
-        readonly property real thumbW: Math.floor((width - 3 * spacing) / 4)
+    // вкладки грузятся, только когда открыты: на открытие раздела — одна главная страница
+    Loader {
         Layout.fillWidth: true
         Layout.topMargin: 10
-        visible: page.tab === "wallpaper"
-        spacing: 8
+        active: page.tab === "wallpaper"
+        visible: active
+        sourceComponent: Component {
+            Flow {
+                id: wallGrid
+                readonly property real thumbW: Math.floor((width - 3 * spacing) / 4)
+                spacing: 8
 
-        Repeater {
-            model: Wallpapers.items
+                Repeater {
+                    model: Wallpapers.items
 
-            Rectangle {
-                id: wp
-                required property var modelData
-                readonly property bool current: modelData.path === Wallpapers.current
+                    Rectangle {
+                        id: wp
+                        required property var modelData
+                        readonly property bool current: modelData.path === Wallpapers.current
 
-                width: wallGrid.thumbW
-                height: Math.round(wallGrid.thumbW * 9 / 16)
-                radius: 8
-                color: Theme.surface
-                border.width: current ? 2 : 0
-                border.color: Theme.accent
-                clip: true
+                        width: wallGrid.thumbW
+                        height: Math.round(wallGrid.thumbW * 9 / 16)
+                        radius: 8
+                        color: Theme.surface
+                        border.width: current ? 2 : 0
+                        border.color: Theme.accent
+                        clip: true
 
-                Image {
-                    anchors.fill: parent
-                    anchors.margins: wp.current ? 3 : 0
-                    source: wp.modelData.thumb ? "file://" + wp.modelData.thumb : ""
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    sourceSize.width: 336
-                    opacity: wpArea.containsMouse || wp.current ? 1 : 0.85
+                        Image {
+                            anchors.fill: parent
+                            anchors.margins: wp.current ? 3 : 0
+                            source: wp.modelData.thumb ? "file://" + wp.modelData.thumb : ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            sourceSize.width: 336
+                            opacity: wpArea.containsMouse || wp.current ? 1 : 0.85
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
-                }
+                            Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+                        }
 
-                MouseArea {
-                    id: wpArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Wallpapers.apply(wp.modelData.path)
+                        MouseArea {
+                            id: wpArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Wallpapers.apply(wp.modelData.path)
+                        }
+                    }
                 }
             }
         }
     }
 
     // ═════════════════════════ бар
-    BarPanel {
-        visible: page.tab === "bar"
+    Loader {
+        Layout.fillWidth: true
+        active: page.tab === "bar"
+        visible: active
+        sourceComponent: Component {
+            BarPanel {}
+        }
     }
 
     // ═════════════════════════ виджеты рабочего стола
-    WidgetsPanel {
-        visible: page.tab === "widgets"
+    Loader {
+        Layout.fillWidth: true
+        active: page.tab === "widgets"
+        visible: active
+        sourceComponent: Component {
+            WidgetsPanel {}
+        }
     }
 }

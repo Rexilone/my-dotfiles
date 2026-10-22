@@ -46,6 +46,8 @@ Singleton {
     // список + миниатюры (создаются один раз) + размеры
     Process {
         id: scan
+        // ImageMagick без OpenCL: на NVIDIA его запуск будит видеокарту и компилирует ядра — шелл и система встают
+        environment: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2" })
         command: ["sh", "-c", `
             dir="$1"; cache="$2"; mkdir -p "$cache"
             find -L "$dir" -maxdepth 2 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \\
@@ -53,7 +55,7 @@ Singleton {
                 h=$(printf '%s' "$f" | md5sum | cut -c1-16)
                 t="$cache/$h.jpg"; d="$cache/$h.txt"
                 if [ ! -s "$t" ] || [ "$f" -nt "$t" ]; then
-                    magick "$f[0]" -thumbnail 640x360^ -gravity center -extent 640x360 -quality 88 "$t" < /dev/null 2>/dev/null
+                    nice -n 19 magick "$f[0]" -thumbnail 640x360^ -gravity center -extent 640x360 -quality 88 "$t" < /dev/null 2>/dev/null
                     magick identify -format '%wx%h' "$f[0]" < /dev/null > "$d" 2>/dev/null
                 fi
                 printf '%s\\t%s\\t%s\\n' "$f" "$t" "$(cat "$d" 2>/dev/null)"

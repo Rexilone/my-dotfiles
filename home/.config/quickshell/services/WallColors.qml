@@ -39,6 +39,8 @@ Singleton {
 
     Process {
         id: extract
+        // ImageMagick без OpenCL: на NVIDIA его запуск будит видеокарту и компилирует ядра — шелл и система встают
+        environment: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2" })
         stdout: StdioCollector {
             onStreamFinished: {
                 // строки вида: "  120: (r,g,b) #RRGGBB srgb(...)"

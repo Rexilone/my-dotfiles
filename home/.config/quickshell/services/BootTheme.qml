@@ -91,9 +91,16 @@ Singleton {
         }
     }
 
-    Process { id: themeProc }
+    // ImageMagick без OpenCL: на NVIDIA его запуск будит видеокарту и компилирует ядра — шелл и система встают
+    readonly property var magickEnv: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2" })
+
+    Process {
+        id: themeProc
+        environment: root.magickEnv
+    }
     Process {
         id: wallProc
+        environment: root.magickEnv
         onExited: (code) => {
             if (code !== 0) root.lastWallpaper = "";
             if (root.pending.length) root.start();
