@@ -458,7 +458,7 @@ pub fn dropdown(t: &Tk, id: &str, opts: &[(String, String)], current: &str, min_
                 let cur = Prefs::get(&off_key).parse::<f32>().unwrap_or(0.0);
                 Prefs::set(&off_key, &((cur + s.y * 32.0).clamp(0.0, (total - list_h).max(0.0))).to_string());
             })
-            .child(Rectangle::new().width(lw - 8.0).height(total.max(1.0)).translate(0.0, -off).child(Column::new(items)));
+            .child(ui::scrolled(Rectangle::new().width(lw - 8.0).height(total.max(1.0)).child(Column::new(items)), off));
         rows.push(bx(list));
         let col = Column::new(rows).gap(4.0);
         let (_, chh) = wh(&col);

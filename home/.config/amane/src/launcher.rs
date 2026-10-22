@@ -637,7 +637,7 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
                                 w.sel = idx;
                             }
                         })
-                        .child(Rectangle::new().width(WIDTH - 16.0).height(total).translate(0.0, -scroll).child(Column::new(rows))),
+                        .child(ui::scrolled(Rectangle::new().width(WIDTH - 16.0).height(total).child(Column::new(rows)), scroll)),
                 ),
         )
     };

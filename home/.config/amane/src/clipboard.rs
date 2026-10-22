@@ -357,7 +357,7 @@ pub fn view(m: &amane::Monitor) -> LayerWindow {
                     let mut c = Clip::write();
                     c.scroll = (c.scroll + s.y * 40.0).clamp(0.0, (total - view_h).max(0.0));
                 })
-                .child(Rectangle::new().width(inner).height(total).translate(0.0, -scroll).child(Column::new(rows).gap(2.0))),
+                .child(ui::scrolled(Rectangle::new().width(inner).height(total).child(Column::new(rows).gap(2.0)), scroll)),
         ));
     }
     col.push(Box::new(Rectangle::new().width(inner).height(t.fs + 2.0).align_child(End, Center).padding(Padding { top: 0.0, right: 4.0, bottom: 0.0, left: 0.0 }).child(ui::text(

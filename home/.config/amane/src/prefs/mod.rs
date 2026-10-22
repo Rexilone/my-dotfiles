@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use amane::{
     Center, Column, Key, Padding, Parent, Rectangle, Row, ScrollArea, Service, Start, Stack, TextInput, Weight,
-    Widget, Window, children, close_window, open_window,
+    Window, children, close_window, open_window,
 };
 
 use crate::look::{self, Tk};
@@ -367,7 +367,7 @@ pub fn smooth_scroll(id: &'static str, child: Rectangle, w: f32, h: f32, content
             *v = (*v + s.y * 15.0).clamp(0.0, max);
             amane::request_frame();
         })
-        .child(child.translate(0.0, -off))
+        .child(ui::scrolled(child, off))
 }
 
 pub fn view() -> Window {

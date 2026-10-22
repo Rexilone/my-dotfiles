@@ -343,15 +343,34 @@ fn network(t: &Tk) -> Column {
         crate::net::Kind::Wifi => format!("Wi-Fi · {}", if nt.ssid.is_empty() { &nt.iface } else { &nt.ssid }),
         crate::net::Kind::None => t.tr("Not connected", "Нет подключения").to_string(),
     };
-    let details: Vec<(String, String)> = [
-        (t.tr("Address", "Адрес"), nt.ip.clone()),
-        (t.tr("Speed", "Скорость"), nt.speed.clone()),
-    ]
-    .into_iter()
-    .filter(|(_, v)| !v.is_empty())
-    .map(|(k, v)| (k.to_string(), v))
-    .collect();
+    let status = if nt.speed.is_empty() { status } else { format!("{status} · {}", nt.speed) };
+    let connected = nt.kind != crate::net::Kind::None;
+    // сведения о подключении (как NetworkInfo в Quickshell)
+    let mut details: Vec<(String, String)> = Vec::new();
+    if connected {
+        let dash = |v: String| if v.is_empty() { "—".to_string() } else { v };
+        details.push(("IPv4".into(), dash(nt.info.ipv4.join(", "))));
+        for (i, a) in nt.info.ipv6.iter().enumerate() {
+            details.push((if i == 0 { "IPv6".into() } else { String::new() }, a.clone()));
+        }
+        details.push((t.tr("Gateway", "Шлюз").into(), dash(nt.info.gateway.clone())));
+        details.push(("DNS".into(), dash(nt.info.dns.join(", "))));
+        if nt.kind == crate::net::Kind::Wifi {
+            details.push((t.tr("Signal", "Сигнал").into(), format!("{}/70", if nt.signal.is_empty() { "?" } else { &nt.signal })));
+        }
+        details.push(("MAC".into(), dash(nt.info.mac.clone())));
+        details.push(("MTU".into(), if nt.info.mtu > 0 { nt.info.mtu.to_string() } else { "—".into() }));
+        details.push(("VPN".into(), if nt.info.vpn.is_empty() { t.tr("off", "выкл").into() } else { nt.info.vpn.join(", ") }));
+    }
     drop(nt);
+    let rate = crate::net::NetRate::read();
+    let (rx, tx, rx_total, tx_total) = (rate.rx_speed, rate.tx_speed, rate.rx_total, rate.tx_total);
+    let (rx_hist, tx_hist) = (rate.rx_history.clone(), rate.tx_history.clone());
+    drop(rate);
+    if connected {
+        details.push((t.tr("Received", "Получено").into(), crate::net::format_bytes(rx_total)));
+        details.push((t.tr("Sent", "Отправлено").into(), crate::net::format_bytes(tx_total)));
+    }
     let n = Network::read();
     // список сетей Wi-Fi — через NetworkManager (если он есть)
     let nm = n.wifi_enabled() || !n.access_points().is_empty();
@@ -371,12 +390,31 @@ fn network(t: &Tk) -> Column {
         .justify(SpaceBetween)
         .align(Center),
     ));
-    for (k, v) in details {
-        rows.push(Box::new(
-            Row::new(children![ui::text(t, k, t.p.dim).size(t.fs - 1.0), ui::text(t, v, t.p.fg).size(t.fs - 1.0)])
-                .width(320.0)
-                .justify(SpaceBetween),
-        ));
+    if connected {
+        rows.push(Box::new(ui::spacer(1.0, 8.0)));
+        rows.push(Box::new(net_card(Column::new(children![
+            Row::new(children![
+                ui::text(t, format!("{} {}", ui::glyph(0xF0045), crate::net::format_speed(rx)), t.p.fg).size(t.fs + 1.0),
+                ui::text(t, format!("{} {}", ui::glyph(0xF005D), crate::net::format_speed(tx)), t.p.dim).size(t.fs + 1.0)
+            ])
+            .width(NET_IN)
+            .justify(SpaceBetween),
+            net_graph(t, &rx_hist, &tx_hist)
+        ])
+        .gap(8.0), t)));
+        rows.push(Box::new(ui::spacer(1.0, 6.0)));
+        let lh = ((t.fs - 1.0) * 1.35).ceil();
+        let mut grid: Vec<Box<dyn Widget>> = Vec::new();
+        for (k, v) in details {
+            grid.push(Box::new(
+                Row::new(children![
+                    Rectangle::new().width(84.0).height(lh).align_child(Start, Center).child(ui::text(t, k, t.p.dim).size(t.fs - 1.0)),
+                    Rectangle::new().width(NET_IN - 84.0).height(lh).align_child(End, Center).child(ui::text(t, v, t.p.fg).size(t.fs - 1.0).elide())
+                ])
+                .width(NET_IN),
+            ));
+        }
+        rows.push(Box::new(net_card(Column::new(grid).gap(6.0), t)));
     }
     rows.push(Box::new(ui::spacer(1.0, 8.0)));
     let ask = Popups::read().ask_ssid.clone();
@@ -454,6 +492,43 @@ fn network(t: &Tk) -> Column {
     Column::new(rows).gap(2.0)
 }
 
+// ширина содержимого карточек в меню сети
+const NET_IN: f32 = 320.0 - 28.0;
+
+fn net_card(child: Column, t: &Tk) -> Rectangle {
+    let h = match amane::Widget::height(&child) {
+        amane::Size::Fixed(v) => v,
+        _ => 0.0,
+    };
+    Rectangle::new().width(320.0).height(h + 24.0).radius(12.0).fill(t.p.surface).padding(Padding { top: 12.0, right: 14.0, bottom: 12.0, left: 14.0 }).child(child)
+}
+
+// скорость за последнюю минуту: входящая — светлая, исходящая — серая
+fn net_graph(t: &Tk, rx: &[f64], tx: &[f64]) -> amane::Canvas {
+    use amane::{Path, Shape};
+    let (w, h) = (NET_IN, 60.0_f32);
+    let max = rx.iter().chain(tx).fold(1024.0_f64, |a, b| a.max(*b)) * 1.15;
+    let step = w / 59.0;
+    let mut shapes: Vec<Box<dyn Shape>> = Vec::new();
+    for (data, line, fill) in [(tx, t.p.dim, theme_alpha(t.p.fg, 0.03)), (rx, t.p.fg, theme_alpha(t.p.fg, 0.06))] {
+        if data.len() < 2 {
+            continue;
+        }
+        let x0 = w - (data.len() - 1) as f32 * step;
+        let pt = |i: usize, v: f64| (x0 + i as f32 * step, h - (v / max) as f32 * h);
+        let mut area = Path::new().move_to(x0, h);
+        let mut stroke = Path::new();
+        for (i, v) in data.iter().enumerate() {
+            let (x, y) = pt(i, *v);
+            area = area.line_to(x, y);
+            stroke = if i == 0 { stroke.move_to(x, y) } else { stroke.line_to(x, y) };
+        }
+        shapes.push(Box::new(area.line_to(w, h).close().fill(fill)));
+        shapes.push(Box::new(stroke.stroke(1.5, line)));
+    }
+    amane::Canvas::new().width(w).height(h).shapes(shapes)
+}
+
 fn theme_alpha(c: amane::Color, a: f32) -> amane::Color {
     crate::theme::alpha(c, a)
 }
@@ -529,15 +604,22 @@ fn tile(t: &Tk, id: &str, code: u32, label: &str, sub: &str, on: bool, f: impl F
         .radius(14.0)
         .fill(if on { t.p.accent } else if hov { t.p.surface_hi } else { t.p.surface })
         .padding(12.0)
-        .child(
-            Column::new(children![
-                ui::icon(t, code, t.icon + 3.0, fg),
-                ui::spacer(1.0, 10.0),
-                Rectangle::new().width(w - 24.0).height(t.fs).child(ui::bold(t, label, fg).size(t.fs - 2.0).elide()),
-                Rectangle::new().width(w - 24.0).height(t.fs - 2.0).child(ui::text(t, sub, if on { theme_alpha(t.p.bg, 0.7) } else { t.p.dim }).size(t.fs - 4.0).elide())
-            ])
-            .gap(2.0),
-        );
+        .child({
+            // иконка сверху, подписи прижаты вниз и целиком внутри плитки (как в Quickshell)
+            let lh = ((t.fs - 2.0) * 1.3).ceil();
+            let sh = if sub.is_empty() { 0.0 } else { ((t.fs - 4.0) * 1.3).ceil() };
+            let top = (76.0 - 24.0 - lh - sh - if sub.is_empty() { 2.0 } else { 4.0 }).max(0.0);
+            let mut col: Vec<Box<dyn amane::Widget>> = vec![
+                Box::new(Rectangle::new().width(w - 24.0).height(top).align_child(Start, Start).child(ui::icon(t, code, t.icon + 3.0, fg))),
+                Box::new(Rectangle::new().width(w - 24.0).height(lh).align_child(Start, Center).child(ui::bold(t, label, fg).size(t.fs - 2.0).elide())),
+            ];
+            if !sub.is_empty() {
+                col.push(Box::new(
+                    Rectangle::new().width(w - 24.0).height(sh).align_child(Start, Center).child(ui::text(t, sub, if on { theme_alpha(t.p.bg, 0.7) } else { t.p.dim }).size(t.fs - 4.0).elide()),
+                ));
+            }
+            Column::new(col).gap(2.0)
+        });
     ui::on_left(ui::track::<POPUP>(r, id), f)
 }
 

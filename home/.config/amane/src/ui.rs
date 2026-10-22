@@ -2,9 +2,15 @@
 
 use std::time::Duration;
 
-use amane::{Button, Color, Rectangle, Service, Text, Weight};
+use amane::{Button, Color, Column, Rectangle, Service, Text, Weight, Widget, children};
 
 use crate::look::Tk;
+
+// содержимое прокрутки, сдвинутое вверх на off. Не через translate: clip в amane режет зоны
+// клика по месту до сдвига, и то, что прокручено в окно снизу, не нажималось
+pub fn scrolled(child: impl Widget + 'static, off: f32) -> Column {
+    Column::new(children![Column::new(Vec::new()).height(-off), child])
+}
 
 // что под мышью; у каждого окна свой номер W — наведение в одном окне не перерисовывает другие
 pub struct Hover<const W: u8> {
