@@ -145,6 +145,8 @@ html.qs-steam .closeButton:hover svg { stroke: var(--qs-accent-fg) !important; }
     padding: 2px 0 12px;
     color: var(--qs-fg);
     font-size: 22px;
+    /* значок из Nerd Font, даже если шрифт шелла без значков */
+    font-family: "JetBrainsMono Nerd Font Mono", "Symbols Nerd Font Mono", monospace !important;
 }
 .%SuperNav% {
     display: flex !important;
@@ -252,6 +254,21 @@ html.qs-steam .closeButton:hover svg { stroke: var(--qs-accent-fg) !important; }
     z-index: 100;
 }
 [data-qs-tip]:hover::after { opacity: 1; transform: translate(0, -50%); }
+/* в Магазине и Сообществе страница — отдельное окно браузера поверх интерфейса Steam,
+   подсказка справа ушла бы под него: там подпись показывается прямо в панели, вместо иконки */
+.%OuterFrame%:has(.%BrowserWrapper%) [data-qs-tip]::after {
+    left: -8px;
+    right: -8px;
+    top: 50%;
+    transform: translate(0, -50%);
+    padding: 3px 2px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    font-size: 9px;
+    line-height: 1.15;
+}
+.%OuterFrame%:has(.%BrowserWrapper%) [data-qs-tip]:hover::after { transform: translate(0, -50%); }
 /* полоска выбранного раздела — тенью, т.к. ::after занят подсказкой */
 .%SuperNavMenu%.%Selected@SuperNavMenu% { box-shadow: inset 3px 0 0 var(--qs-accent) !important; }
 

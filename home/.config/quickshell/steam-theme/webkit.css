@@ -40,3 +40,51 @@ form[role="search"] button {
     box-shadow: none !important;
 }
 form[role="search"] button:hover { background: var(--qs-line, #3a3a3a) !important; }
+
+/* поля ввода сайтов (поиск в Сообществе, код друга…); у поиска магазина фон уже на самой форме */
+input[type="text"]:not(form[role="search"] input), input[type="search"]:not(form[role="search"] input),
+input[type="password"], input:not([type]):not(form[role="search"] input), textarea, .DialogInput {
+    background: var(--qs-surface-hi, #222) !important;
+    color: var(--qs-fg, #d4d4d4) !important;
+    border: 1px solid var(--qs-surface-hi-2, #2a2a2a) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+input:not(form[role="search"] input):focus, textarea:focus, .DialogInput:focus { border-color: var(--qs-line, #3a3a3a) !important; }
+input::placeholder, textarea::placeholder { color: var(--qs-dim, #6b6b6b) !important; }
+/* синяя лупа-картинка у поиска Сообщества */
+.appHubSearchTextForm input[type="image"] { filter: grayscale(1) brightness(1.1); opacity: 0.7; }
+
+/* кнопки нового интерфейса сайта (Скопировать, Отправить…) */
+.DialogButton.Primary {
+    background: var(--qs-accent, #d4d4d4) !important;
+    color: var(--qs-accent-fg, #151515) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+.DialogButton.Secondary {
+    background: var(--qs-surface-hi-2, #2a2a2a) !important;
+    color: var(--qs-fg, #d4d4d4) !important;
+    border-radius: 8px !important;
+}
+.DialogButton.Primary:hover { filter: brightness(1.1); }
+.DialogButton.Secondary:hover { background: var(--qs-line, #3a3a3a) !important; }
+
+/* «Добавить друга»: синяя плашка заголовка (класс сайта зашифрован), фон шапки профиля, счётчик заявок */
+.X9bYNT3rKpg6L1Cgq45pG { background: var(--qs-surface-hi-2, #2a2a2a) !important; color: var(--qs-fg, #d4d4d4) !important; }
+.friends_header_bg, .profile_small_header_bg { background-image: none !important; background-color: var(--qs-surface, #1b1b1b) !important; }
+.em_count { background: var(--qs-accent, #d4d4d4) !important; color: var(--qs-accent-fg, #151515) !important; }
+/* чёрный подвал сайта */
+#footer, #footer_spacer { background: var(--qs-bg, #151515) !important; }
+/* поиск Сообщества: рамка — у контейнера, поле внутри прозрачное */
+.community_home_search_apps, .community_home_search_players, .gray_bevel {
+    background: var(--qs-surface-hi, #222) !important;
+    border: 1px solid var(--qs-surface-hi-2, #2a2a2a) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+html body .community_home_search_apps input:not([type="image"]), html body .community_home_search_players input:not([type="image"]), html body .gray_bevel input {
+    background: transparent !important;
+    border: none !important;
+}

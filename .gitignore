@@ -15,3 +15,6 @@ home/.config/quickshell/plugins/*
 !home/.config/quickshell/plugins/hello-world/
 !home/.config/quickshell/plugins/.template/
 !home/.config/quickshell/plugins/README.md
+
+# fc-cache пишет .uuid в папки шрифтов
+home/.local/share/fonts/**/.uuid

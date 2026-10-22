@@ -332,6 +332,14 @@ window-rule {
     default-floating-position x=32 y=32 relative-to="bottom-right"
 }
 
+// уведомления Steam (друг зашёл в игру, заявки в друзья…): в правом нижнем углу, без фокуса
+window-rule {
+    match app-id=r#"^steam$"# title="^notificationtoasts_"
+    open-floating true
+    open-focused false
+    default-floating-position x=16 y=16 relative-to="bottom-right"
+}
+
 // окна Настроек и «Программ» Quickshell — плавающие, по центру
 window-rule {
     match app-id=r#"^org\.quickshell$"# title="^Settings$"
