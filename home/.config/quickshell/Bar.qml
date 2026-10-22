@@ -146,7 +146,7 @@ PanelWindow {
             height: parent.height
             spacing: 10
 
-            // кот, спектр и текст песни (как в AngelOS)
+            // кот, спектр и текст песни
             BarGroup {
                 id: gFun
                 // не через visible детей: он зависит от visible группы

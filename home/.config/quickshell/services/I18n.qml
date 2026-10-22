@@ -752,7 +752,7 @@ Singleton {
         "Pop-up at the bottom": "Всплывает снизу",
         "When volume, microphone or brightness change, and while voice typing listens (Super+H)": "Когда меняются громкость, микрофон или яркость, и пока идёт голосовой ввод (Super+H)",
         "Voice typing": "Голосовой ввод",
-        // из AngelOS: кот, спектр, текст песен, график CPU, углы экрана, пиксельный вид
+        // кот, спектр, текст песен, график CPU, углы экрана
         "Cat": "Кот", "Sleeps while the CPU rests, runs under load; click for system stats": "Спит, пока процессор отдыхает, бежит под нагрузкой; клик — показатели системы",
         "Audio visualizer": "Визуализатор звука", "Spectrum bars while music plays (cava)": "Столбики спектра, пока играет музыка (cava)",
         "Lyrics": "Текст песни", "The line being sung now, synced (lrclib.net)": "Строка, которая звучит сейчас (lrclib.net)",
@@ -762,7 +762,5 @@ Singleton {
         "Screen corners": "Углы экрана", "Rounded screen corners": "Скруглённые углы экрана",
         "Black rounded corners on every monitor, like a phone screen. Clicks pass through": "Чёрные скруглённые углы на каждом мониторе, как у экрана телефона. Клики проходят насквозь",
         "Corner radius": "Радиус углов",
-        "Pixel look": "Пиксельный вид", "Undo": "Вернуть",
-        "Bold CozetteVector for the shell and GTK apps, as in AngelOS": "Жирный CozetteVector в шелле и GTK-приложениях, как в AngelOS",
     })
 }

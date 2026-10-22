@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// скруглённые углы экрана (как в AngelOS): чёрные уголки поверх всего, клики проходят насквозь
+// скруглённые углы экрана: чёрные уголки поверх всего, клики проходят насквозь
 Variants {
     model: Settings.screenCorners.enabled ? Quickshell.screens : []
 

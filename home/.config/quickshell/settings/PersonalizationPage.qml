@@ -36,7 +36,6 @@ Page {
     readonly property var schemeList: ["dark", "light", "nord", "gruvbox", "rose", "wallpaper"]
 
     property var fonts: []
-    readonly property bool pixel: Settings.font.startsWith("CozetteVector")
     property var monoFonts: []
 
     Component.onCompleted: {
@@ -444,22 +443,6 @@ Page {
                     options: [{ value: "", label: "System default" }].concat(page.fonts.map(f => ({ value: f, label: f })))
                     current: Settings.appFont
                     onPicked: v => Settings.appFont = v
-                }
-            }
-
-            // пиксельный вид из AngelOS: жирный Cozette в шелле и GTK-приложениях
-            SCard {
-                icon: String.fromCodePoint(0xF0E51)
-                title: "Pixel look"
-                desc: "Bold CozetteVector for the shell and GTK apps, as in AngelOS"
-
-                SButton {
-                    text: page.pixel ? "Undo" : "Apply"
-                    primary: !page.pixel
-                    onClicked: {
-                        Settings.font = page.pixel ? "JetBrainsMono Nerd Font" : "CozetteVectorBold";
-                        Settings.appFont = page.pixel ? "" : "CozetteVectorBold";
-                    }
                 }
             }
 
