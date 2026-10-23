@@ -328,6 +328,103 @@ Page {
             font.pixelSize: Theme.fontSize - 2
         }
 
+        // ── расписание: днём одна схема, вечером другая (services/ThemeSchedule.qml)
+        ColumnLayout {
+            Layout.fillWidth: true
+            id: sched
+            Layout.topMargin: 14
+            visible: page.tab === "colors"
+            spacing: 3
+
+            readonly property var ts: Settings.themeSchedule ?? {}
+            readonly property var schemeOpts: page.schemeList.map(k => ({ value: k, label: k === "wallpaper" ? "From wallpaper" : (Theme.schemes[k]?.name ?? k) }))
+            readonly property var wallOpts: [{ value: "", label: "Keep" }].concat(Wallpapers.items.map(i => ({ value: i.path, label: i.name })))
+
+            SCard {
+                icon: String.fromCodePoint(0xF050E)
+                title: "Schedule"
+                desc: ThemeSchedule.on
+                    ? `${I18n.tr(ThemeSchedule.night ? "Night now" : "Day now")}   ·   ${I18n.tr("next switch")} ${Qt.locale(I18n.locale).toString(ThemeSchedule.nextSwitch, "HH:mm")}`
+                    : "Light theme by day, dark in the evening"
+                SChoice {
+                    options: [{ value: "off", label: "Off" }, { value: "sun", label: "By sunset" }, { value: "time", label: "By time" }]
+                    current: sched.ts.mode ?? "off"
+                    onPicked: v => Settings.setSchedule("mode", v)
+                }
+            }
+            SCard {
+                visible: sched.ts.mode === "sun" && !Weather.configured
+                icon: String.fromCodePoint(0xF0026)
+                title: "Set your city in the weather"
+                desc: "Sunrise and sunset come from it; until then 07:00 and 20:00"
+            }
+            SCard {
+                visible: sched.ts.mode === "time"
+                icon: String.fromCodePoint(0xF0150)
+                title: "Day from — to"
+                SField {
+                    Layout.preferredWidth: 80
+                    Layout.fillWidth: false
+                    text: sched.ts.from ?? "07:00"
+                    placeholder: "07:00"
+                    onAccepted: Settings.setSchedule("from", text.trim())
+                    onTextChanged: if (/^\d{1,2}:\d{2}$/.test(text.trim())) Settings.setSchedule("from", text.trim())
+                }
+                SField {
+                    Layout.preferredWidth: 80
+                    Layout.fillWidth: false
+                    text: sched.ts.to ?? "20:00"
+                    placeholder: "20:00"
+                    onAccepted: Settings.setSchedule("to", text.trim())
+                    onTextChanged: if (/^\d{1,2}:\d{2}$/.test(text.trim())) Settings.setSchedule("to", text.trim())
+                }
+            }
+            SCard {
+                visible: ThemeSchedule.on
+                icon: String.fromCodePoint(0xF0599)
+                title: "Day"
+                SDropdown {
+                    minWidth: 170
+                    options: sched.schemeOpts
+                    current: sched.ts.day ?? "light"
+                    onPicked: v => Settings.setSchedule("day", v)
+                }
+                SDropdown {
+                    minWidth: 200
+                    options: sched.wallOpts
+                    current: sched.ts.wallDay ?? ""
+                    onPicked: v => Settings.setSchedule("wallDay", v)
+                }
+            }
+            SCard {
+                visible: ThemeSchedule.on
+                icon: String.fromCodePoint(0xF0594)
+                title: "Night"
+                SDropdown {
+                    minWidth: 170
+                    options: sched.schemeOpts
+                    current: sched.ts.night ?? "dark"
+                    onPicked: v => Settings.setSchedule("night", v)
+                }
+                SDropdown {
+                    minWidth: 200
+                    options: sched.wallOpts
+                    current: sched.ts.wallNight ?? ""
+                    onPicked: v => Settings.setSchedule("wallNight", v)
+                }
+            }
+            SCard {
+                visible: ThemeSchedule.on
+                icon: String.fromCodePoint(0xF0335)
+                title: "Night light at night"
+                desc: "Warm screen colors together with the night theme"
+                SSwitch {
+                    checked: sched.ts.nightLight ?? false
+                    onToggled: v => Settings.setSchedule("nightLight", v)
+                }
+            }
+        }
+
         SCard {
             visible: page.tab === "wallpaper"
             icon: String.fromCodePoint(0xF0E09)
@@ -356,6 +453,121 @@ Page {
                 options: [{ value: "awww", label: "awww" }, { value: "swaybg", label: "swaybg" }]
                 current: Wallpapers.engine
                 onPicked: v => Wallpapers.setEngine(v)
+            }
+        }
+
+        // ── живые обои: видео или анимация в цветах темы (services/LiveWallpaper.qml)
+        ColumnLayout {
+            id: live
+            Layout.fillWidth: true
+            Layout.topMargin: 10
+            visible: page.tab === "wallpaper"
+            spacing: 3
+
+            readonly property var lw: Settings.liveWallpaper ?? {}
+
+            SCard {
+                icon: String.fromCodePoint(0xF1545)
+                title: "Live wallpaper"
+                desc: live.lw.kind === "video" ? (live.lw.video ? live.lw.video.split("/").pop() : "Pick a video")
+                    : live.lw.kind === "shader" ? "Animation in the theme colors"
+                    : "A video or a calm animation instead of a picture"
+                SChoice {
+                    options: [{ value: "off", label: "Off" }, { value: "shader", label: "Animation" }, { value: "video", label: "Video" }]
+                    current: live.lw.kind ?? "off"
+                    onPicked: v => Settings.setLive("kind", v)
+                }
+            }
+
+            // анимация
+            SCard {
+                visible: live.lw.kind === "shader"
+                icon: String.fromCodePoint(0xF03D8)
+                title: "Animation"
+                SChoice {
+                    options: LiveWallpaper.shaders.map(x => ({ value: x.id, label: x.name }))
+                    current: live.lw.shader ?? "aurora"
+                    onPicked: v => Settings.setLive("shader", v)
+                }
+            }
+            SCard {
+                visible: live.lw.kind === "shader"
+                icon: String.fromCodePoint(0xF04C5)
+                title: "Speed"
+                SSlider {
+                    from: 0.25
+                    to: 3
+                    step: 0.25
+                    value: live.lw.speed ?? 1
+                    display: value
+                    decimals: 2
+                    suffix: "×"
+                    onMoved: v => Settings.setLive("speed", v)
+                }
+            }
+            SCard {
+                visible: live.lw.kind === "shader"
+                icon: String.fromCodePoint(0xF0A07)
+                title: "Frames per second"
+                desc: "Fewer — lighter on the video card"
+                SChoice {
+                    options: [15, 30, 60].map(v => ({ value: v, label: String(v) }))
+                    current: live.lw.fps ?? 30
+                    onPicked: v => Settings.setLive("fps", v)
+                }
+            }
+
+            // видео
+            SCard {
+                visible: live.lw.kind === "video" && !LiveWallpaper.mpvpaperInstalled
+                icon: String.fromCodePoint(0xF0026)
+                title: "mpvpaper is not installed"
+                desc: "It plays video on the desktop (AUR)"
+                SButton { text: I18n.tr("Install"); primary: true; onClicked: LiveWallpaper.installMpvpaper() }
+            }
+            SCard {
+                visible: live.lw.kind === "video"
+                icon: String.fromCodePoint(0xF0567)
+                title: "Video"
+                desc: live.lw.video || "MP4, WebM, MKV — looped, without sound"
+                SButton {
+                    text: I18n.tr("Choose…")
+                    primary: !live.lw.video
+                    onClicked: pickVideo.running = true
+                }
+            }
+
+            // когда замирать
+            SCard {
+                visible: (live.lw.kind ?? "off") !== "off"
+                icon: String.fromCodePoint(0xF0293)
+                title: "Pause under a fullscreen window"
+                SSwitch { checked: live.lw.pauseFullscreen ?? true; onToggled: v => Settings.setLive("pauseFullscreen", v) }
+            }
+            SCard {
+                visible: (live.lw.kind ?? "off") !== "off"
+                icon: String.fromCodePoint(0xF0297)
+                title: "Pause in games"
+                desc: "With game mode (Settings → Games)"
+                SSwitch { checked: live.lw.pauseGame ?? true; onToggled: v => Settings.setLive("pauseGame", v) }
+            }
+            SCard {
+                visible: (live.lw.kind ?? "off") !== "off"
+                icon: String.fromCodePoint(0xF008E)
+                title: "Pause on battery"
+                SSwitch { checked: live.lw.pauseBattery ?? true; onToggled: v => Settings.setLive("pauseBattery", v) }
+            }
+
+            Process {
+                id: pickVideo
+                command: ["zenity", "--file-selection", "--title", I18n.tr("Video for the wallpaper"),
+                          "--file-filter", "Video | *.mp4 *.webm *.mkv *.mov *.avi *.gif", `--filename=${Quickshell.env("HOME")}/Videos/`]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        const f = text.trim();
+                        if (f) Settings.setLive("video", f);
+                    }
+                }
             }
         }
 

@@ -166,6 +166,8 @@ ColumnLayout {
         Rectangle {
             id: app
             required property PwNode modelData
+            property bool pick: false
+            readonly property string rule: (Settings.audioRoutes?.[root.input ? "in" : "out"] ?? {})[AudioRoutes.appKey(modelData)] ?? ""
 
             Layout.fillWidth: true
             implicitHeight: appCol.implicitHeight + 20
@@ -203,6 +205,85 @@ ColumnLayout {
                     node: app.modelData
                     input: root.input
                     meter: root.meters
+                }
+
+                // куда идёт звук этого приложения (запоминается: services/AudioRoutes.qml)
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 28
+                    radius: 8
+                    color: routeArea.containsMouse || app.pick ? Theme.surfaceHi2 : Theme.surfaceHi
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 8
+                        spacing: 8
+                        Text {
+                            text: String.fromCodePoint(root.input ? 0xF036C : 0xF04C3)
+                            color: app.rule ? Theme.accent : Theme.dim
+                            font.family: Theme.font
+                            font.pixelSize: Theme.iconSize - 2
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: app.rule ? (root.devices.find(d => d.name === app.rule)?.description ?? app.rule) : I18n.tr("Same as the system")
+                            elide: Text.ElideRight
+                            color: app.rule ? Theme.fg : Theme.muted
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize - 2
+                        }
+                        Text {
+                            text: String.fromCodePoint(app.pick ? 0xF0143 : 0xF0140)
+                            color: Theme.dim
+                            font.family: Theme.font
+                            font.pixelSize: Theme.iconSize - 2
+                        }
+                    }
+                    MouseArea {
+                        id: routeArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: app.pick = !app.pick
+                    }
+                }
+
+                Repeater {
+                    model: app.pick ? [null].concat(root.devices) : []
+
+                    Rectangle {
+                        id: opt
+                        required property var modelData
+                        readonly property string devName: modelData ? modelData.name : ""
+                        Layout.fillWidth: true
+                        implicitHeight: 28
+                        radius: 8
+                        color: optArea.containsMouse ? Theme.surfaceHi : "transparent"
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 30
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: opt.modelData ? (opt.modelData.description || opt.modelData.name) : I18n.tr("Same as the system")
+                            elide: Text.ElideRight
+                            color: opt.devName === app.rule ? Theme.accent : Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize - 2
+                            font.bold: opt.devName === app.rule
+                        }
+                        MouseArea {
+                            id: optArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                AudioRoutes.route(app.modelData, opt.devName);
+                                app.pick = false;
+                            }
+                        }
+                    }
                 }
             }
         }

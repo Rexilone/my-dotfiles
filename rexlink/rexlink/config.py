@@ -46,6 +46,7 @@ DEFAULTS = {
     "camera": {"facing": "back", "width": 1280, "height": 720, "fps": 30, "bitrate": 6000000},
     "screen": {"maxSize": 1280, "bitrate": 8000000, "fps": 60},
     # устройство как второй монитор: длинная сторона, битрейт (Wi-Fi / USB), разъём видеокарты
+    "phoneFiles": False,      # память устройства как папка в файловом менеджере (WebDAV)
     # включение компьютера с устройства (Wake-on-LAN): внешний адрес (IP или DDNS) и UDP-порт, проброшенный на роутере
     "wol": {"host": "", "port": 9},
     "display": {"maxSize": 2560, "fps": 60, "bitrate": 12000000, "usbBitrate": 30000000, "connector": "auto",

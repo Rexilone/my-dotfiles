@@ -111,6 +111,28 @@ Singleton {
         power = Object.assign({}, power, { [key]: value });
     }
 
+    // ── звук по приложениям: { out: { приложение: node.name }, in: { … } } (services/AudioRoutes.qml)
+    property alias audioRoutes: cfg.audioRoutes
+    function setAudioRoute(input, app, node) {
+        const r = JSON.parse(JSON.stringify(audioRoutes));
+        const k = input ? "in" : "out";
+        r[k] = Object.assign({}, r[k] ?? {});
+        if (node) r[k][app] = node;
+        else delete r[k][app];
+        audioRoutes = r;
+    }
+    // ── игровой режим (services/GameMode.qml) и оверлей MangoHud (services/Overlay.qml)
+    property alias gameMode: cfg.gameMode
+    property alias overlay: cfg.overlay
+    function setGame(key, value) { gameMode = Object.assign({}, gameMode, { [key]: value }); }
+    function setOverlay(key, value) { overlay = Object.assign({}, overlay, { [key]: value }); }
+    // ── расписание темы (services/ThemeSchedule.qml)
+    property alias themeSchedule: cfg.themeSchedule
+    function setSchedule(key, value) { themeSchedule = Object.assign({}, themeSchedule, { [key]: value }); }
+    // ── живые обои (services/LiveWallpaper.qml)
+    property alias liveWallpaper: cfg.liveWallpaper
+    function setLive(key, value) { liveWallpaper = Object.assign({}, liveWallpaper, { [key]: value }); }
+
     // ── бар
     property alias barHeight: cfg.barHeight
     property alias clockFormat: cfg.clockFormat
@@ -244,6 +266,13 @@ Singleton {
                 visualizer: { enabled: false, screen: "", x: 80, y: 700, background: true, size: 1 },
                 lyrics: { enabled: false, screen: "", x: 700, y: 800, background: false, size: 1 },
             })
+            property var audioRoutes: ({ out: {}, in: {} })
+            property var gameMode: ({ auto: true, dnd: true, performance: true, noAnimations: true, pauseEffects: true, hideWidgets: false })
+            property var overlay: ({ enabled: false, visible: true, position: "top-left", fps: true, frametime: true, cpu: true, gpu: true,
+                                     temps: true, ram: true, vram: true, scale: 1, opacity: 0.5 })
+            property var themeSchedule: ({ mode: "off", day: "light", night: "dark", from: "07:00", to: "20:00", wallDay: "", wallNight: "" })
+            property var liveWallpaper: ({ kind: "off", video: "", shader: "aurora", speed: 1, pauseFullscreen: true, pauseGame: true,
+                                           pauseBattery: true, fps: 30 })
             property real uiScale: 1
 
             property int barHeight: 32

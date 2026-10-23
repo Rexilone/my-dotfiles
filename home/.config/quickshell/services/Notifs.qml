@@ -70,7 +70,8 @@ Singleton {
             root.times[n.id] = new Date();
             root.timesChanged();
             n.closed.connect(() => root.hidePopup(n));
-            if (!root.dnd || n.urgency === NotificationUrgency.Critical)
+            // «Не беспокоить» или игровой режим: всплывают только важные
+            if ((!root.dnd && !GameMode.quiet) || n.urgency === NotificationUrgency.Critical)
                 root.popups = root.popups.filter(p => p !== n).concat([n]);
         }
     }

@@ -106,6 +106,14 @@ PanelWindow {
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize - 2
                     }
+                    // разговор пойдёт через компьютер (ПК — Bluetooth-гарнитура телефона)
+                    Text {
+                        visible: CallAudio.enabled && CallAudio.adapter
+                        text: `${String.fromCodePoint(0xF02CE)}  ${I18n.tr(CallAudio.inCall ? "Talking through the computer" : "Answer here — talk through the computer")}`
+                        color: Theme.accent
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize - 2
+                    }
                 }
             }
 

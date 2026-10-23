@@ -6,6 +6,7 @@
 #   rexilone-wallpaper set <файл>     поставить обои
 #   rexilone-wallpaper engine [awww|swaybg]   показать или сменить движок
 #   rexilone-wallpaper current        путь к текущим обоям
+#   rexilone-wallpaper stop           убрать обычные обои (их место заняли живые — Quickshell, mpvpaper)
 #
 # Выбор движка — ~/.config/rexilone/wallpaper-engine, текущие обои — ~/.local/state/rexilone/wallpaper.
 
@@ -55,7 +56,12 @@ start_swaybg() {
     fi
 }
 
+# включены живые обои (Quickshell или mpvpaper) — обычные не запускаем, только помним файл
+LIVE="${REXILONE_WALL_LIVE:-$HOME/.local/state/rexilone/live}"
+live() { [[ -e "$LIVE" ]]; }
+
 start() {
+    live && return 0
     local f
     f="$(current)"
     if [[ "$(engine)" == swaybg ]]; then
@@ -73,6 +79,7 @@ set_wall() {
     local f="$1"
     [[ -f "$f" ]] || { echo "нет файла: $f" >&2; return 1; }
     remember "$f"
+    live && return 0
     if [[ "$(engine)" == swaybg ]]; then
         start_swaybg "$f"
     else
@@ -85,6 +92,7 @@ case "${1:-}" in
     start) start ;;
     set) set_wall "${2:-}" ;;
     current) current ;;
+    stop) pkill -x awww-daemon; pkill -x swaybg; exit 0 ;;
     engine)
         if [[ -n "${2:-}" ]]; then
             [[ "$2" == awww || "$2" == swaybg ]] || { echo "движок: awww или swaybg" >&2; exit 2; }
@@ -97,7 +105,7 @@ case "${1:-}" in
         engine
         ;;
     *)
-        echo "использование: rexilone-wallpaper start | set <файл> | engine [awww|swaybg] | current" >&2
+        echo "использование: rexilone-wallpaper start | set <файл> | engine [awww|swaybg] | current | stop" >&2
         exit 2
         ;;
 esac

@@ -218,7 +218,7 @@ PanelWindow {
             BarGroup {
                 id: gInd
                 // группа индикаторов: видна, только если в ней что-то есть
-                visible: Power.caffeine || NightLight.on || Recorder.recording || Recorder.countdown > 0 || Recorder.replayActive
+                visible: GameMode.active || Power.caffeine || NightLight.on || Recorder.recording || Recorder.countdown > 0 || Recorder.replayActive
                     || (Settings.moduleOn("castHidden", true) && CastHide.apps.length > 0)
                     || Settings.moduleOn("stats", false)
                     || (Settings.moduleOn("updates", false) && (!Updates.installed || Updates.count > 0 || Updates.checking))
@@ -232,6 +232,14 @@ PanelWindow {
                     color: CastHide.focusedHidden ? Theme.warn : Theme.dim
                     active: bar.popup === "cast"
                     onClicked: bar.toggle("cast", castIcon)
+                }
+                // игровой режим: клик — выключить
+                BarText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: GameMode.active
+                    text: String.fromCodePoint(0xF0297)
+                    color: Theme.accent
+                    onClicked: GameMode.toggle()
                 }
                 // «Не засыпать» включён
                 BarText {

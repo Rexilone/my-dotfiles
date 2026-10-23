@@ -31,6 +31,8 @@ ShellRoot {
     SettingsWindow {}
     // «Программы»: установка приложений (pacman + AUR), открывается из меню приложений
     StoreWindow {}
+    // живые обои — под виджетами рабочего стола
+    WallpaperLayer {}
     DesktopWidgets {}
     // скруглённые углы экрана (Персонализация → Углы экрана)
     ScreenCorners {}
@@ -49,6 +51,15 @@ ShellRoot {
     readonly property var themeSync: ThemeSync
     // таймеры простоя (Электропитание)
     readonly property var power: Power
+    // звук по приложениям (Звук → Приложения)
+    readonly property var audioRoutes: AudioRoutes
+    // игровой режим и оверлей в играх (Настройки → Игры)
+    readonly property var gameMode: GameMode
+    readonly property var overlay: Overlay
+    // тема по расписанию (Персонализация → Цвета)
+    readonly property var themeSchedule: ThemeSchedule
+    readonly property var liveWallpaper: LiveWallpaper
+    readonly property var callAudio: CallAudio
     readonly property var nightLight: NightLight
     readonly property var updates: Updates
     // скрытые с демонстрации приложения (Super+G): индикатор в баре

@@ -40,12 +40,16 @@ Singleton {
         { name: "Plugins", keys: "plugins developer extensions", icon2: 0xF0431, dev: true },
         { name: "Updates", keys: "update upgrade version git github dotfiles packages pacman", icon2: 0xF06B0 },
         { name: "Boot & login", keys: "boot limine bootloader menu login lightdm greetd greeter password screen windows dual other systems disk", icon2: 0xF0342 },
+        { name: "Games", keys: "game gaming steam proton fps overlay mangohud gamemode performance", icon2: 0xF0297 },
+        // вкладки «Персонализации»: поиск и `page wallpaper` / `page colors` ведут туда
+        { name: "Wallpaper", keys: "wallpaper live video animation background awww swaybg", icon2: 0xF0E09, hidden: true, go: 7, tab: "wallpaper" },
+        { name: "Colors", keys: "theme scheme dark light schedule day night sunset", icon2: 0xF03D8, hidden: true, go: 7, tab: "colors" },
     ]
 
     // порядок в боковой панели Настроек — по группам
     readonly property var settingsNav: [
         { group: "", items: [0] },
-        { group: "Hardware", items: [1, 2, 10, 14] },
+        { group: "Hardware", items: [1, 2, 10, 14, 20] },
         { group: "Connections", items: [3, 4, 5] },
         { group: "Look & feel", items: [7, 15] },
         { group: "System", items: [11, 12, 13, 18, 19, 16, 17] },

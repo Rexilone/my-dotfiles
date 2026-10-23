@@ -219,10 +219,20 @@ Singleton {
             L.push("}");
         }
 
-        // Qt-приложения берут цвета из GTK-темы (она следует схеме шелла)
+        // игровой режим: без анимаций niri
+        if (GameMode.noAnimations) {
+            L.push("");
+            L.push("animations {");
+            L.push("    off");
+            L.push("}");
+        }
+
+                // Qt-приложения берут цвета из GTK-темы (она следует схеме шелла)
         L.push("");
         L.push("environment {");
         L.push('    QT_QPA_PLATFORMTHEME "gtk3"');
+        // оверлей MangoHud в играх (Настройки → Игры)
+        if (Settings.overlay?.enabled) L.push('    MANGOHUD "1"');
         L.push("}");
 
         // свои и изменённые бинды

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Property, QTimer, QUrl, Signal, Slot
 
-from . import PORT, display, firewall, updates, video, wol
+from . import PORT, display, firewall, phonefiles, updates, video, wol
 from .i18n import set_lang, tr
 from .adb import Adb, ScrcpyVideo
 from .clipboard import Clipboard
@@ -60,6 +60,7 @@ def new_dev(did, entry):
 
 class Backend(QObject):
     stateChanged = Signal()
+    davResult = Signal(str, str, bool, str)   # из потока gio mount — в главный поток
     statusChanged = Signal()
     notifsChanged = Signal()
     mediaChanged = Signal()
@@ -82,6 +83,7 @@ class Backend(QObject):
         super().__init__()
         self.config = config
         self.theme = theme
+        self.davResult.connect(self._dav_done)
         self.server = Server(config)
         self.clip = Clipboard()
         self.notifier = DesktopNotify()
@@ -235,7 +237,7 @@ class Backend(QObject):
                         "notifications": len(d["notifs"]), "current": d["id"] == self._current,
                         "ringing": d["call"].get("state") == "ringing", "lastSeen": d["lastSeen"],
                         "appVersion": d["app"].get("version", ""), "update": d["app"].get("update", ""),
-                        "updating": bool(d["app"].get("updating"))})
+                        "updating": bool(d["app"].get("updating")), "files": d.get("files", {})})
         res.sort(key=lambda x: (not x["online"], x["name"].lower()))
         return res
 
@@ -304,7 +306,10 @@ class Backend(QObject):
         d = self.devs.get(did)
         if not d:
             return
-        d.update(online=False, status={}, media={}, call={}, notifs=[])
+        if d.get("files", {}).get("uri"):
+            phonefiles.unmount(d["files"]["uri"])
+            phonefiles.unbookmark(d["name"])
+        d.update(online=False, status={}, media={}, call={}, notifs=[], files={})
         for key in [k for k in self._desk if k[0] == did]:
             nid = self._desk.pop(key)
             self._desk_rev.pop(nid, None)
@@ -402,7 +407,7 @@ class Backend(QObject):
         c = self.config
         self.server.send(did, {"t": "pc_settings", "clipboard": c["clipboard"], "clipboardImages": c["clipboardImages"],
                                "notifications": c["notifications"], "calls": c["calls"], "sms": c["sms"],
-                               "media": c["media"], "pcMedia": c["pcMedia"],
+                               "media": c["media"], "pcMedia": c["pcMedia"], "phoneFiles": bool(c.get("phoneFiles")),
                                # чем включить этот компьютер, когда он выключен: MAC — с той карты, через которую
                                # видно устройство; внешний адрес — для включения не из домашней сети
                                "wol": dict(wol.lan_info(self.devs.get(did, {}).get("address", "")),
@@ -1131,6 +1136,34 @@ class Backend(QObject):
         self.server.send(did, dict(ev, t="input"))
 
     # ── экран выключен (ADB + scrcpy)
+    # ── память устройства как папка (WebDAV на устройстве, gio на ПК)
+    def _m_dav(self, did, h, _):
+        d = self.devs[did]
+        old = d.get("files", {})
+        if h.get("off"):
+            if old.get("uri"):
+                phonefiles.unmount(old["uri"])
+                phonefiles.unbookmark(d["name"])
+            d["files"] = {"state": h.get("reason", "off")}
+            self.devicesChanged.emit()
+            return
+        u = phonefiles.uri(d["address"], int(h.get("port", 0)))
+        d["files"] = {"state": "mounting", "uri": u}
+        self.devicesChanged.emit()
+
+        phonefiles.mount(u, str(h.get("pass", "")), lambda ok, err: self.davResult.emit(did, u, ok, err))
+
+    def _dav_done(self, did, u, ok, err):
+        d = self.devs.get(did)
+        if not d or d.get("files", {}).get("uri") != u:
+            return
+        if ok:
+            phonefiles.bookmark(u, d["name"])
+            d["files"] = {"state": "on", "uri": u}
+        else:
+            d["files"] = {"state": "error", "uri": u, "error": err}
+        self.devicesChanged.emit()
+
     def _m_adb_info(self, did, h, _):
         d = self.devs[did]
         d["adb"]["ports"] = {k: int(v) for k, v in (h.get("ports") or {}).items() if v}

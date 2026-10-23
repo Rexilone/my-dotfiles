@@ -154,7 +154,7 @@ ColumnLayout {
 
     GridLayout {
         Layout.fillWidth: true
-        columns: 4
+        columns: 3
         columnSpacing: 8
         rowSpacing: 8
 
@@ -187,6 +187,13 @@ ColumnLayout {
             onHit: NightLight.installed ? NightLight.toggle() : NightLight.install()
         }
         Tile {
+            icon: String.fromCodePoint(0xF0297)
+            label: "Game"
+            sub: GameMode.active ? (GameMode.game?.title ?? "On") : "Off"
+            on: GameMode.active
+            onHit: GameMode.toggle()
+        }
+        Tile {
             icon: Icons.record
             label: "Record"
             sub: Recorder.recording ? Recorder.elapsedText : "Screen"
@@ -197,7 +204,7 @@ ColumnLayout {
             icon: String.fromCodePoint(0xF0104)
             label: "Snip"
             sub: "Region"
-            onHit: Ui.afterClose(["niri", "msg", "action", "screenshot"])
+            onHit: Ui.afterClose(["qs", "ipc", "call", "screenshot", "open"], 0.25)
         }
         Tile {
             icon: Icons.clipboard

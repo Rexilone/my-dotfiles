@@ -75,6 +75,13 @@ ffmpeg
 playerctl
 # спектр звука в баре и на рабочем столе
 cava
+# игры: оверлей и gamemode (Настройки → Игры)
+mangohud
+lib32-mangohud
+gamemode
+lib32-gamemode
+# память телефона как папка (WebDAV в gvfs)
+gvfs-dnssd
 openssl
 glib2
 iproute2

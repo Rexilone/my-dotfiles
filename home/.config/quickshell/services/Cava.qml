@@ -12,7 +12,7 @@ Singleton {
     readonly property bool installed: probe.found
 
     property var consumers: ({})
-    readonly property bool active: installed && Object.keys(consumers).length > 0
+    readonly property bool active: installed && Object.keys(consumers).length > 0 && !GameMode.pauseEffects
 
     function need(id, on) {
         const c = Object.assign({}, consumers);

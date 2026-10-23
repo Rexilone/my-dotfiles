@@ -39,7 +39,8 @@ Variants {
             return c && c.enabled && (c.screen === modelData.name || (!Quickshell.screens.some(s => s.name === c.screen) && modelData.name === Settings.primary));
         })
 
-        visible: mine.length > 0
+        // игровой режим может прятать виджеты (Настройки → Игры)
+        visible: mine.length > 0 && !GameMode.hideWidgets
         color: "transparent"
         anchors {
             top: true

@@ -42,6 +42,39 @@ ColumnLayout {
     Toggle { key: "media"; icon: String.fromCodePoint(0xF075A); title: "Device media"; desc: "Control what plays on the device" }
     Toggle { key: "pcMedia"; icon: String.fromCodePoint(0xF0379); title: "PC player on the device"; desc: tab.st.playerctl === false ? "Needs the playerctl package" : "Control the computer's music from the phone's notification shade (MPRIS)" }
 
+    // память телефона как папка в «Файлах» (WebDAV на телефоне, монтирует служба Rexlink)
+    Toggle { key: "phoneFiles"; def: false; icon: String.fromCodePoint(0xF0870); title: "Phone storage in Files"; desc: "The phone's memory as a folder in the file manager over Wi-Fi: copy, open, delete" }
+    SCard {
+        id: filesCard
+        readonly property var f: Rexlink.dev?.files ?? {}
+        visible: (Rexlink.settings.phoneFiles ?? false) && !!Rexlink.dev
+        icon: String.fromCodePoint(f.state === "on" ? 0xF024B : f.state === "error" || f.state === "permission" ? 0xF0026 : 0xF0870)
+        title: ({ on: "Phone storage is open", mounting: "Connecting…", permission: "Allow «All files» on the phone",
+                  error: "Couldn't open the phone storage", port: "The phone couldn't open a port" })[f.state] ?? "Waiting for the phone"
+        desc: f.state === "on" ? f.uri : f.state === "permission" ? "Rexlink on the phone → Accesses → All files"
+            : f.state === "error" ? (f.error ?? "") : "The device must be online"
+        SButton {
+            visible: filesCard.f.state === "on"
+            text: I18n.tr("Open")
+            primary: true
+            onClicked: Quickshell.execDetached(["xdg-open", filesCard.f.uri])
+        }
+    }
+
+    // звонки: звук через компьютер — ПК как Bluetooth-гарнитура телефона
+    SCard {
+        icon: String.fromCodePoint(0xF02CE)
+        title: "Talk through the computer"
+        desc: !CallAudio.adapter ? "Needs a Bluetooth adapter in the computer"
+            : CallAudio.inCall ? "Call audio is going through the computer now"
+            : "The computer becomes a Bluetooth headset of the phone: calls you answer here use its speakers and microphone. Pair the phone once in Settings → Bluetooth"
+        SSwitch {
+            enabled: CallAudio.adapter
+            checked: CallAudio.enabled
+            onToggled: v => CallAudio.setEnabled(v)
+        }
+    }
+
     // ── экран устройства
     SSection { text: I18n.tr("Device screen") }
 
