@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Длинный скриншот: снимает область, пока её прокручивают, и склеивает в одну картинку.
+"""Длинный скриншот: снимает область по мере прокрутки и склеивает в одну картинку.
 
     shot-long.py <x> <y> <w> <h> <out.png>
 
-Область — в глобальных логических координатах (как у grim -g). Каждые ~0.2 с новый кадр сравнивается с
-предыдущим: насколько сдвинулось содержимое, столько новых строк снизу и добавляется. Остановка — файл
-<out.png>.stop; тогда картинка пишется в out.png. В stdout — «height <пиксели>» по ходу и «done <путь>» в конце.
+Область — в глобальных логических координатах (как у grim -g). Кадр берётся, только когда картинка
+перестала меняться (догрузились картинки, закончилась плавная прокрутка) — как на телефоне.
+Новый кадр сравнивается с прошлым: на сколько сдвинулось содержимое, столько строк снизу и добавляется.
+
+Управление — файлами рядом с out.png:
+    <out>.auto   листать самому (стрелкой вниз в окне с фокусом), шаг подбирается по ходу; конец страницы — стоп
+    <out>.stop   закончить и записать картинку
+В stdout: «height <px>», «lost» (прокрутили слишком далеко — вернитесь чуть назад), «auto», «end», «done <путь>».
 """
 import os
 import subprocess
@@ -18,6 +23,10 @@ import numpy as np
 MAX_HEIGHT = 30000
 
 
+def say(*a):
+    print(*a, flush=True)
+
+
 def grab(geom):
     try:
         png = subprocess.run(["grim", "-g", geom, "-t", "png", "-l", "0", "-"], capture_output=True, timeout=5).stdout
@@ -26,6 +35,25 @@ def grab(geom):
     if not png:
         return None
     return cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)
+
+
+def same(a, b):
+    return a is not None and b is not None and a.shape == b.shape and cv2.absdiff(a, b).mean() < 0.4
+
+
+def settled(geom, first=None, timeout=3.0):
+    """Кадр, который перестал меняться (два снимка подряд одинаковые), или последний за timeout."""
+    cur = first if first is not None else grab(geom)
+    end = time.time() + timeout
+    while time.time() < end:
+        time.sleep(0.15)
+        nxt = grab(geom)
+        if nxt is None:
+            continue
+        if same(cur, nxt):
+            return nxt
+        cur = nxt
+    return cur
 
 
 def shift(prev, cur):
@@ -50,40 +78,79 @@ def shift(prev, cur):
     return best
 
 
+def scroll(n):
+    # стрелка вниз в окне с фокусом: плавно и понемногу, перекрытие кадров остаётся
+    subprocess.run(["wtype"] + ["-k", "Down"] * n, capture_output=True, timeout=10)
+
+
 def main():
     x, y, w, h, out = sys.argv[1:6]
     geom = f"{x},{y} {w}x{h}"
-    stop = out + ".stop"
-    if os.path.exists(stop):
-        os.remove(stop)
+    stop, auto_flag = out + ".stop", out + ".auto"
+    for f in (stop, auto_flag):
+        if os.path.exists(f):
+            os.remove(f)
 
-    first = grab(geom)
-    if first is None:
+    prev = settled(geom)
+    if prev is None:
         sys.exit(1)
-    parts = [first]
-    prev = first
-    height = first.shape[0]
-    print(f"height {height}", flush=True)
+    parts = [prev]
+    height = prev.shape[0]
+    say(f"height {height}")
+
+    auto = False
+    step = 6           # нажатий стрелки за шаг (авто)
+    still = 0          # шагов подряд без сдвига — конец страницы
+    raw = prev
     while not os.path.exists(stop) and height < MAX_HEIGHT:
-        time.sleep(0.2)
-        cur = grab(geom)
+        if not auto and os.path.exists(auto_flag):
+            auto = True
+            say("auto")
+        if auto:
+            scroll(step)
+            cur = settled(geom)
+        else:
+            # сами листают: ждём, пока картинка остановится и догрузится
+            time.sleep(0.15)
+            cur = grab(geom)
+            if cur is None or same(cur, prev):
+                raw = cur
+                continue
+            if not same(cur, raw):
+                raw = cur
+                continue
+            cur = settled(geom, cur, timeout=1.5)
         if cur is None or cur.shape != prev.shape:
             continue
-        if cv2.absdiff(cur, prev).mean() < 0.5:
-            continue
+
         dy = shift(prev, cur)
-        if dy is None or dy <= 0:
-            prev = cur if dy is None else prev
+        if dy is None:
+            if auto:
+                step = max(1, step // 2)        # перескочили — дальше шаг меньше
+            say("lost")
             continue
+        if dy <= 0:
+            if auto:
+                still += 1
+                if still >= 2:
+                    say("end")
+                    break
+            continue
+        still = 0
         parts.append(cur[cur.shape[0] - dy:])
         height += dy
         prev = cur
-        print(f"height {height}", flush=True)
+        say(f"height {height}")
+        if auto:
+            # шаг — так, чтобы сдвиг был около трети кадра
+            want = cur.shape[0] / 3
+            step = int(max(1, min(30, round(step * want / dy))))
 
     cv2.imwrite(out, np.vstack(parts))
-    if os.path.exists(stop):
-        os.remove(stop)
-    print(f"done {out}", flush=True)
+    for f in (stop, auto_flag):
+        if os.path.exists(f):
+            os.remove(f)
+    say(f"done {out}")
 
 
 main()

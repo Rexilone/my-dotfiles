@@ -21,6 +21,8 @@ Scope {
     property var pins: []           // закреплённые снимки: [{ id, path, screen, x, y, w, h }]
     property var longCap: null      // длинный скриншот: { screen, x, y, w, h (глобальные), out }
     property int longHeight: 0
+    property bool longAuto: false     // листает сам
+    property bool longLost: false     // прокрутили слишком далеко — вернуться чуть назад
     property bool historyOpen: false
 
     // ── снимок
@@ -108,14 +110,21 @@ Scope {
         const out = `${dir}/long-${Date.now()}.png`;
         close();
         longHeight = 0;
+        longAuto = false;
+        longLost = false;
         longCap = { screen, x, y, w, h, out };
         // оверлей успевает исчезнуть до первого кадра
         longStart.restart();
     }
     function stopLong(keep) {
         if (!longCap) return;
-        longCap.keep = keep;
+        longCap.cancelled = !keep;
         Quickshell.execDetached(["touch", longCap.out + ".stop"]);
+    }
+    // листать самому (стрелкой вниз в окне с фокусом), пока страница не кончится
+    function autoLong() {
+        if (!longCap) return;
+        Quickshell.execDetached(["touch", longCap.out + ".auto"]);
     }
 
     IpcHandler {
@@ -160,13 +169,18 @@ Scope {
         id: longProc
         stdout: SplitParser {
             onRead: line => {
-                if (line.startsWith("height ")) root.longHeight = parseInt(line.slice(7));
+                if (line.startsWith("height ")) {
+                    root.longHeight = parseInt(line.slice(7));
+                    root.longLost = false;
+                } else if (line === "lost") root.longLost = true;
+                else if (line === "auto") root.longAuto = true;
             }
         }
         onExited: code => {
             const c = root.longCap;
             root.longCap = null;
-            if (c && c.keep && code === 0) root.deliver(c.out, true, true, false);
+            // «Готово», конец страницы при авто-прокрутке — сохранить; «Отмена» — нет
+            if (c && !c.cancelled && code === 0) root.deliver(c.out, true, true, false);
         }
     }
 

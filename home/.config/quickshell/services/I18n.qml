@@ -822,5 +822,7 @@ Singleton {
         "Open folder": "Открыть папку",
         "Click — copy   ·   right click — open   ·   Enter — copy the first one": "Клик — скопировать   ·   правый клик — открыть   ·   Enter — первый",
         "No screenshots yet": "Снимков пока нет",
+        "Too far — scroll back a little": "Слишком далеко — прокрутите чуть назад", "Scrolling by itself…": "Листаю сам…",
+        "Scroll slowly, or press Auto": "Прокручивайте не спеша или нажмите «Авто»", "Auto": "Авто",
     })
 }

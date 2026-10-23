@@ -61,10 +61,20 @@ PanelWindow {
                 font.pixelSize: Theme.iconSize + 2
             }
             Text {
-                text: I18n.tr("Scroll the area") + (win.ctl.longHeight ? `   ·   ${win.ctl.longHeight} px` : "")
-                color: Theme.fg
+                text: (win.ctl.longLost ? I18n.tr("Too far — scroll back a little")
+                       : win.ctl.longAuto ? I18n.tr("Scrolling by itself…")
+                       : I18n.tr("Scroll slowly, or press Auto"))
+                    + (win.ctl.longHeight ? `   ·   ${win.ctl.longHeight} px` : "")
+                color: win.ctl.longLost ? Theme.warn : Theme.fg
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSize
+            }
+            // фокус остаётся у окна под рамкой: клавиши прокрутки уходят ему
+            ToolButton {
+                visible: !win.ctl.longAuto
+                icon: 0xF0DB9
+                label: "Auto"
+                onClicked: win.ctl.autoLong()
             }
             ToolButton {
                 label: "Done"
