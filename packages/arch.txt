@@ -13,6 +13,12 @@ swaylock
 swayidle
 # выбор области записи, значки магазина
 slurp
+# скриншотилка: снимок, распознавание текста (русский и английский), поиск границ картинок
+grim
+tesseract
+tesseract-data-rus
+tesseract-data-eng
+python-opencv
 libjxl
 # ── терминал и консоль
 foot

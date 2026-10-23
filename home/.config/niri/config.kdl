@@ -617,7 +617,8 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    Print { screenshot; }
+    // своя скриншотилка: выделение текста (OCR) и картинок по границам; Ctrl+Print / Alt+Print — встроенные niri
+    Print hotkey-overlay-title="Screenshot" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc screenshot open"; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 

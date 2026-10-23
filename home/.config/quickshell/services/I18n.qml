@@ -774,5 +774,11 @@ Singleton {
         "From the internet": "Из интернета",
         "Your home IP or DDNS name and the UDP port forwarded on the router to this computer (port 9). Sent to your devices in Rexlink": "Домашний IP или DDNS-имя и UDP-порт, проброшенный на роутере на этот компьютер (порт 9). Уходит на устройства в Rexlink",
         "Start Rexlink (Settings → Phone) to send the address to your phone": "Запустите Rexlink (Настройки → Телефон), чтобы передать адрес на телефон",
+        // скриншотилка
+        "Screenshot copied": "Скриншот скопирован", "Screenshot saved": "Скриншот сохранён", "In the clipboard": "В буфере обмена",
+        "Text copied": "Текст скопирован", "Screenshot failed": "Не удалось сделать снимок", "Is grim installed?": "Установлен ли grim?",
+        "Copy text": "Копировать текст", "Text": "Текст", "Text…": "Текст…", "No text found": "Текста не найдено",
+        "Recognizing text…": "Распознаю текст…",
+        "Drag — area   ·   click — by edges   ·   drag over text — select it   ·   F — whole screen   ·   Esc": "Тяните — область   ·   клик — по границам   ·   по тексту — выделить текст   ·   F — весь экран   ·   Esc",
     })
 }

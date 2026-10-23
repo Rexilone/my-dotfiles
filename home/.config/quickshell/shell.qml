@@ -22,6 +22,8 @@ ShellRoot {
 
     Launcher {}
     PowerMenu {}
+    // скриншотилка с выделением текста и картинок (Print)
+    Screenshot {}
     PolkitDialog {}
     Clipboard {}
     RecorderMenu {}
