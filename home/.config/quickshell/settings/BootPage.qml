@@ -149,10 +149,10 @@ Page {
         visible: BootTheme.installed && (page.st.dms ?? []).length > 0
         icon: String.fromCodePoint(0xF0306)
         title: "Login screen"
-        desc: page.st.dm === "greetd" ? "Rexilone — like the shell: the bar, the card, the colors and the wallpaper. Takes effect on the next boot"
+        desc: page.st.dm === "greetd" ? "RexOS — like the shell: the bar, the card, the colors and the wallpaper. Takes effect on the next boot"
             : "LightDM — the classic GTK login screen. Takes effect on the next boot"
         SChoice {
-            options: [{ value: "rexilone", label: "Rexilone" }].concat((page.st.dms ?? []).includes("lightdm") ? [{ value: "lightdm", label: "LightDM" }] : [])
+            options: [{ value: "rexilone", label: "RexOS" }].concat((page.st.dms ?? []).includes("lightdm") ? [{ value: "lightdm", label: "LightDM" }] : [])
             current: page.st.dm === "greetd" ? "rexilone" : page.st.dm === "lightdm" ? "lightdm" : ""
             enabled: !BootTheme.busy
             onPicked: v => BootTheme.setDm(v)
@@ -161,7 +161,7 @@ Page {
     SCard {
         visible: BootTheme.installed && !(page.st.dms ?? []).includes("rexilone")
         icon: String.fromCodePoint(0xF0026)
-        title: "The Rexilone login screen isn't installed"
+        title: "The RexOS login screen isn't installed"
         desc: "Needs the greetd package: Settings → Updates installs missing packages, then Update the boot service above"
     }
 

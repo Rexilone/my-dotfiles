@@ -76,7 +76,7 @@ Page {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: `Rexilone Shell ${Dotfiles.version}${Dotfiles.commit ? "   ·   " + Dotfiles.commit + " · " + Dotfiles.commitDate : ""}`
+                    text: `RexOS ${Dotfiles.version}${Dotfiles.commit ? "   ·   " + Dotfiles.commit + " · " + Dotfiles.commitDate : ""}`
                     elide: Text.ElideRight
                     color: Theme.dim
                     font.family: Theme.font
@@ -140,7 +140,7 @@ Page {
         visible: BootTheme.dots !== "" && (!BootTheme.installed || BootTheme.outdated)
         icon: String.fromCodePoint(0xF0306)
         title: "Update the boot menu and the login screen"
-        desc: "The system part (rexilone-boot, the Rexilone login screen on greetd) is newer in the update. Needs the password once; the new login screen starts on the next boot"
+        desc: "The system part (rexilone-boot, the RexOS login screen on greetd) is newer in the update. Needs the password once; the new login screen starts on the next boot"
         SButton {
             text: BootTheme.busy ? "Installing…" : "Update"
             primary: true

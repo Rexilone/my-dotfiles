@@ -1,6 +1,6 @@
 <div align="center">
 
-# Rexilone Shell
+# RexOS
 
 **A minimal desktop on [niri](https://github.com/YaLTeR/niri) + [Quickshell](https://quickshell.org)**
 
@@ -71,7 +71,7 @@ The installer:
 4. applies the settings preset from `state/` (scheme, bar, modules);
 5. sets up the Rexlink service (phone link) and opens its ports in ufw;
 6. optionally sets up the Steam theme, OpenTabletDriver, CUPS and the phone webcam;
-7. sets up the Rexilone login screen (greetd + Quickshell, niri session by default), makes zsh the login shell and enables Bluetooth.
+7. sets up the RexOS login screen (greetd + Quickshell, niri session by default), makes zsh the login shell and enables Bluetooth.
 
 Then reboot, enter your password on the login screen — niri and the bar start by themselves.
 

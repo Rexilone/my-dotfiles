@@ -10,7 +10,7 @@ let
 in
 {
   options.rexilone = {
-    steam.enable = lib.mkEnableOption "Steam с Millennium и темой «Rexilone»";
+    steam.enable = lib.mkEnableOption "Steam с Millennium и темой «RexOS»";
     tablet.enable = lib.mkEnableOption "OpenTabletDriver (рабочая область, поворот, кнопки пера)";
     printers.enable = lib.mkEnableOption "печать и сканирование (CUPS, SANE)";
     webcam.enable = lib.mkEnableOption "телефон как веб-камера (v4l2loopback для Rexlink)";

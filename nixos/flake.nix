@@ -1,5 +1,5 @@
 {
-  description = "Rexilone: niri + Quickshell — рабочее окружение для NixOS";
+  description = "RexOS: niri + Quickshell — рабочее окружение для NixOS";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -9,7 +9,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Steam с Millennium (тема «Rexilone» для клиента Steam)
+    # Steam с Millennium (тема «RexOS» для клиента Steam)
     millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
   };
 

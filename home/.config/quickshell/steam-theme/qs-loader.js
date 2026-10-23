@@ -1,4 +1,4 @@
-// Загрузчик темы Rexilone для Millennium.
+// Загрузчик темы RexOS для Millennium.
 // Классы Steam зашифрованы (_3Z7VQ1IMk4E3HsHvrkLNgo) и меняются с каждым обновлением,
 // поэтому CSS темы пишется с понятными именами: `.%TopBar%` или `.%Container@GameListHomeAndSearch%`
 // (Container из того модуля, где есть и GameListHomeAndSearch). Здесь эти имена заменяются

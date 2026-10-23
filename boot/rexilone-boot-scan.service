@@ -1,6 +1,6 @@
 # Поиск систем на дисках: запускает правило udev, когда подключают или отключают диск
 [Unit]
-Description=Rexilone: поиск систем на подключённых дисках
+Description=RexOS: поиск систем на подключённых дисках
 After=local-fs.target
 RequiresMountsFor=/boot
 

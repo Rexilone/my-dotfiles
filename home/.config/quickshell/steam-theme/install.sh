@@ -1,5 +1,5 @@
 #!/bin/sh
-# Подключить тему Rexilone к Millennium: ссылка на эту папку + выбор темы.
+# Подключить тему RexOS к Millennium: ссылка на эту папку + выбор темы.
 # Запускать при закрытом Steam (Millennium перезаписывает конфиг при выходе).
 set -e
 dir=$(cd "$(dirname "$0")" && pwd)
@@ -26,7 +26,7 @@ PY
     echo "тема выбрана в $config"
 else
     echo "Конфига Millennium ещё нет: запусти Steam один раз, закрой и повтори,"
-    echo "или выбери тему вручную: Steam → Millennium → Themes → Rexilone."
+    echo "или выбери тему вручную: Steam → Millennium → Themes → RexOS."
 fi
 
 [ -f "$dir/colors.css" ] || echo "colors.css создаст шелл (ThemeSync) при запуске."

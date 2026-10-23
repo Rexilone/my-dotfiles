@@ -1,6 +1,6 @@
-# Тема Steam «Rexilone»
+# Тема Steam «RexOS»
 
-Тема для клиента Steam в стиле Rexilone Shell: те же цвета, шрифт, скругления, переключатели,
+Тема для клиента Steam в стиле RexOS: те же цвета, шрифт, скругления, переключатели,
 меню и навигация, что в баре и Настройках шелла. Все функции Steam на месте: тема меняет
 только внешний вид.
 
@@ -86,7 +86,7 @@ home.file.".local/share/Steam/millennium/themes/rexilone".source =
 ```
 
 Здесь нужна именно ссылка «вне store»: шелл пишет в эту папку `colors.css`.
-Тему один раз выбери в Steam: **Millennium → Themes → Rexilone**.
+Тему один раз выбери в Steam: **Millennium → Themes → RexOS**.
 
 ## Если после обновления Steam что-то стало старым
 

@@ -66,7 +66,7 @@ enable() {
     mkdir -p "${LINK%/*}"
     # своя .link заменяет 99-default.link для этой карты: правила имён и MAC — как в ней, чтобы имя не поменялось
     cat > "$LINK" <<EOF
-# Rexilone: Wake-on-LAN (Настройки → Электропитание → Включение по сети)
+# RexOS: Wake-on-LAN (Настройки → Электропитание → Включение по сети)
 [Match]
 MACAddress=$mac
 

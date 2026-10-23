@@ -1,10 +1,10 @@
 {
-    "name": "Rexilone",
+    "name": "RexOS",
     "author": "Rexilone",
-    "description": "Steam в стиле Rexilone Shell: цвета и шрифт берутся из темы шелла и меняются вместе с ней.",
+    "description": "Steam в стиле RexOS: цвета и шрифт берутся из темы шелла и меняются вместе с ней.",
     "version": "1.0.0",
     "tags": [
-        "Rexilone",
+        "RexOS",
         "Minimal"
     ],
     "github": {

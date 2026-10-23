@@ -1,4 +1,4 @@
-// niri для экрана входа Rexilone — запасной вариант (обычно rexilone-boot пишет
+// niri для экрана входа RexOS — запасной вариант (обычно rexilone-boot пишет
 // /var/lib/rexilone/greeter/niri.kdl с мониторами и раскладкой пользователя)
 input {
     keyboard {

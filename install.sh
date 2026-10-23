@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Установка рабочего окружения Rexilone (niri + Quickshell) на Arch Linux.
+# Установка рабочего окружения RexOS (niri + Quickshell) на Arch Linux.
 #
 #   ./install.sh                 пакеты + конфиги
-#   ./install.sh --with-steam    + Steam и тема «Rexilone» (Millennium)
+#   ./install.sh --with-steam    + Steam и тема «RexOS» (Millennium)
 #   ./install.sh --with-tablet   + OpenTabletDriver (рабочая область планшета)
 #   ./install.sh --with-printers + печать и сканирование (CUPS)
 #   ./install.sh --with-webcam   + телефон как веб-камера (v4l2loopback для Rexlink)
@@ -174,7 +174,7 @@ done
 
 # ─────────────────────────── Steam: тема для Millennium
 if (( STEAM )); then
-    bold "Steam: тема «Rexilone»"
+    bold "Steam: тема «RexOS»"
     if pgrep -x steam >/dev/null; then
         info "Steam запущен — закройте его и выполните: ~/.config/quickshell/steam-theme/install.sh"
     else
@@ -238,7 +238,7 @@ if (( PACKAGES )); then
     # Прежний (LightDM, gdm, sddm…) отключается; вернуть LightDM — Настройки → Загрузка и вход.
     # Без экрана входа система грузится в tty и просит логин/пароль текстом.
     if [[ -x /usr/bin/greetd && -x /usr/local/lib/rexilone/rexilone-boot ]]; then
-        info "Экран входа: Rexilone (greetd) → niri"
+        info "Экран входа: RexOS (greetd) → niri"
         run sudo /usr/local/lib/rexilone/rexilone-boot dm rexilone
     elif [[ -f /usr/share/xgreeters/lightdm-gtk-greeter.desktop ]]; then
         info "Экран входа: LightDM → niri"
@@ -278,7 +278,7 @@ fi
 bold "Готово"
 if (( PACKAGES )); then
     cat <<EOF
-  Перезагрузитесь: появится экран входа Rexilone, введите пароль — запустится niri.
+  Перезагрузитесь: появится экран входа RexOS, введите пароль — запустится niri.
   Бар запускается сам (spawn-at-startup "qs" в ~/.config/niri/config.kdl).
   Super+D — приложения, Super+I — настройки, Super+Shift+E — питание.
 EOF

@@ -1,6 +1,6 @@
 <div align="center">
 
-# Rexilone Shell
+# RexOS
 
 **Минималистичное рабочее окружение на [niri](https://github.com/YaLTeR/niri) + [Quickshell](https://quickshell.org)**
 
@@ -71,7 +71,7 @@ cd ~/my-dotfiles
 4. применяет пресет настроек из `state/` (схема, бар, модули);
 5. ставит службу Rexlink (связь с телефоном) и открывает её порты в ufw;
 6. по флагам — тема Steam, OpenTabletDriver, CUPS, веб-камера из телефона;
-7. включает экран входа Rexilone (greetd + Quickshell, по умолчанию сессия niri), делает zsh оболочкой по умолчанию и включает Bluetooth.
+7. включает экран входа RexOS (greetd + Quickshell, по умолчанию сессия niri), делает zsh оболочкой по умолчанию и включает Bluetooth.
 
 Потом перезагрузитесь и введите пароль на экране входа — niri и бар запустятся сами.
 

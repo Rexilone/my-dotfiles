@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+Name[ru]=Файлы
+Comment=Browse files, the phone storage and the trash
+Comment[ru]=Файлы, память телефона и корзина
+Icon=system-file-manager
+Exec=rexilone-files %u
+Terminal=false
+Categories=System;FileManager;Utility;Core;
+MimeType=inode/directory;
+StartupNotify=false
+Keywords=folder;manager;explore;disk;filesystem;nautilus;проводник;папка;

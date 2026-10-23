@@ -106,6 +106,6 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 
-# экран входа Rexilone: greetd (niri + Quickshell) — пароль, затем сессия niri
+# экран входа RexOS: greetd (niri + Quickshell) — пароль, затем сессия niri
 greetd
 greetd-agreety

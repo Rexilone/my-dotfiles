@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Greetd
 
-// Экран входа Rexilone: тема, пользователи, сеансы, раскладка, вход через greetd.
+// Экран входа RexOS: тема, пользователи, сеансы, раскладка, вход через greetd.
 // Тему кладёт rexilone-boot (root) в /var/lib/rexilone/greeter/ — по теме шелла пользователя.
 Singleton {
     id: root

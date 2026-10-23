@@ -52,7 +52,7 @@ Item {
             anchors.left: parent.left
             pills: bar.style === "pills"
             BarText { text: String.fromCodePoint(0xF08C7); size: G.iconSize + 2 }
-            BarText { text: G.host || "Rexilone"; color: G.muted }
+            BarText { text: G.host || "RexOS"; color: G.muted }
         }
 
         // ── по центру: дата и время

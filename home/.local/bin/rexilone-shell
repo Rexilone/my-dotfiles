@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rexilone Shell: запуск Quickshell (~/.config/quickshell).
+# RexOS: запуск Quickshell (~/.config/quickshell).
 #
 #   rexilone-shell                      запущен ли шелл
 #   rexilone-shell start                запустить (spawn-at-startup в niri)

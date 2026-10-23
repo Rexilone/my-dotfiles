@@ -50,7 +50,7 @@ Singleton {
 
     // поставить пакеты из обновлённых списков — в терминале (спросит пароль); install.sh потом сам перезапустит шелл
     function installPackages() {
-        Quickshell.execDetached(["foot", "-T", "Rexilone update", "sh", "-c", `"${dir}/install.sh"; echo; read -p '${I18n.ru ? "Готово. Enter — закрыть" : "Done. Press Enter to close"}' _`]);
+        Quickshell.execDetached(["foot", "-T", "RexOS update", "sh", "-c", `"${dir}/install.sh"; echo; read -p '${I18n.ru ? "Готово. Enter — закрыть" : "Done. Press Enter to close"}' _`]);
     }
 
     // перезапуск отдельным процессом: старый шелл завершается, новый запускает niri (с окружением сеанса)
@@ -148,7 +148,7 @@ Singleton {
             // шелл перезапускаем всегда: новые файлы QML подхватываются только при запуске.
             // Если изменились списки пакетов — после перезапуска Обновления предложат их поставить
             const pkgs = root.changedPackages.length > 0;
-            Quickshell.execDetached(["notify-send", "-a", "Rexilone", "-i", "system-software-update",
+            Quickshell.execDetached(["notify-send", "-a", "RexOS", "-i", "system-software-update",
                 I18n.ru ? "Обновлено — перезапускаю оболочку" : "Updated — restarting the shell",
                 pkgs ? (I18n.ru ? "Изменились списки пакетов — поставьте их в Настройки → Обновления" : "Package lists changed — install them in Settings → Updates")
                      : (I18n.ru ? "Новая версия запустится через секунду" : "The new version starts in a second")]);
@@ -164,7 +164,7 @@ Singleton {
         if (head === notifiedHead || head === Settings.updateNotified) return;
         notifiedHead = head;
         Settings.updateNotified = head;
-        Quickshell.execDetached(["notify-send", "-a", "Rexilone", "-i", "system-software-update",
+        Quickshell.execDetached(["notify-send", "-a", "RexOS", "-i", "system-software-update",
             I18n.ru ? "Доступно обновление" : "Update available",
             `${incoming[0].subject}${behind > 1 ? (I18n.ru ? ` и ещё ${behind - 1}` : ` and ${behind - 1} more`) : ""} — ${I18n.ru ? "Настройки → Обновления" : "Settings → Updates"}`]);
     }

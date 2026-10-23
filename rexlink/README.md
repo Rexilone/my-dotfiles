@@ -1,6 +1,6 @@
 # Rexlink
 
-The phone link of Rexilone Shell: Android phones, tablets and watches on the desktop.
+The phone link of RexOS: Android phones, tablets and watches on the desktop.
 Here it is a **system service** (`rexlink.service`) with no window or tray icon of its own —
 the interface is **Settings → Phone**, the phone module in the bar, the desktop widget,
 the incoming call card and the quick reply popup.

@@ -29,6 +29,8 @@ ShellRoot {
     RecorderMenu {}
     WallpaperSwitcher {}
     SettingsWindow {}
+    // проводник (Super+E): места, телефон через Rexlink, корзина
+    FilesWindow {}
     // «Программы»: установка приложений (pacman + AUR), открывается из меню приложений
     StoreWindow {}
     // живые обои — под виджетами рабочего стола

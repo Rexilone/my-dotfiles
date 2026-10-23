@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Загрузка и вход в стиле шелла: готовит тему для меню Limine и экрана входа (Rexilone на greetd или LightDM).
+// Загрузка и вход в стиле шелла: готовит тему для меню Limine и экрана входа (RexOS на greetd или LightDM).
 // Шелл только пишет файлы в ~/.local/state/rexilone/boot/ (цвета, обои под экран, размытые обои, аватар),
 // применяет их системная служба rexilone-boot (root): при выключении — сама, «Применить» — сразу.
 // Состояние (найденные системы, итог) — /var/lib/rexilone/boot-status.json.
@@ -37,7 +37,7 @@ Singleton {
             accent: hex(Theme.accent), urgent: hex(Theme.urgent), warn: hex(Theme.warn),
             line: hex(Theme.line), faint: hex(Theme.faint),
         },
-        // экран входа Rexilone повторяет бар и размеры шелла
+        // экран входа RexOS повторяет бар и размеры шелла
         lang: I18n.lang,
         barStyle: Settings.barStyle,
         barHeight: Settings.barHeight,
@@ -178,7 +178,7 @@ Singleton {
                 root.outdated = text.includes("outdated");
                 root.dots = (text.match(/^dots=(.*)$/m) ?? [])[1] ?? "";
                 if (text.includes("notify"))
-                    Quickshell.execDetached(["notify-send", "-a", "Rexilone", "-i", "system-software-update",
+                    Quickshell.execDetached(["notify-send", "-a", "RexOS", "-i", "system-software-update",
                         I18n.ru ? "Обновите загрузку и экран входа" : "Update the boot menu and the login screen",
                         I18n.ru ? "Настройки → Обновления → «Обновить» (нужен пароль)" : "Settings → Updates → Update (needs the password)"]);
             }

@@ -1,4 +1,4 @@
-# Плагины Rexilone Shell
+# Плагины RexOS
 
 Плагин — это папка в `~/.config/quickshell/plugins/<id>/` с файлом `plugin.json`
 и QML-файлами. Плагины видны на странице **Настройки → Plugins**, которая появляется

@@ -10,7 +10,7 @@ Page {
 
     title: "About"
 
-    readonly property string shellName: "Rexilone Shell"
+    readonly property string shellName: "RexOS"
     readonly property string version: Dotfiles.version
     readonly property string author: "Rexilone"
 

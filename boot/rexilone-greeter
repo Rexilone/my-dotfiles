@@ -1,5 +1,5 @@
 #!/bin/sh
-# Экран входа Rexilone (greetd запускает его от пользователя greeter): niri, в нём Quickshell.
+# Экран входа RexOS (greetd запускает его от пользователя greeter): niri, в нём Quickshell.
 # Тема и настройки niri — /var/lib/rexilone/greeter (пишет rexilone-boot по теме шелла).
 # Экран входа не поднялся три раза подряд — текстовый вход agreety, чтобы не остаться без входа.
 G=/usr/local/share/rexilone/greeter

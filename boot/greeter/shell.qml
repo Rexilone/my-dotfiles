@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// Экран входа Rexilone Shell: greetd → niri → этот Quickshell.
+// Экран входа RexOS: greetd → niri → этот Quickshell.
 // На главном мониторе — карточка входа, на остальных — обои и бар.
 ShellRoot {
     id: shell

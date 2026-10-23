@@ -15,7 +15,7 @@ Singleton {
     property bool enabled: false
     readonly property string conf: `${Quickshell.env("HOME")}/.config/wireplumber/wireplumber.conf.d/51-rexilone-calls.conf`
     readonly property string confText: [
-        "# Rexilone: ПК — гарнитура телефона (звонки через компьютер). Настройки → Телефон",
+        "# RexOS: ПК — гарнитура телефона (звонки через компьютер). Настройки → Телефон",
         "monitor.bluez.properties = {",
         "  bluez5.roles = [ a2dp_sink a2dp_source bap_sink bap_source hsp_hs hsp_ag hfp_hf hfp_ag ]",
         "  bluez5.hfphsp-backend = \"native\"",

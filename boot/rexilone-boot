@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Загрузка и вход в стиле Rexilone Shell (запускается от root).
+"""Загрузка и вход в стиле RexOS (запускается от root).
 
   rexilone-boot scan           найти системы на всех дисках (Windows, другие Linux…) и добавить их в меню Limine
   rexilone-boot apply          оформить меню Limine и экран входа по теме шелла
@@ -10,7 +10,7 @@
   rexilone-boot status         состояние в JSON (то же пишется в /var/lib/rexilone/boot-status.json)
 
 Тему готовит шелл пользователя: ~/.local/state/rexilone/boot/{theme.json, wallpaper.jpg, greeter.jpg, avatar.jpg}.
-Экран входа Rexilone — greetd → niri → Quickshell (/usr/local/share/rexilone/greeter); его тема и
+Экран входа RexOS — greetd → niri → Quickshell (/usr/local/share/rexilone/greeter); его тема и
 настройки niri (мониторы, раскладка из ~/.config/niri/qs-settings.kdl) — в /var/lib/rexilone/greeter.
 Пользователь — из /etc/rexilone/boot.conf (user=…). Эти файлы — данные, а не код: цвета и числа
 проверяются, картинки принимаются только JPEG и не больше 16 МБ.
@@ -271,7 +271,7 @@ def limine_theme(t, conf):
     if t["remember"]:
         lines.append("remember_last_entry: yes")
     lines += [
-        "interface_branding: Rexilone",
+        "interface_branding: RexOS",
         f"interface_branding_colour: {t['accent']}",
         "interface_help_hidden: yes",
         f"interface_help_colour: {t['dim']}",
@@ -441,7 +441,7 @@ def rgba(h, a):
 def greeter_css(t):
     bg, panel, s1, s2, s3 = t["bg"], t["panel"], t["surface"], t["surfaceHi"], t["surfaceHi2"]
     fg, dim, acc, urg = t["fg"], t["dim"], t["accent"], t["urgent"]
-    return f"""/* экран входа в стиле Rexilone Shell — генерирует rexilone-boot, вручную не править */
+    return f"""/* экран входа в стиле RexOS — генерирует rexilone-boot, вручную не править */
 * {{
     font-family: "JetBrains Mono", "{t['font']}", monospace;
     text-shadow: none;
@@ -649,7 +649,7 @@ def apply_greeter(t):
     return True
 
 
-# ── экран входа Rexilone (greetd → niri → Quickshell) ─────────────────
+# ── экран входа RexOS (greetd → niri → Quickshell) ─────────────────
 
 NIRI_OUTPUT_KEYS = re.compile(r'^(mode|scale|transform|position|variable-refresh-rate|focus-at-startup|off)( [\w ".@=:-]*)?$')
 NIRI_XKB = re.compile(r'^(layout|variant|options|model) "[\w,:()+ -]*"$')
@@ -698,7 +698,7 @@ def niri_user_bits():
 
 def greeter_niri():
     outputs, xkb, numlock = niri_user_bits()
-    out = ["// сгенерировано rexilone-boot — niri для экрана входа Rexilone", "input {", "    keyboard {", "        xkb {"]
+    out = ["// сгенерировано rexilone-boot — niri для экрана входа RexOS", "input {", "    keyboard {", "        xkb {"]
     out += [f"            {l}" for l in (xkb or ['layout "us,ru"', 'options "grp:caps_toggle"'])]
     out += ["        }"] + (["        numlock"] if numlock else []) + ["    }", "    touchpad {", "        tap", "    }", "}", ""]
     for o in outputs:
@@ -751,7 +751,7 @@ def dms_available():
 
 
 def greetd_conf():
-    return ("# сгенерировано rexilone-boot — экран входа Rexilone (Настройки → Загрузка и вход)\n"
+    return ("# сгенерировано rexilone-boot — экран входа RexOS (Настройки → Загрузка и вход)\n"
             "[terminal]\nvt = 1\n\n[default_session]\n"
             f'command = "{GREETER_BIN}"\nuser = "greeter"\n')
 
