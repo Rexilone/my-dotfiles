@@ -93,7 +93,8 @@ Item {
             readonly property bool selected: !!fg.br.sel[modelData.path]
             readonly property bool renaming: fg.br.renaming === modelData.path
             readonly property bool image: !modelData.dir && fg.br.isImage(modelData.name)
-            readonly property string thumbKind: modelData.dir || fg.remote ? "" : FileThumbs.kind(modelData.name)
+            readonly property bool thumbsOn: (fg.br.cfg.thumbs ?? true) && (!fg.remote || (fg.br.cfg.remoteThumbs ?? false))
+            readonly property string thumbKind: modelData.dir || !thumbsOn ? "" : FileThumbs.kind(modelData.name)
             readonly property string thumbKey: thumbKind ? FileThumbs.key(modelData.path, String(modelData.mtime)) : ""
             readonly property string thumb: thumbKey ? (FileThumbs.ready[thumbKey] ?? "") : ""
             onThumbKeyChanged: if (thumbKey) Qt.callLater(() => FileThumbs.request(modelData.path, String(modelData.mtime)))
@@ -132,7 +133,7 @@ Item {
                     id: thumbImg
                     anchors.fill: parent
                     visible: status === Image.Ready
-                    source: !fg.grid && fg.zoom < 1.5 ? "" : cell.image && !fg.remote ? "file://" + cell.modelData.path : cell.thumb ? "file://" + cell.thumb : ""
+                    source: !fg.grid && fg.zoom < 1.5 ? "" : cell.image && cell.thumbsOn ? "file://" + cell.modelData.path : cell.thumb ? "file://" + cell.thumb : ""
                     sourceSize.width: 256
                     sourceSize.height: 256
                     fillMode: Image.PreserveAspectFit

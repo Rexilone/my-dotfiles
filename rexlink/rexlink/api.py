@@ -68,7 +68,10 @@ class Api(QObject):
         self.subs.pop(conn, None)
         for ch in self.watching.pop(conn, ()):
             video.STORE.set_watch(ch, False)
-        conn.deleteLater()
+        try:
+            conn.deleteLater()
+        except RuntimeError:   # при выключении службы сокет уже удалён Qt
+            pass
 
     def listen(self):
         QLocalServer.removeServer(SOCKET)

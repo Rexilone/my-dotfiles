@@ -62,6 +62,8 @@ ShellRoot {
     readonly property var themeSchedule: ThemeSchedule
     readonly property var liveWallpaper: LiveWallpaper
     readonly property var callAudio: CallAudio
+    // флешки: подключаются сами (Настройки → Файлы)
+    readonly property var drives: Drives
     readonly property var nightLight: NightLight
     readonly property var updates: Updates
     // скрытые с демонстрации приложения (Super+G): индикатор в баре

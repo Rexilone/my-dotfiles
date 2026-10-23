@@ -118,7 +118,7 @@ Item {
         id: fm
         folder: br.mode === "dir" && br.path ? "file://" + br.path : ""
         showHidden: br.cfg.hidden ?? false
-        showDirsFirst: true
+        showDirsFirst: br.cfg.dirsFirst ?? true
         showDotAndDotDot: false
         caseSensitive: false
         sortField: ({ name: FolderListModel.Name, time: FolderListModel.Time, size: FolderListModel.Size, type: FolderListModel.Type })[br.cfg.sort ?? "name"]
@@ -476,6 +476,21 @@ Item {
         if (p) { waitPhone = ""; go(p); }
         else if (d?.files?.state === "permission") { waitPhone = ""; say(I18n.tr("Allow «All files» in Rexlink on the phone")); }
     }
+    // ── диски и флешки
+    property string waitDrive: ""
+    function openDrive(d) {
+        if (d.mount) { go(d.mount); return; }
+        waitDrive = d.dev;
+        Drives.mount(d.dev, false);
+    }
+    Connections {
+        target: Drives
+        function onMounted(dev, p) {
+            if (dev === br.waitDrive && p) br.go(p);
+            br.waitDrive = "";
+        }
+    }
+
     function sendToPhone(dev) {
         const files = selItems.filter(i => !i.dir).map(i => i.path);
         if (!files.length) { say(I18n.tr("Pick files, not folders")); return; }
@@ -679,6 +694,17 @@ Item {
             color: Theme.fg
             font.family: Theme.font
             font.pixelSize: Theme.fontSize - 1
+        }
+    }
+
+    // боковые кнопки мыши — назад / вперёд (остальные кнопки проходят дальше)
+    MouseArea {
+        anchors.fill: parent
+        z: 50
+        acceptedButtons: Qt.BackButton | Qt.ForwardButton
+        onClicked: mouse => {
+            if (mouse.button === Qt.BackButton) br.goBack();
+            else br.goFwd();
         }
     }
 

@@ -461,6 +461,7 @@ Scope {
                     PageSlot { index: 18; sourceComponent: UpdatesPage {} }
                     PageSlot { index: 19; sourceComponent: BootPage {} }
                     PageSlot { index: 20; sourceComponent: GamesPage {} }
+                    PageSlot { index: 23; sourceComponent: FilesPage {} }
                 }
             }
         }

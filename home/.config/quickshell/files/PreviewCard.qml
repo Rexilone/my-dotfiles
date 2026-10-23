@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
@@ -18,8 +19,18 @@ Item {
     readonly property string thumbKey: visible && kind ? FileThumbs.key(it.path, String(it.mtime)) : ""
     readonly property string thumb: thumbKey ? (FileThumbs.ready[thumbKey] ?? "") : ""
     onThumbKeyChanged: if (thumbKey) Qt.callLater(() => FileThumbs.request(it.path, String(it.mtime)))
-    readonly property bool textLike: !!it && !it.dir && !image && !kind && (it.size ?? 0) < 5000000
+    readonly property bool audio: !!it && !it.dir && /\.(mp3|flac|ogg|opus|wav|m4a|aac|wma)$/i.test(it.name)
+    // видео и музыку — играть прямо в просмотре (Настройки → Файлы)
+    readonly property bool play: visible && (pv.br.cfg.previewPlay ?? true) && (kind === "video" || audio)
+    readonly property bool textLike: !!it && !it.dir && !image && !kind && !audio && (it.size ?? 0) < 5000000
     property string text: ""
+
+    function time(ms) {
+        const t = Math.floor((ms ?? 0) / 1000);
+        const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+        const p = n => String(n).padStart(2, "0");
+        return h ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+    }
 
     onItChanged: load()
     onVisibleChanged: load()
@@ -94,10 +105,119 @@ Item {
                 color: Theme.bg
                 clip: true
 
+                // видео и музыка
+                MediaPlayer {
+                    id: player
+                    source: pv.play && pv.it ? "file://" + pv.it.path : ""
+                    videoOutput: video
+                    audioOutput: AudioOutput {
+                        id: sound
+                        muted: pv.br.cfg.previewMuted ?? false
+                        volume: 0.8
+                    }
+                    loops: (pv.br.cfg.previewLoop ?? true) ? MediaPlayer.Infinite : 1
+                    onSourceChanged: if (source != "") play()
+                }
+                VideoOutput {
+                    id: video
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    anchors.bottomMargin: pv.play ? 52 : 8
+                    visible: pv.play && pv.kind === "video"
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: player.playbackState === MediaPlayer.PlayingState ? player.pause() : player.play()
+                    }
+                }
+                Column {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: -26
+                    visible: pv.play && pv.audio
+                    spacing: 10
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: String.fromCodePoint(0xF075A)
+                        color: Theme.accent
+                        font.family: Theme.font
+                        font.pixelSize: 96
+                    }
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: player.metaData.stringValue(MediaMetaData.Title) || (pv.it?.name ?? "")
+                        color: Theme.fg
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize + 2
+                    }
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: player.metaData.stringValue(MediaMetaData.ContributingArtist) || player.metaData.stringValue(MediaMetaData.AlbumArtist) || ""
+                        color: Theme.dim
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize
+                    }
+                }
+                // панель плеера
+                RowLayout {
+                    visible: pv.play
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 10
+                    height: 36
+                    spacing: 8
+                    ToolButton {
+                        icon: player.playbackState === MediaPlayer.PlayingState ? 0xF03E4 : 0xF040A
+                        tip: player.playbackState === MediaPlayer.PlayingState ? "Pause" : "Play"
+                        onClicked: player.playbackState === MediaPlayer.PlayingState ? player.pause() : player.play()
+                    }
+                    Text {
+                        text: pv.time(player.position)
+                        color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize - 2
+                    }
+                    // перемотка
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 20
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 4
+                            radius: 2
+                            color: Theme.surfaceHi2
+                            Rectangle {
+                                width: player.duration > 0 ? parent.width * player.position / player.duration : 0
+                                height: parent.height
+                                radius: 2
+                                color: Theme.accent
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            function seekTo(x) { if (player.duration > 0) player.position = Math.max(0, Math.min(1, x / width)) * player.duration; }
+                            onPressed: mouse => seekTo(mouse.x)
+                            onPositionChanged: mouse => { if (pressed) seekTo(mouse.x); }
+                        }
+                    }
+                    Text {
+                        text: pv.time(player.duration)
+                        color: Theme.muted
+                        font.family: Theme.font
+                        font.pixelSize: Theme.fontSize - 2
+                    }
+                    ToolButton {
+                        icon: sound.muted ? 0xF0581 : 0xF057E
+                        tip: sound.muted ? "Sound on" : "Mute"
+                        onClicked: sound.muted = !sound.muted
+                    }
+                }
+
                 Image {
                     anchors.fill: parent
                     anchors.margins: 8
-                    visible: pv.image || pv.thumb !== ""
+                    visible: !pv.play && (pv.image || pv.thumb !== "")
                     source: pv.image ? "file://" + pv.it.path : pv.thumb ? "file://" + pv.thumb : ""
                     sourceSize.width: 1600
                     sourceSize.height: 1200
@@ -126,7 +246,7 @@ Item {
                 }
                 Column {
                     anchors.centerIn: parent
-                    visible: !pv.image && !pv.thumb && pv.text === ""
+                    visible: !pv.play && !pv.image && !pv.thumb && pv.text === ""
                     spacing: 10
                     IconImage {
                         anchors.horizontalCenter: parent.horizontalCenter

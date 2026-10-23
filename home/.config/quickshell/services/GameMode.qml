@@ -11,8 +11,9 @@ Singleton {
 
     readonly property var cfg: Settings.gameMode ?? {}
     property bool manual: false
-    // окно игры: Steam/Proton (steam_app_N), gamescope, Wine (*.exe)
-    readonly property var game: Object.values(Niri.windows).find(w => /^steam_app_\d+$|^gamescope$|\.exe$/i.test(w.app_id ?? "")) ?? null
+    // окно игры: Steam/Proton (steam_app_N), gamescope, Wine (*.exe), Minecraft (Java)
+    readonly property var game: Object.values(Niri.windows).find(w => /^steam_app_\d+$|^gamescope$|\.exe$/i.test(w.app_id ?? "")
+        || /^Minecraft[* ]\s*\d/.test(w.title ?? "")) ?? null
     readonly property bool detected: !!game
     property bool suppressed: false   // выключили вручную при открытой игре — до её закрытия
     readonly property bool active: manual || ((cfg.auto ?? true) && detected && !suppressed)

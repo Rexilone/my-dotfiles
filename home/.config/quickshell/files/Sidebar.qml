@@ -160,7 +160,7 @@ Flickable {
 
         // ── устройства: телефон и планшет через Rexlink, диски
         Caption {
-            visible: Rexlink.connected && Rexlink.devices.length > 0 || (sb.br.places.drives ?? []).length > 0
+            visible: Rexlink.connected && Rexlink.devices.length > 0 || Drives.drives.length > 0
             text: I18n.tr("DEVICES")
         }
         Repeater {
@@ -183,19 +183,29 @@ Flickable {
                 onActivated: if (modelData.online) sb.br.openPhone(modelData)
             }
         }
+        // диски и флешки (services/Drives.qml): не подключённые — подключить по клику
         Repeater {
-            model: sb.br.places.drives ?? []
+            model: Drives.drives
             Place {
+                id: dv
                 required property var modelData
-                glyph: 0xF02CA
+                glyph: modelData.removable ? 0xF129E : 0xF02CA
                 label: modelData.name
-                sub: modelData.size ? `${modelData.size}${modelData["use%"] ? "   ·   " + modelData["use%"] : ""}` : ""
-                target: modelData.path
-                here: sb.br.path.startsWith(modelData.path)
-                onActivated: sb.br.go(modelData.path)
-                onMenu: (x, y) => sb.br.popupMenu(x, y, [
-                    { icon: 0xF01A4, text: "Unmount", act: () => Quickshell.execDetached(["udisksctl", "unmount", "-b", modelData.source ?? "", "--no-user-interaction"]) },
-                ])
+                sub: modelData.mount
+                    ? (modelData.free !== null ? `${Drives.human(modelData.free)} ${I18n.tr("free of")} ${modelData.sizeText}` : modelData.sizeText)
+                    : `${modelData.sizeText}   ·   ${I18n.tr("not connected")}`
+                target: modelData.mount
+                busy: sb.br.waitDrive === modelData.dev
+                here: !!modelData.mount && sb.br.mode === "dir" && (sb.br.path === modelData.mount || sb.br.path.startsWith(modelData.mount + "/"))
+                opacity: modelData.mount ? 1 : 0.75
+                onActivated: sb.br.openDrive(modelData)
+                onMenu: (x, y) => sb.br.popupMenu(x, y, modelData.mount ? [
+                    { icon: 0xF0DCE, text: "Open", act: () => sb.br.go(modelData.mount) },
+                    { icon: 0xF018D, text: "Open terminal here", act: () => sb.br.openTerminal(modelData.mount) },
+                    { sep: true },
+                    { icon: 0xF033A, text: "Disconnect", act: () => { if (sb.br.path.startsWith(modelData.mount)) sb.br.go(sb.br.home); Drives.unmount(modelData.dev); } },
+                ].concat(modelData.removable ? [{ icon: 0xF01EA, text: "Eject", act: () => { if (sb.br.path.startsWith(modelData.mount)) sb.br.go(sb.br.home); Drives.eject(modelData); } }] : [])
+                : [{ icon: 0xF0DCE, text: "Connect", act: () => sb.br.openDrive(modelData) }])
             }
         }
         Place {
