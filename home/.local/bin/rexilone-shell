@@ -5,6 +5,8 @@
 #   rexilone-shell start                запустить (spawn-at-startup в niri)
 #   rexilone-shell stop | restart
 #   rexilone-shell ipc <цель> <функция> [аргументы…]   вызов в запущенный шелл (бинды niri)
+#   rexilone-shell watchdog             сторож: шелл не отвечает ~30 с — отчёт в ~/.cache/rexilone/hangs и перезапуск;
+#                                       шелл упал — поднять снова (start запускает сторожа сам)
 set -u
 
 say() { printf '%s\n' "$*"; }
@@ -30,14 +32,78 @@ wait_gone() {
     return 1
 }
 
+RUN="${XDG_RUNTIME_DIR:-/tmp}"
+STOPPED="$RUN/rexilone-shell.stopped"        # остановили нарочно — сторож не поднимает
+WATCH_PID="$RUN/rexilone-shell-watchdog.pid"
+HANGS="${XDG_CACHE_HOME:-$HOME/.cache}/rexilone/hangs"
+
 stop() {
+    touch "$STOPPED"
     qs_running || return 0
     pkill -x qs; pkill -x quickshell
     wait_gone qs_running || { pkill -9 -x qs; pkill -9 -x quickshell; }
     return 0
 }
 
-start() { qs_running || detach qs; }
+start() {
+    rm -f "$STOPPED"
+    qs_running || detach qs
+    watchdog_start
+}
+
+# ── сторож
+watchdog_start() {
+    [[ -f "$WATCH_PID" ]] && kill -0 "$(cat "$WATCH_PID")" 2>/dev/null && return 0
+    setsid -f "$0" watchdog >/dev/null 2>&1
+}
+
+# отчёт о зависании: что делают потоки шелла, где ждут в ядре, лог; затем SIGABRT — обработчик падений
+# Quickshell пишет стек главного потока в ~/.cache/quickshell/crashes (gdb к чужому процессу не пустит ptrace_scope)
+report() {
+    local pid="$1" f i r
+    mkdir -p "$HANGS"
+    f="$HANGS/qs-hang-$(date +%Y-%m-%d-%H%M%S).txt"
+    {
+        echo "== $(date)   qs pid $pid"
+        echo "== видеокарта"; lspci -k 2>/dev/null | grep -A3 -Ei 'vga|3d' | head -12
+        echo "== потоки (stat, где ждут в ядре)"; ps -L -o tid,stat,wchan:32,pcpu,rss,comm -p "$pid" 2>&1
+        echo "== состояние"; grep -E 'State|VmRSS|Threads' "/proc/$pid/status" 2>&1
+        echo "== лог шелла"; timeout 5 qs log 2>&1 | tail -150
+    } > "$f" 2>&1
+    kill -CONT "$pid" 2>/dev/null; kill -ABRT "$pid" 2>/dev/null
+    for i in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+    r=$(find "${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/crashes" -name report.txt -newer "$f" 2>/dev/null | head -1)
+    [[ -n "$r" ]] && { echo "== стек главного потока"; sed -n '/===== Stacktrace/,/===== Log Tail/p' "$r"; } >> "$f"
+    printf '%s' "$f"
+}
+
+watchdog() {
+    echo $$ > "$WATCH_PID"
+    local fails=0 gone=0 pid f
+    while :; do
+        sleep 15
+        if ! qs_running; then
+            # упал сам (не stop) — поднять
+            if [[ ! -e "$STOPPED" ]]; then
+                gone=$((gone + 1))
+                (( gone >= 2 )) && { detach qs; gone=0; }
+            fi
+            fails=0
+            continue
+        fi
+        gone=0
+        if timeout 5 qs ipc show >/dev/null 2>&1; then fails=0; continue; fi
+        fails=$((fails + 1))
+        (( fails < 2 )) && continue
+        pid=$(pgrep -xo qs)
+        f=$(report "$pid")
+        pkill -9 -x qs; pkill -9 -x quickshell
+        wait_gone qs_running
+        detach qs
+        command -v notify-send >/dev/null && notify-send -a RexOS -i dialog-warning "Шелл завис и был перезапущен" "Отчёт: ${f/#$HOME/~}"
+        fails=0
+    done
+}
 
 ipc() {
     (( $# >= 1 )) || { say "использование: rexilone-shell ipc <цель> <функция> [аргументы…]" >&2; return 2; }
@@ -51,6 +117,7 @@ case "${1:-status}" in
     stop) stop ;;
     restart) stop; start ;;
     ipc) shift; ipc "$@" ;;
-    -h|--help|help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//' ;;
+    watchdog) watchdog ;;
+    -h|--help|help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) say "неизвестная команда: $1 (rexilone-shell help)" >&2; exit 2 ;;
 esac

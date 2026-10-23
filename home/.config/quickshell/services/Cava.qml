@@ -9,6 +9,7 @@ Singleton {
 
     readonly property int bands: 32
     property var values: new Array(bands).fill(0)
+    property string lastLine: ""
     readonly property bool installed: probe.found
 
     property var consumers: ({})
@@ -33,7 +34,7 @@ Singleton {
         return out;
     }
 
-    onActiveChanged: if (!active) values = new Array(bands).fill(0)
+    onActiveChanged: if (!active) { values = new Array(bands).fill(0); lastLine = ""; }
 
     Process {
         id: probe
@@ -45,11 +46,18 @@ Singleton {
 
     Process {
         running: root.active
-        command: ["sh", "-c", `printf '%s\\n' '[general]' 'framerate = 45' 'bars = ${root.bands}' 'sleep_timer = 3' \
+        // конфиг — во временный файл, cava — прямой ребёнок шелла (без конвейера: иначе при перезагрузке шелла
+        // убивался только sh, а cava оставалась жить сиротой); --pdeathsig — умирает вместе с шеллом
+        command: ["sh", "-c", `f="\${XDG_RUNTIME_DIR:-/tmp}/rexilone-cava.conf"
+            printf '%s\\n' '[general]' 'framerate = 45' 'bars = ${root.bands}' 'sleep_timer = 3' \
             '[output]' 'method = raw' 'raw_target = /dev/stdout' 'data_format = ascii' 'ascii_max_range = 100' \
-            'bar_delimiter = 59' 'frame_delimiter = 10' '[smoothing]' 'noise_reduction = 60' | exec cava -p /dev/stdin`]
+            'bar_delimiter = 59' 'frame_delimiter = 10' '[smoothing]' 'noise_reduction = 60' > "$f"
+            exec setpriv --pdeathsig TERM cava -p "$f"`]
         stdout: SplitParser {
             onRead: line => {
+                // тишина — cava шлёт одни и те же нули: не пересчитывать столбики зря
+                if (line === root.lastLine) return;
+                root.lastLine = line;
                 const v = line.split(";").filter(x => x !== "").map(x => Number(x) / 100);
                 if (v.length === root.bands) root.values = v;
             }

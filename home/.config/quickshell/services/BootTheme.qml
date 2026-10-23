@@ -92,7 +92,8 @@ Singleton {
     }
 
     // ImageMagick без OpenCL: на NVIDIA его запуск будит видеокарту и компилирует ядра — шелл и система встают
-    readonly property var magickEnv: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2" })
+    readonly property var magickEnv: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2",
+                                            MAGICK_MEMORY_LIMIT: "256MiB", MAGICK_MAP_LIMIT: "512MiB", MAGICK_AREA_LIMIT: "128MP" })
 
     Process {
         id: themeProc

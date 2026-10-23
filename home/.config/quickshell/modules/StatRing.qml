@@ -12,8 +12,11 @@ Item {
     property int size: 108
     property int thickness: 8
 
+    // animate: false — кольцо скрыто (закрытое меню): плавный переход не нужен, а идущая анимация
+    // заставляет перерисовываться все окна шелла
+    property bool animate: true
     property real shown: value
-    Behavior on shown { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
+    Behavior on shown { enabled: root.animate; NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
     onShownChanged: ring.requestPaint()
     // Canvas сам не знает о смене темы — перерисовать вместе с цветами
     onArcColorChanged: ring.requestPaint()

@@ -11,7 +11,7 @@ FAIL=0
 
 setup() {
     T="$(mktemp -d)"
-    export HOME="$T/home" STUB="$T" NIRI_SOCKET=""
+    export HOME="$T/home" STUB="$T" NIRI_SOCKET="" XDG_RUNTIME_DIR="$T" XDG_CACHE_HOME="$T/cache"
     mkdir -p "$T/bin" "$T/proc"
     : > "$T/log"
     stub() { printf '#!/usr/bin/env bash\n%s\n' "$2" > "$T/bin/$1"; chmod +x "$T/bin/$1"; }
@@ -49,9 +49,11 @@ t_start_stop() {
     run start
     check "start запускает qs" proc qs
     run start
-    check "второй start не плодит qs" test "$(grep -c '^start' "$T/log")" = 1
+    check "второй start не плодит qs" test "$(grep -c '^start qs$' "$T/log")" = 1
+    check "start поднимает сторожа" logged "rexilone-shell watchdog"
     run stop
     check "stop останавливает qs" not proc qs
+    check "stop: сторож не поднимает шелл" test -e "$T/rexilone-shell.stopped"
     run restart
     check "restart поднимает qs" proc qs
     teardown

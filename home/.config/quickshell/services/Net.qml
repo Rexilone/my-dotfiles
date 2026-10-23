@@ -69,24 +69,76 @@ Singleton {
         if (iface) infoProc.running = true;
     }
 
-    // раз в секунду: первый физический интерфейс в состоянии up и его счётчики
+    // скорость считается, только пока её показывают (меню сети, центр управления, Настройки → Сеть)
+    property var consumers: ({})
+    readonly property bool speedActive: Object.keys(consumers).length > 0
+    function need(id, on) {
+        const c = Object.assign({}, consumers);
+        if (on) c[id] = true;
+        else delete c[id];
+        consumers = c;
+    }
+    onSpeedActiveChanged: if (!speedActive) { lastTime = 0; rxSpeed = txSpeed = 0; }
+
+    // раз в секунду — счётчики интерфейса прямо из /sys (без запуска процессов);
+    // какой интерфейс «up», ищется по событиям ip monitor (и раз в 30 с на всякий случай)
+    property string cand: ""          // найденный интерфейс
+    property string candType: "none"
+    FileView { id: rxFile; path: root.cand ? `/sys/class/net/${root.cand}/statistics/rx_bytes` : ""; blockLoading: true; printErrors: false }
+    FileView { id: txFile; path: root.cand ? `/sys/class/net/${root.cand}/statistics/tx_bytes` : ""; blockLoading: true; printErrors: false }
+    Timer {
+        running: root.speedActive
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!root.cand) { root.sample("none"); return; }
+            rxFile.reload();
+            txFile.reload();
+            const rx = rxFile.text().trim(), tx = txFile.text().trim();
+            if (!rx) { discover.running = true; return; }
+            root.sample(`${root.candType} ${root.cand} ${rx} ${tx}`);
+        }
+    }
     Process {
         running: true
+        // setpriv --pdeathsig: умирает вместе с шеллом (иначе после перезапуска/падения шелла остаётся висеть)
+        command: ["setpriv", "--pdeathsig", "TERM", "ip", "-o", "monitor", "link", "address"]
+        stdout: SplitParser { onRead: rediscover.restart() }
+    }
+    Timer {
+        id: rediscover
+        interval: 500
+        onTriggered: discover.running = true
+    }
+    Timer {
+        running: true
+        interval: 30000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: discover.running = true
+    }
+    Process {
+        id: discover
         command: ["sh", "-c", `
-            while :; do
-                found=
-                for d in /sys/class/net/*; do
-                    [ -e "$d/device" ] || continue
-                    [ "$(cat "$d/operstate")" = up ] || continue
-                    t=ethernet; [ -d "$d/wireless" ] && t=wifi
-                    echo "$t \${d##*/} $(cat "$d/statistics/rx_bytes") $(cat "$d/statistics/tx_bytes")"
-                    found=1; break
-                done
-                [ -n "$found" ] || echo none
-                sleep 1
-            done`]
-        stdout: SplitParser {
-            onRead: line => root.sample(line)
+            for d in /sys/class/net/*; do
+                [ -e "$d/device" ] || continue
+                [ "$(cat "$d/operstate")" = up ] || continue
+                t=ethernet; [ -d "$d/wireless" ] && t=wifi
+                echo "$t \${d##*/}"; exit 0
+            done
+            echo none`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const [t, dev] = text.trim().split(" ");
+                root.candType = t || "none";
+                root.cand = t && t !== "none" ? dev : "";
+                if (root.cand !== root.iface || root.candType !== root.type) {
+                    root.iface = root.cand;
+                    root.type = root.candType;
+                    root.lastTime = 0;   // счётчики другого интерфейса — скорость с нуля
+                }
+            }
         }
     }
 

@@ -21,18 +21,21 @@ Item {
         spacing: 56
 
         StatRing {
+            animate: root.active
             value: SysStats.cpu
             label: "CPU"
             sub: `${Math.round(SysStats.cpuTemp)}°C`
         }
 
         StatRing {
+            animate: root.active
             value: SysStats.gpu
             label: "GPU"
             sub: `${Math.round(SysStats.gpuTemp)}°C · ${(SysStats.vramUsed / 1073741824).toFixed(1)}/${Math.round(SysStats.vramTotal / 1073741824)} GB`
         }
 
         StatRing {
+            animate: root.active
             value: SysStats.ramTotal ? SysStats.ramUsed / SysStats.ramTotal : 0
             label: "RAM"
             sub: `${SysStats.gb(SysStats.ramUsed)} / ${SysStats.gb(SysStats.ramTotal)} GB`

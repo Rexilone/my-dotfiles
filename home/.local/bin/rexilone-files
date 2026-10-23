@@ -1,7 +1,9 @@
 #!/bin/sh
 # Проводник RexOS: открыть папку (путь или file:// URI). Без аргумента — домашняя папка.
-# Работает, пока запущен шелл (Quickshell); иначе — Nautilus.
-if qs ipc call files open "${1:-}" 2>/dev/null; then
+# Работает, пока запущен шелл (Quickshell); без него — yazi в терминале.
+p="${1:-$HOME}"
+case "$p" in file://*) p=$(python3 -c 'import sys,urllib.parse as u; print(u.unquote(u.urlparse(sys.argv[1]).path))' "$p") ;; esac
+if qs ipc call files open "$p" 2>/dev/null; then
     exit 0
 fi
-exec nautilus "$@"
+exec foot yazi "$p"

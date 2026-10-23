@@ -12,6 +12,7 @@ Item {
     id: br
 
     property string startPath: ""
+    property string revealPath: ""        // выделить этот файл после открытия
     signal closeRequested
 
     readonly property string home: Quickshell.env("HOME")
@@ -298,7 +299,7 @@ Item {
     function fileUris(paths) {
         return paths.map(p => "file://" + p.split("/").map(encodeURIComponent).join("/"));
     }
-    // копировать/вырезать: и себе, и в системный буфер (Nautilus и другие поймут)
+    // копировать/вырезать: и себе, и в системный буфер (GTK-программы и браузеры поймут)
     function copySel(cut) {
         if (!selPaths.length || mode === "trash") return;
         clip = { mode: cut ? "move" : "copy", paths: selPaths };
@@ -312,7 +313,7 @@ Item {
         pasteTarget = path;
         pasteProc.running = true;
     }
-    // вставка: свой буфер, иначе системный (скопированное в Nautilus, браузере…)
+    // вставка: свой буфер, иначе системный (скопированное в браузере, Telegram…)
     Process {
         id: pasteProc
         command: ["sh", "-c", 'wl-paste -n -t x-special/gnome-copied-files 2>/dev/null || wl-paste -n -t text/uri-list 2>/dev/null']
@@ -421,7 +422,7 @@ Item {
         runSimple(["mv", "-n", "--", it.path, dst], "");
     }
 
-    // ── закладки GTK (их видят и Nautilus, и окна выбора файлов)
+    // ── закладки GTK (их видят окна выбора файлов)
     function bookmark(p) {
         runSimple(["sh", "-c", 'mkdir -p ~/.config/gtk-3.0; grep -qxF "$1" ~/.config/gtk-3.0/bookmarks 2>/dev/null || printf "%s\\n" "$1" >> ~/.config/gtk-3.0/bookmarks', "sh",
                    fileUris([p])[0]], I18n.tr("Added to bookmarks"));
@@ -544,7 +545,15 @@ Item {
     }
 
     // ═════════════════════════ раскладка
+    function reveal(p) {
+        const dir = p.substring(0, p.lastIndexOf("/")) || "/";
+        pendingSelect = p;
+        go(dir);
+        rebuild.restart();
+    }
     Component.onCompleted: {
+        Drives.refresh();
+        if (revealPath) pendingSelect = revealPath;
         go(startPath || home, true);
         view.forceFocus();
     }
@@ -798,7 +807,7 @@ Item {
     function forceViewFocus() {
         view.forceFocus();
     }
-    // открывать папки этим проводником (вместо Nautilus): «Открыть папку» в браузере, Telegram и т. д.
+    // открывать папки этим проводником : «Открыть папку» в браузере, Telegram и т. д.
     function makeDefault() {
         runSimple(["xdg-mime", "default", "rexilone-files.desktop", "inode/directory"], I18n.tr("Folders now open here"));
     }

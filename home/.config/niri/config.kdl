@@ -233,7 +233,7 @@ spawn-sh-at-startup "$HOME/.local/bin/rexilone-shell start"
 // история буфера обмена: текст и картинки
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
-spawn-at-startup "xwayland-satellite"
+// X11-программы: niri сам запускает xwayland-satellite по требованию (DISPLAY=:0) — свой запуск не нужен
 // обои: awww или swaybg — Настройки → Персонализация → Обои
 spawn-sh-at-startup "$HOME/.local/bin/rexilone-wallpaper start"
 

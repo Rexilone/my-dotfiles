@@ -18,3 +18,8 @@ home/.config/quickshell/plugins/*
 
 # fc-cache пишет .uuid в папки шрифтов
 home/.local/share/fonts/**/.uuid
+
+# сборка пакета-заглушки Nautilus
+packages/rexos-nautilus-stub/*.pkg.tar.zst
+packages/rexos-nautilus-stub/pkg/
+packages/rexos-nautilus-stub/src/

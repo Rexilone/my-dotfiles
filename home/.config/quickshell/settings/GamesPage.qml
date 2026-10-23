@@ -101,7 +101,7 @@ Page {
             visible: page.o.enabled ?? false
             icon: String.fromCodePoint(0xF0450)
             title: "Restart Steam"
-            desc: "Steam passes the overlay to games only after a restart (or the next login)"
+            desc: "Steam passes the overlay to its games only after a restart. Prism Launcher: turn on MangoHud in the instance settings"
             SButton { text: I18n.tr("Restart"); onClicked: Overlay.restartSteam() }
         }
     }

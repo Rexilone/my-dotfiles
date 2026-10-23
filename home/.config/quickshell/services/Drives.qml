@@ -131,11 +131,29 @@ Singleton {
         command: ["lsblk", "-J", "-b", "-o", "NAME,PATH,LABEL,PARTLABEL,PARTTYPE,PARTTYPENAME,SIZE,FSTYPE,FSAVAIL,MOUNTPOINTS,RM,HOTPLUG,TYPE,TRAN,MODEL"]
         stdout: StdioCollector { onStreamFinished: root.parse(text) }
     }
+    // события udev (вставили/вынули, подключили раздел) вместо опроса; редкий опрос — на всякий случай
+    Process {
+        running: true
+        // setpriv --pdeathsig: умирает вместе с шеллом (иначе после перезапуска/падения шелла остаётся висеть)
+        command: ["setpriv", "--pdeathsig", "TERM", "udevadm", "monitor", "--udev", "--subsystem-match=block"]
+        stdout: SplitParser {
+            onRead: line => { if (/ (add|remove|change) /.test(line)) rescan.restart(); }
+        }
+    }
+    Timer {
+        id: rescan
+        interval: 700
+        onTriggered: if (!job.running) scan.running = true
+    }
     Timer {
         running: true
-        interval: 3000
+        interval: 30000
         repeat: true
         triggeredOnStart: true
         onTriggered: if (!job.running) scan.running = true
+    }
+    // окно «Файлов» открыто — свежие данные о свободном месте
+    function refresh() {
+        if (!job.running) scan.running = true;
     }
 }

@@ -12,6 +12,7 @@ Scope {
 
     property bool open: false
     property string startPath: ""
+    property string reveal: ""
 
     // путь или file:// URI → путь
     function clean(p) {
@@ -35,6 +36,14 @@ Scope {
         target: "files"
 
         function open(path: string): void { ctl.show(path); }
+        // показать файл в его папке, выделенным («Показать в папке» из браузеров — rexilone-filemanager1)
+        function reveal(path: string): void {
+            const p = ctl.clean(path);
+            const dir = p.substring(0, p.lastIndexOf("/")) || "/";
+            ctl.reveal = p;
+            ctl.show(dir);
+            if (loader.item) loader.item.browser.reveal(p);
+        }
         function toggle(): void { if (ctl.open) ctl.open = false; else ctl.show(""); }
         function hide(): void { ctl.open = false; }
     }
@@ -67,6 +76,7 @@ Scope {
                 id: browser
                 anchors.fill: parent
                 startPath: ctl.startPath
+                revealPath: ctl.reveal
                 onCloseRequested: win.visible = false
             }
         }

@@ -33,14 +33,15 @@ Singleton {
         if (!path || path === source && palette) return;
         source = path;
         extract.command = ["sh", "-c",
-            'magick "$1[0]" -resize 96x96 -colors 8 -format "%c" histogram:info:- < /dev/null 2>/dev/null', "sh", path];
+            'magick -define jpeg:size=256x256 "$1[0]" -resize 96x96 -colors 8 -format "%c" histogram:info:- < /dev/null 2>/dev/null', "sh", path];
         extract.running = true;
     }
 
     Process {
         id: extract
         // ImageMagick без OpenCL: на NVIDIA его запуск будит видеокарту и компилирует ядра — шелл и система встают
-        environment: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2" })
+        environment: ({ MAGICK_OCL_DEVICE: "OFF", MAGICK_THREAD_LIMIT: "2",
+                                            MAGICK_MEMORY_LIMIT: "256MiB", MAGICK_MAP_LIMIT: "512MiB", MAGICK_AREA_LIMIT: "128MP" })
         stdout: StdioCollector {
             onStreamFinished: {
                 // строки вида: "  120: (r,g,b) #RRGGBB srgb(...)"

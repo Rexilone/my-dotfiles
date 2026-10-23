@@ -74,7 +74,8 @@ Singleton {
     // gamemode (Feral): держим «клиента», пока режим включён — частоты и планировщик под игру
     Process {
         running: root.active && (root.cfg.performance ?? true) && root.gamemodeInstalled
-        command: ["gamemoderun", "sleep", "infinity"]
+        // setpriv --pdeathsig: шелл упал — режим производительности снимается сам
+        command: ["setpriv", "--pdeathsig", "TERM", "gamemoderun", "sleep", "infinity"]
     }
     Process {
         running: true

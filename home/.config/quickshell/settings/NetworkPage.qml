@@ -6,6 +6,11 @@ import qs.services
 
 // Сеть: Ethernet, Wi-Fi, VPN, файрвол ufw
 Page {
+    // скорость сети считается, пока страница на экране
+    readonly property string netUid: `net-page-${Math.random()}`
+    onVisibleChanged: Net.need(netUid, visible)
+    Component.onDestruction: Net.need(netUid, false)
+
     id: page
 
     title: "Network & Internet"
@@ -74,6 +79,7 @@ Page {
     }
 
     Component.onCompleted: {
+        Net.need(netUid, visible);
         Net.refreshInfo();
         wifiCheck.running = true;
         dnsRead.running = true;

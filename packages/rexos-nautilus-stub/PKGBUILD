@@ -1,0 +1,14 @@
+# Пустой пакет вместо Nautilus: портал GNOME (нужен niri для демонстрации экрана) требует nautilus,
+# а в RexOS свой проводник. Окно выбора файлов — портал GTK (~/.config/xdg-desktop-portal/niri-portals.conf).
+pkgname=rexos-nautilus-stub
+pkgver=1
+pkgrel=1
+pkgdesc="RexOS: заглушка вместо Nautilus (свой проводник, выбор файлов — портал GTK)"
+arch=('any')
+license=('MIT')
+provides=('nautilus' 'libnautilus-extension.so=4-64')
+conflicts=('nautilus')
+
+package() {
+    :
+}

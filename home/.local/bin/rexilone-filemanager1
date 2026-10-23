@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""org.freedesktop.FileManager1 для проводника RexOS: «Показать в папке» из браузеров, Telegram и т. п.
+Запускается DBus по требованию (~/.local/share/dbus-1/services/org.freedesktop.FileManager1.service)
+и выходит через минуту без вызовов."""
+import subprocess
+from urllib.parse import unquote, urlparse
+
+from gi.repository import Gio, GLib
+
+XML = """
+<node>
+  <interface name="org.freedesktop.FileManager1">
+    <method name="ShowFolders"><arg type="as" name="URIs" direction="in"/><arg type="s" name="StartupId" direction="in"/></method>
+    <method name="ShowItems"><arg type="as" name="URIs" direction="in"/><arg type="s" name="StartupId" direction="in"/></method>
+    <method name="ShowItemProperties"><arg type="as" name="URIs" direction="in"/><arg type="s" name="StartupId" direction="in"/></method>
+  </interface>
+</node>"""
+
+loop = GLib.MainLoop()
+timer = 0
+
+
+def path(uri):
+    return unquote(urlparse(uri).path) if uri.startswith("file://") else uri
+
+
+def ipc(*args):
+    if subprocess.run(["qs", "ipc", "call", "files", *args], capture_output=True).returncode != 0:
+        # шелл не запущен — хотя бы папку
+        subprocess.Popen(["xdg-open", args[-1] if args[0] == "open" else args[-1].rsplit("/", 1)[0] or "/"])
+
+
+def idle():
+    global timer
+    if timer:
+        GLib.source_remove(timer)
+    timer = GLib.timeout_add_seconds(60, loop.quit)
+
+
+def call(conn, sender, obj, iface, method, params, inv):
+    uris = params.unpack()[0]
+    for u in uris[:10]:
+        if method == "ShowFolders":
+            ipc("open", path(u))
+        else:
+            ipc("reveal", path(u))
+    inv.return_value(None)
+    idle()
+
+
+def acquired(conn, name):
+    conn.register_object("/org/freedesktop/FileManager1", Gio.DBusNodeInfo.new_for_xml(XML).interfaces[0], call, None, None)
+    idle()
+
+
+Gio.bus_own_name(Gio.BusType.SESSION, "org.freedesktop.FileManager1", Gio.BusNameOwnerFlags.REPLACE, None, acquired, lambda *a: loop.quit())
+loop.run()

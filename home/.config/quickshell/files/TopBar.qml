@@ -255,7 +255,6 @@ Item {
                     { sep: true },
                     { icon: 0xF0590, text: "Sidebar", check: tb.br.cfg.sidebar ?? true, act: () => Settings.setFiles("sidebar", !(tb.br.cfg.sidebar ?? true)) },
                     { icon: 0xF024B, text: "Use as the default file manager", act: () => tb.br.makeDefault() },
-                    { icon: 0xF024B, text: "Open in Nautilus", act: () => Quickshell.execDetached(["nautilus", tb.br.mode === "dir" ? tb.br.path : tb.br.home]) },
                 ]);
             }
         }

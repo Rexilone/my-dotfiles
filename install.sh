@@ -52,6 +52,12 @@ if (( PACKAGES )); then
 
     pkgs=( $(list "$DOTS/packages/arch.txt") )
     (( STEAM )) && pkgs+=( $(list "$DOTS/packages/steam.txt") )
+    # Vulkan-драйвер под свою видеокарту: иначе с --noconfirm pacman берёт первый попавшийся (NVIDIA) —
+    # его библиотеки грузятся в каждую программу с графикой, а 32-битный Vulkan в Steam не работает
+    gpus=$(cat /sys/class/drm/card*/device/vendor 2>/dev/null)
+    if [[ $gpus == *0x1002* ]]; then pkgs+=( vulkan-radeon ); (( STEAM )) && pkgs+=( lib32-vulkan-radeon ); fi
+    if [[ $gpus == *0x8086* ]]; then pkgs+=( vulkan-intel ); (( STEAM )) && pkgs+=( lib32-vulkan-intel ); fi
+    if [[ $gpus == *0x10de* ]]; then pkgs+=( nvidia-utils ); (( STEAM )) && pkgs+=( lib32-nvidia-utils ); fi
     (( PRINTERS )) && pkgs+=( $(list "$DOTS/packages/printers.txt") )
     (( WEBCAM )) && pkgs+=( $(list "$DOTS/packages/webcam.txt") )
     # Rust через rustup уже стоит — пакет rust с ним конфликтует
@@ -91,6 +97,19 @@ if (( PACKAGES )); then
     (( STEAM )) && aur+=( $(list "$DOTS/packages/steam-aur.txt") )
     (( TABLET )) && aur+=( $(list "$DOTS/packages/tablet-aur.txt") )
     (( ${#aur[@]} )) && run "$AUR" -S --needed --noconfirm "${aur[@]}"
+
+    # Nautilus не нужен (свой проводник), но его требует портал GNOME — ставим пустой пакет вместо него
+    if ! pacman -Qq rexos-nautilus-stub >/dev/null 2>&1; then
+        info "Nautilus → заглушка (свой проводник)"
+        tmp=$(mktemp -d)
+        cp "$DOTS/packages/rexos-nautilus-stub/PKGBUILD" "$tmp/"
+        (( DRY )) || (cd "$tmp" && makepkg -f --noconfirm >/dev/null)
+        for p in nautilus-image-converter nautilus-python nautilus; do
+            if pacman -Qq "$p" >/dev/null 2>&1; then run sudo pacman -Rdd --noconfirm "$p"; fi
+        done
+        (( DRY )) || run sudo pacman -U --noconfirm "$tmp"/rexos-nautilus-stub-*.pkg.tar.zst
+        rm -rf "$tmp"
+    fi
 fi
 
 # ─────────────────────────── ссылки на конфиги
@@ -144,6 +163,17 @@ done
 for f in "$DOTS"/home/.config/systemd/user/*; do
     link "$f" "$HOME/.config/systemd/user/$(basename "$f")"
 done
+
+# «Показать в папке» из браузеров и других программ — свой проводник (DBus org.freedesktop.FileManager1);
+# в файле службы нужен абсолютный путь — подставляем домашнюю папку
+run mkdir -p "$HOME/.local/share/dbus-1/services"
+for f in "$DOTS"/home/.local/share/dbus-1/services/*.service; do
+    (( DRY )) || sed "s#@HOME@#$HOME#g" "$f" > "$HOME/.local/share/dbus-1/services/$(basename "$f")"
+done
+# порталы: окно выбора файлов — GTK (Nautilus не нужен)
+link "$DOTS/home/.config/xdg-desktop-portal/niri-portals.conf" "$HOME/.config/xdg-desktop-portal/niri-portals.conf"
+# папки открываются своим проводником
+command -v xdg-mime >/dev/null && run xdg-mime default rexilone-files.desktop inode/directory
 
 # файлы, которые шелл генерирует под тему: начальные версии, если их ещё нет
 bold "Начальные файлы темы"

@@ -30,7 +30,8 @@ Singleton {
     Process {
         id: follow
         running: root.available
-        command: ["voxtype", "status", "--follow", "--format", "json"]
+        // setpriv --pdeathsig: умирает вместе с шеллом (иначе после перезапуска/падения шелла остаётся висеть)
+        command: ["setpriv", "--pdeathsig", "TERM", "voxtype", "status", "--follow", "--format", "json"]
         stdout: SplitParser {
             onRead: line => {
                 try {

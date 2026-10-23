@@ -37,11 +37,12 @@ Page {
         title: "Default file manager"
         desc: page.defaultApp === "rexilone-files.desktop" ? "Folders from other apps open here"
             : `${I18n.tr("Now")}: ${page.defaultApp.replace(/\.desktop$/, "") || "—"}`
-        SChoice {
-            options: [{ value: "rexilone-files.desktop", label: "RexOS" }, { value: "org.gnome.Nautilus.desktop", label: "Nautilus" }]
-            current: page.defaultApp
-            onPicked: v => {
-                setDefault.command = ["xdg-mime", "default", v, "inode/directory"];
+        SButton {
+            visible: page.defaultApp !== "rexilone-files.desktop"
+            text: I18n.tr("Make default")
+            primary: true
+            onClicked: {
+                setDefault.command = ["xdg-mime", "default", "rexilone-files.desktop", "inode/directory"];
                 setDefault.running = true;
             }
         }

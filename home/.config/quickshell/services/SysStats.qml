@@ -56,8 +56,10 @@ Singleton {
 
     onActiveChanged: if (!active) prevCpu = null
 
+    // где лежат датчики — один раз; дальше файлы читаются напрямую (без запуска процессов)
+    property var paths: ({})
     Process {
-        running: root.active
+        running: true
         command: ["sh", "-c", `
             for h in /sys/class/hwmon/hwmon*; do
                 case "$(cat "$h/name")" in
@@ -66,19 +68,44 @@ Singleton {
                 esac
             done
             gd=$(readlink -f "$gh/device" 2>/dev/null)
-            while :; do
-                printf '%s|%s|%s|%s|%s %s|%s\\n' \\
-                    "$(head -n1 /proc/stat)" \\
-                    "$(cat "$ct" 2>/dev/null || echo 0)" \\
-                    "$(cat "$gd/gpu_busy_percent" 2>/dev/null || echo 0)" \\
-                    "$(cat "$gh/temp1_input" 2>/dev/null || echo 0)" \\
-                    "$(cat "$gd/mem_info_vram_used" 2>/dev/null || echo 0)" \\
-                    "$(cat "$gd/mem_info_vram_total" 2>/dev/null || echo 0)" \\
-                    "$(awk '/^MemTotal/{t=$2} /^MemAvailable/{a=$2} END{print t, a}' /proc/meminfo)"
-                sleep 1.5
-            done`]
-        stdout: SplitParser {
-            onRead: line => root.parse(line)
+            printf '%s\n%s\n%s\n' "$ct" "$gh" "$gd"`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const [ct, gh, gd] = text.split("\n");
+                root.paths = { cpuTemp: ct, gpuTemp: gh ? gh + "/temp1_input" : "", gpuBusy: gd ? gd + "/gpu_busy_percent" : "",
+                               vramUsed: gd ? gd + "/mem_info_vram_used" : "", vramTotal: gd ? gd + "/mem_info_vram_total" : "" };
+            }
+        }
+    }
+    FileView { id: fStat; path: "/proc/stat"; blockLoading: true; printErrors: false }
+    FileView { id: fMem; path: "/proc/meminfo"; blockLoading: true; printErrors: false }
+    FileView { id: fCt; path: root.paths.cpuTemp ?? ""; blockLoading: true; printErrors: false }
+    FileView { id: fGb; path: root.paths.gpuBusy ?? ""; blockLoading: true; printErrors: false }
+    FileView { id: fGt; path: root.paths.gpuTemp ?? ""; blockLoading: true; printErrors: false }
+    FileView { id: fVu; path: root.paths.vramUsed ?? ""; blockLoading: true; printErrors: false }
+    FileView { id: fVt; path: root.paths.vramTotal ?? ""; blockLoading: true; printErrors: false }
+
+    function read(f) {
+        if (!f.path) return "0";
+        f.reload();
+        return f.text().trim() || "0";
+    }
+
+    Timer {
+        running: root.active
+        interval: 1500
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            const mem = (() => {
+                fMem.reload();
+                const m = fMem.text();
+                const t = /MemTotal:\s+(\d+)/.exec(m), a = /MemAvailable:\s+(\d+)/.exec(m);
+                return `${t ? t[1] : 0} ${a ? a[1] : 0}`;
+            })();
+            fStat.reload();
+            root.parse([fStat.text().split("\n")[0], root.read(fCt), root.read(fGb), root.read(fGt),
+                        `${root.read(fVu)} ${root.read(fVt)}`, mem].join("|"));
         }
     }
 }

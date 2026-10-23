@@ -5,7 +5,8 @@ import Quickshell.Io
 
 // оверлей в играх (MangoHud): FPS, время кадра, загрузка и температуры CPU/GPU, память.
 // Настройки → Игры. Конфиг ~/.config/MangoHud/MangoHud.conf собирается здесь, в цветах темы шелла;
-// MANGOHUD=1 — в окружении сеанса (niri, systemd): работает в играх на Vulkan (Proton, DXVK).
+// MANGOHUD=1 — только для Steam (свой ярлык steam.desktop): игры получают его от Steam, остальные программы —
+// нет (раньше переменная была на весь сеанс и цепляла оверлей к шеллу, браузерам, Electron).
 // Показать/спрятать в игре — Shift_R+F12.
 Singleton {
     id: root
@@ -72,12 +73,21 @@ Singleton {
         env.running = true;
     }
 
-    // MANGOHUD=1 для программ, запущенных systemd и при следующих входах (environment.d)
+    // ярлык Steam с MANGOHUD=1 (~/.local/share/applications перекрывает системный); выключили — убрать свой.
+    // Заодно убрать старую глобальную переменную (environment.d, systemd) — она была на все программы.
     Process {
         id: env
-        command: ["sh", "-c", root.enabled
-            ? 'mkdir -p ~/.config/environment.d && printf "MANGOHUD=1\\n" > ~/.config/environment.d/90-rexilone-mangohud.conf && systemctl --user set-environment MANGOHUD=1'
-            : 'rm -f ~/.config/environment.d/90-rexilone-mangohud.conf; systemctl --user unset-environment MANGOHUD']
+        command: ["sh", "-c", `
+            rm -f ~/.config/environment.d/90-rexilone-mangohud.conf
+            systemctl --user unset-environment MANGOHUD
+            f=~/.local/share/applications/steam.desktop
+            if [ "$1" = 1 ] && [ -f /usr/share/applications/steam.desktop ]; then
+                mkdir -p ~/.local/share/applications
+                { echo "# RexOS: оверлей MangoHud в играх (Настройки → Игры)"
+                  sed 's#^Exec=/usr/bin/steam#Exec=env MANGOHUD=1 /usr/bin/steam#' /usr/share/applications/steam.desktop; } > "$f"
+            elif grep -q "^# RexOS: оверлей MangoHud" "$f" 2>/dev/null; then
+                rm -f "$f"
+            fi`, "sh", root.enabled ? "1" : "0"]
     }
     Process {
         running: true

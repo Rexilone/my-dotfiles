@@ -6,8 +6,16 @@ import qs.services
 ColumnLayout {
     id: root
 
+    // скорость сети считается, пока меню открыто
+    readonly property string netUid: `net-${Math.random()}`
+    Component.onCompleted: Net.need(netUid, active)
+    Component.onDestruction: Net.need(netUid, false)
+
     property bool active: false
-    onActiveChanged: if (active) Net.refreshInfo()
+    onActiveChanged: {
+        Net.need(netUid, active);
+        if (active) Net.refreshInfo();
+    }
 
     width: 340
     spacing: 10

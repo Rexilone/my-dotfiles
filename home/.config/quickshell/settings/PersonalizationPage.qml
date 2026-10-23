@@ -93,7 +93,7 @@ Page {
                         anchors.fill: parent
                         source: (Wallpapers.items.find(i => i.path === Wallpapers.current)?.thumb ?? "") !== ""
                             ? "file://" + Wallpapers.items.find(i => i.path === Wallpapers.current).thumb
-                            : (Wallpapers.current ? "file://" + Wallpapers.current : "")
+                            : ""   // полноразмерные обои здесь не грузим — только миниатюру (огромные картинки вешали систему)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         sourceSize.width: 320
@@ -242,7 +242,8 @@ Page {
                                 Image {
                                     visible: sc.modelData === "wallpaper" && !!Wallpapers.current
                                     anchors.fill: parent
-                                    source: Wallpapers.current ? "file://" + Wallpapers.current : ""
+                                    source: (Wallpapers.items.find(i => i.path === Wallpapers.current)?.thumb ?? "") !== ""
+                                        ? "file://" + Wallpapers.items.find(i => i.path === Wallpapers.current).thumb : ""
                                     sourceSize.width: 300
                                     fillMode: Image.PreserveAspectCrop
                                     opacity: 0.55

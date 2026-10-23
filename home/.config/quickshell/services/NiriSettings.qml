@@ -231,8 +231,8 @@ Singleton {
         L.push("");
         L.push("environment {");
         L.push('    QT_QPA_PLATFORMTHEME "gtk3"');
-        // оверлей MangoHud в играх (Настройки → Игры)
-        if (Settings.overlay?.enabled) L.push('    MANGOHUD "1"');
+        // MangoHud — только в играх (через ярлык Steam, services/Overlay.qml), не во всех программах сеанса
+        L.push("    MANGOHUD null");
         L.push("}");
 
         // свои и изменённые бинды

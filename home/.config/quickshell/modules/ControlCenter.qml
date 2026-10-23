@@ -9,6 +9,12 @@ import qs.settings
 ColumnLayout {
     id: root
 
+    // скорость сети считается, пока меню открыто
+    readonly property string netUid: `net-${Math.random()}`
+    onActiveChanged: Net.need(netUid, active)
+    Component.onCompleted: Net.need(netUid, active)
+    Component.onDestruction: Net.need(netUid, false)
+
     property bool active: false
 
     width: 380

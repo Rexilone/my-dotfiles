@@ -83,7 +83,8 @@ Singleton {
     Process {
         id: stream
         running: true
-        command: ["niri", "msg", "-j", "event-stream"]
+        // setpriv --pdeathsig: умирает вместе с шеллом (иначе после перезапуска/падения шелла остаётся висеть)
+        command: ["setpriv", "--pdeathsig", "TERM", "niri", "msg", "-j", "event-stream"]
         stdout: SplitParser {
             onRead: line => {
                 try {
