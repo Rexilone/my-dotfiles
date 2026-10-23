@@ -136,3 +136,7 @@ The device learns the computer's MAC address from Rexlink. **Turn on the compute
 quick settings tile) sends the magic packet to the home network and, if set, to the address for waking from outside —
 your home IP or DDNS name with a UDP port forwarded on the router to the computer (port 9). That address is separate
 from the computer's address on the local network; set it in Settings → Power or right in the app.
+
+Every computer the app has connected to is kept as a profile (name, the addresses it answered on, pairing keys,
+wake-up data). **Another PC** disconnects but keeps the profile; under **My computers** one tap connects back
+without typing an address or pairing again, and the power icon wakes that computer.
