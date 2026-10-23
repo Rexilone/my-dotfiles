@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Разбор снимка экрана для скриншотилки (Screenshot.qml).
 
-    shot-analyze.py objects <png>   прямоугольники картинок и блоков — клик по ним выделяет их по границам
+    shot-analyze.py objects <png>   { objects: прямоугольники картинок и блоков — клик выделяет их по границам,
+                                      codes: QR и штрихкоды с текстом }
     shot-analyze.py text <png>      слова с координатами (tesseract, русский + английский) — их можно выделять мышью
 
 Печатает JSON в пикселях картинки. objects — быстро (доли секунды), text — пара секунд, поэтому раздельно.
@@ -55,6 +56,40 @@ def objects(path):
     return [list(map(int, r)) for r in out[:400]]
 
 
+def codes(path):
+    import cv2
+    import numpy as np
+
+    img = cv2.imread(path)
+    if img is None:
+        return []
+    out = []
+
+    def box(pts, data, kind):
+        pts = np.array(pts).reshape(-1, 2)
+        x0, y0 = pts.min(axis=0)
+        x1, y1 = pts.max(axis=0)
+        out.append({"x": int(x0), "y": int(y0), "w": int(x1 - x0), "h": int(y1 - y0), "text": data, "kind": kind})
+
+    try:
+        ok, data, pts, _ = cv2.QRCodeDetector().detectAndDecodeMulti(img)
+        if ok:
+            for d, p in zip(data, pts):
+                if d:
+                    box(p, d, "qr")
+    except cv2.error:
+        pass
+    try:
+        ok, data, pts, _ = cv2.barcode.BarcodeDetector().detectAndDecodeMulti(img)
+        if ok:
+            for d, p in zip(data, pts):
+                if d:
+                    box(p, d, "barcode")
+    except cv2.error:
+        pass
+    return out
+
+
 def text(path):
     # без пробелов между словами на картинке tesseract склеивает строки — psm 3 (авто) лучше всего для экрана
     try:
@@ -82,4 +117,7 @@ def text(path):
 
 if __name__ == "__main__":
     mode, path = sys.argv[1], sys.argv[2]
-    print(json.dumps(objects(path) if mode == "objects" else text(path), ensure_ascii=False))
+    if mode == "objects":
+        print(json.dumps({"objects": objects(path), "codes": codes(path)}, ensure_ascii=False))
+    else:
+        print(json.dumps(text(path), ensure_ascii=False))

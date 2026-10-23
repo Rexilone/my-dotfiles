@@ -619,6 +619,8 @@ binds {
 
     // своя скриншотилка: выделение текста (OCR) и картинок по границам; Ctrl+Print / Alt+Print — встроенные niri
     Print hotkey-overlay-title="Screenshot" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc screenshot open"; }
+    Shift+Print hotkey-overlay-title="Screenshot in 3 Seconds" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc screenshot delay 3"; }
+    Mod+Print hotkey-overlay-title="Screenshot History" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc screenshot history"; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 
