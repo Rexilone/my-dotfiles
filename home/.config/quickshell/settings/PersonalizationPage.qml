@@ -364,6 +364,7 @@ Page {
                 title: "Day from — to"
                 SField {
                     Layout.preferredWidth: 80
+                    Layout.maximumWidth: 90
                     Layout.fillWidth: false
                     text: sched.ts.from ?? "07:00"
                     placeholder: "07:00"
@@ -372,6 +373,7 @@ Page {
                 }
                 SField {
                     Layout.preferredWidth: 80
+                    Layout.maximumWidth: 90
                     Layout.fillWidth: false
                     text: sched.ts.to ?? "20:00"
                     placeholder: "20:00"
