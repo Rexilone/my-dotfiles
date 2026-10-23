@@ -764,5 +764,15 @@ Singleton {
         "Corner radius": "Радиус углов",
         "Wallpaper engine": "Движок обоев", "swaybg — simpler and lighter, no animation": "swaybg — проще и легче, без анимации",
         "awww — animated transition when the wallpaper changes": "awww — анимация при смене обоев",
+        // включение по сети
+        "Wake-on-LAN": "Включение по сети", "Turn on over the network": "Включать компьютер по сети",
+        "Wake the computer from the phone (Rexlink) with a magic packet": "Включить компьютер с телефона (Rexlink) «магическим пакетом»",
+        "Connected over Wi-Fi": "Подключение по Wi-Fi", "Wake-on-LAN almost always works only over a network cable": "Включение по сети почти всегда работает только по кабелю",
+        "The network card can't wake on a magic packet": "Сетевая карта не умеет включаться по «магическому пакету»",
+        "Also turn it on in BIOS / UEFI": "Включите и в BIOS / UEFI",
+        "«Wake on LAN», «Power On by PCI-E» or «Resume by LAN». Turn the computer off normally (not by unplugging) — the network card stays powered": "«Wake on LAN», «Power On by PCI-E» или «Resume by LAN». Выключайте компьютер обычно (не из розетки) — сетевая карта остаётся под питанием",
+        "From the internet": "Из интернета",
+        "Your home IP or DDNS name and the UDP port forwarded on the router to this computer (port 9). Sent to your devices in Rexlink": "Домашний IP или DDNS-имя и UDP-порт, проброшенный на роутере на этот компьютер (порт 9). Уходит на устройства в Rexlink",
+        "Start Rexlink (Settings → Phone) to send the address to your phone": "Запустите Rexlink (Настройки → Телефон), чтобы передать адрес на телефон",
     })
 }

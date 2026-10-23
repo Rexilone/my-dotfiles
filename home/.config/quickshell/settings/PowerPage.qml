@@ -18,7 +18,35 @@ Page {
     readonly property var minutes: [0, 1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120]
         .map(m => ({ value: m, label: m === 0 ? "Never" : m < 60 ? `${m} min` : `${m / 60} h` }))
 
-    Component.onCompleted: pp.running = true
+    Component.onCompleted: {
+        pp.running = true;
+        wolStatus.running = true;
+    }
+
+    // ── включение по сети (Wake-on-LAN): rexilone-wol
+    property var wol: ({})
+    property bool wolBusy: false
+    readonly property var wolCfg: Rexlink.settings.wol ?? { host: "", port: 9 }
+
+    Process {
+        id: wolStatus
+        command: ["sh", "-c", '"$HOME/.local/bin/rexilone-wol" status']
+        stdout: StdioCollector {
+            onStreamFinished: { try { page.wol = JSON.parse(text); } catch (e) {} }
+        }
+    }
+    Process {
+        id: wolSet
+        onExited: { page.wolBusy = false; wolStatus.running = true; }
+    }
+    function setWol(on) {
+        wolBusy = true;
+        wolSet.command = ["sh", "-c", `"$HOME/.local/bin/rexilone-wol" ${on ? "enable" : "disable"}`];
+        wolSet.running = true;
+    }
+    function saveWolAddr(host, port) {
+        Rexlink.set("wol", { host: host.trim(), port: parseInt(port) || 9 });
+    }
 
     Process {
         id: pp
@@ -133,6 +161,85 @@ Page {
             onPicked: v => {
                 act.command = ["powerprofilesctl", "set", v];
                 act.running = true;
+            }
+        }
+    }
+
+    SSection { text: I18n.tr("Wake-on-LAN") }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 3
+
+        SCard {
+            icon: String.fromCodePoint(0xF0425)
+            title: "Turn on over the network"
+            desc: page.wol.iface
+                ? `${page.wol.iface} · ${page.wol.mac}` + (page.wol.mode ? ` · Wake-on: ${page.wol.mode}` : "")
+                : "Wake the computer from the phone (Rexlink) with a magic packet"
+
+            SSwitch {
+                enabled: !page.wolBusy && !!page.wol.iface
+                checked: page.wol.enabled ?? false
+                onToggled: v => page.setWol(v)
+            }
+        }
+
+        SCard {
+            visible: page.wol.iface !== undefined && page.wol.wired === false
+            icon: String.fromCodePoint(0xF0026)
+            title: "Connected over Wi-Fi"
+            desc: "Wake-on-LAN almost always works only over a network cable"
+        }
+
+        SCard {
+            visible: page.wol.supported === "false"
+            icon: String.fromCodePoint(0xF0026)
+            title: "The network card can't wake on a magic packet"
+        }
+
+        SCard {
+            visible: page.wol.enabled ?? false
+            icon: String.fromCodePoint(0xF02FC)
+            title: "Also turn it on in BIOS / UEFI"
+            desc: "«Wake on LAN», «Power On by PCI-E» or «Resume by LAN». Turn the computer off normally (not by unplugging) — the network card stays powered"
+        }
+
+        // внешний адрес: телефон получит его от Rexlink, в приложении его можно поменять
+        SCard {
+            visible: page.wol.enabled ?? false
+            icon: String.fromCodePoint(0xF059F)
+            title: "From the internet"
+            desc: Rexlink.connected
+                ? "Your home IP or DDNS name and the UDP port forwarded on the router to this computer (port 9). Sent to your devices in Rexlink"
+                : "Start Rexlink (Settings → Phone) to send the address to your phone"
+
+            // сохраняется через секунду после ввода
+            Timer {
+                id: wolSave
+                interval: 1000
+                onTriggered: if (wolHost.text.trim() !== (page.wolCfg.host ?? "") || wolPort.text !== String(page.wolCfg.port ?? 9))
+                    page.saveWolAddr(wolHost.text, wolPort.text)
+            }
+            SField {
+                id: wolHost
+                Layout.preferredWidth: 200
+                Layout.fillWidth: false
+                enabled: Rexlink.connected
+                placeholder: "IP / DDNS"
+                text: page.wolCfg.host ?? ""
+                onAccepted: page.saveWolAddr(wolHost.text, wolPort.text)
+                onTextChanged: wolSave.restart()
+            }
+            SField {
+                id: wolPort
+                Layout.preferredWidth: 80
+                Layout.fillWidth: false
+                enabled: Rexlink.connected
+                placeholder: "9"
+                text: String(page.wolCfg.port ?? 9)
+                onAccepted: page.saveWolAddr(wolHost.text, wolPort.text)
+                onTextChanged: wolSave.restart()
             }
         }
     }

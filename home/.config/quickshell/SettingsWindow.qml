@@ -27,14 +27,15 @@ Scope {
             pendingTab = p.tab ?? "";
             i = p.go;
         }
-        if (i !== undefined) current = i;
+        // без страницы — всегда первая, последняя открытая не запоминается
+        current = i ?? 0;
         open = true;
     }
 
     IpcHandler {
         target: "settings"
 
-        function toggle(): void { ctl.open = !ctl.open; }
+        function toggle(): void { if (ctl.open) ctl.open = false; else ctl.show(); }
         function open(): void { ctl.show(); }
         function hide(): void { ctl.open = false; }
         // qs ipc call settings scheme light   (dark | light | nord | gruvbox | rose | wallpaper)

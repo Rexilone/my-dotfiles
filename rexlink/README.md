@@ -126,3 +126,13 @@ Device kinds: `phone`, `tablet`, `watch`. `caps`: `notifications clipboard files
 
 Frame = `u32 length | JSON | binary`; video = `u32 length | u8 type | data`
 (0 — JSON `{w, h}`, 1 — H.264 Annex-B, SPS/PPS before every keyframe).
+
+## Turning the computer on from a device
+
+**Settings → Power → Wake-on-LAN** turns on Wake-on-LAN on the network card (`rexilone-wol`, a systemd `.link` file,
+so it works with NetworkManager and systemd-networkd). Also enable it in BIOS/UEFI.
+
+The device learns the computer's MAC address from Rexlink. **Turn on the computer** in the app (or the **Turn on PC**
+quick settings tile) sends the magic packet to the home network and, if set, to the address for waking from outside —
+your home IP or DDNS name with a UDP port forwarded on the router to the computer (port 9). That address is separate
+from the computer's address on the local network; set it in Settings → Power or right in the app.

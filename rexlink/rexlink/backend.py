@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Property, QTimer, QUrl, Signal, Slot
 
-from . import PORT, display, firewall, updates, video
+from . import PORT, display, firewall, updates, video, wol
 from .i18n import set_lang, tr
 from .adb import Adb, ScrcpyVideo
 from .clipboard import Clipboard
@@ -402,7 +402,11 @@ class Backend(QObject):
         c = self.config
         self.server.send(did, {"t": "pc_settings", "clipboard": c["clipboard"], "clipboardImages": c["clipboardImages"],
                                "notifications": c["notifications"], "calls": c["calls"], "sms": c["sms"],
-                               "media": c["media"], "pcMedia": c["pcMedia"]})
+                               "media": c["media"], "pcMedia": c["pcMedia"],
+                               # чем включить этот компьютер, когда он выключен: MAC — с той карты, через которую
+                               # видно устройство; внешний адрес — для включения не из домашней сети
+                               "wol": dict(wol.lan_info(self.devs.get(did, {}).get("address", "")),
+                                           host=c["wol"].get("host", ""), port=int(c["wol"].get("port") or 9))})
 
     def _send_theme(self, did=None):
         h = {"t": "theme", "palette": self.theme.for_phone()}

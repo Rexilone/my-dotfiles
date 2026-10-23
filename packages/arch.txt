@@ -72,6 +72,8 @@ cava
 openssl
 glib2
 iproute2
+# Wake-on-LAN: проверить и включить на сетевой карте (rexilone-wol)
+ethtool
 android-tools
 scrcpy
 # ── «Программы»: каталог приложений (названия, иконки, категории, скриншоты)
