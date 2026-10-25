@@ -202,16 +202,21 @@ ColumnLayout {
                             property real progress: -1
                             property bool clickable: false
                             signal clicked
+                            readonly property color base: clickable && pillArea.containsMouse ? Theme.surfaceHi2 : Theme.surfaceHi
+                            readonly property real part: Math.max(0, Math.min(1, progress))
                             width: pillRow.implicitWidth + 24
                             height: 32
                             radius: 16
-                            color: clickable && pillArea.containsMouse ? Theme.surfaceHi2 : Theme.surfaceHi
-                            clip: true
-                            Rectangle {
-                                visible: pill.progress >= 0
-                                width: parent.width * Math.max(0, Math.min(1, pill.progress))
-                                height: parent.height
-                                color: home.soft(pill.tint, 0.16)
+                            color: base
+                            // заряд — заливкой фона: градиент повторяет скругление, в отличие от вложенного прямоугольника
+                            gradient: progress < 0 ? null : fill
+                            Gradient {
+                                id: fill
+                                orientation: Gradient.Horizontal
+                                GradientStop { position: 0; color: Qt.tint(pill.base, home.soft(pill.tint, 0.22)) }
+                                GradientStop { position: pill.part; color: Qt.tint(pill.base, home.soft(pill.tint, 0.22)) }
+                                GradientStop { position: Math.min(1, pill.part + 0.001); color: pill.base }
+                                GradientStop { position: 1; color: pill.base }
                             }
                             Row {
                                 id: pillRow
@@ -268,14 +273,39 @@ ColumnLayout {
                     }
                 }
 
-                // найти и меню устройства
-                ColumnLayout {
+                // найти: зазвонит, даже если звук выключен
+                Rectangle {
+                    visible: home.online
                     Layout.alignment: Qt.AlignTop
-                    spacing: 8
-                    SButton {
-                        visible: home.online
-                        text: "Find"
-                        icon: String.fromCodePoint(0xF08D3)
+                    implicitWidth: findRow.implicitWidth + 30
+                    implicitHeight: 38
+                    radius: 19
+                    color: findArea.pressed ? home.soft(Theme.accent, 0.32) : findArea.containsMouse ? home.soft(Theme.accent, 0.24) : home.soft(Theme.accent, 0.14)
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                    Row {
+                        id: findRow
+                        anchors.centerIn: parent
+                        spacing: 8
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: String.fromCodePoint(0xF08D3)
+                            color: Theme.accent
+                            font.family: Theme.font
+                            font.pixelSize: Theme.iconSize
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: I18n.tr("Find")
+                            color: Theme.fg
+                            font.family: Theme.font
+                            font.pixelSize: Theme.fontSize - 1
+                        }
+                    }
+                    MouseArea {
+                        id: findArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: Rexlink.ring(home.me.id)
                     }
                 }
