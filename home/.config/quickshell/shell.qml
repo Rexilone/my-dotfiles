@@ -68,10 +68,9 @@ ShellRoot {
     readonly property var drives: Drives
     // медиаклавиши: «следующий»/«предыдущий» и для браузеров (qs ipc call media next)
     readonly property var media: Media
-    // звуки системы, экранное время, таймер острова (IPC: sounds, timer)
+    // звуки системы, экранное время (IPC: sounds)
     readonly property var sounds: Sounds
     readonly property var screenTime: ScreenTime
-    readonly property var timers: Timers
     readonly property var nightLight: NightLight
     readonly property var updates: Updates
     // скрытые с демонстрации приложения (Super+Shift+G): индикатор в баре

@@ -24,7 +24,7 @@ Page {
         { key: "fonts", label: "Fonts", icon: 0xF06D6, desc: [Settings.font, Settings.monoFont].filter((v, i, a) => v && a.indexOf(v) === i).join("   ·   ") || "Interface and terminal fonts" },
         { key: "corners", label: "Screen corners", icon: 0xF0607, desc: Settings.screenCorners.enabled ? `${I18n.tr("On")}   ·   ${Settings.screenCorners.radius} px` : "Off" },
         { key: "size", label: "Text size", icon: 0xF0284, desc: `${Math.round(Settings.uiScale * 100)}%   ·   bar and menus` },
-        { key: "bar", label: "Bar", icon: 0xF0570, desc: `${({ flat: "Solid", floating: "Floating", pills: "Pills", island: "Island" })[Settings.barStyle] ?? Settings.barStyle}   ·   clock, modules, tray` },
+        { key: "bar", label: "Bar", icon: 0xF0570, desc: `${({ flat: "Solid", floating: "Floating", pills: "Pills", island: "Pills" })[Settings.barStyle] ?? Settings.barStyle}   ·   clock, modules, tray` },
         { key: "widgets", label: "Widgets", icon: 0xF0B92, desc: `${Object.values(Settings.widgets ?? {}).filter(w => w.enabled).length} ${I18n.ru ? "на рабочем столе" : "on the desktop"}   ·   ${I18n.tr("clock, weather, phone…")}` },
     ]
 

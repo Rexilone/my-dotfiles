@@ -24,8 +24,21 @@ Page {
     }
     readonly property bool today: selected === ScreenTime.key()
 
+    // ── включить / выключить — первым делом
+    SCard {
+        icon: String.fromCodePoint(0xF051B)
+        title: "Count screen time"
+        desc: ScreenTime.enabled ? "The app in focus, every 5 seconds; two minutes without mouse and keyboard don't count"
+            : "Off: nothing is counted or saved"
+        SSwitch {
+            checked: ScreenTime.enabled
+            onToggled: v => Settings.setScreenTime("enabled", v)
+        }
+    }
+
     // ── итог дня и часы
     Rectangle {
+        visible: ScreenTime.enabled
         Layout.fillWidth: true
         implicitHeight: dayCol.implicitHeight + 44
         radius: 18
@@ -130,6 +143,7 @@ Page {
 
     // ── неделя: щелчок по дню — его подробности
     Rectangle {
+        visible: ScreenTime.enabled
         Layout.fillWidth: true
         implicitHeight: 176
         radius: 18
@@ -203,17 +217,17 @@ Page {
     }
 
     // ── программы дня
-    SSection { text: I18n.tr("Apps") }
+    SSection { visible: ScreenTime.enabled; text: I18n.tr("Apps") }
 
     SCard {
-        visible: page.dayApps.length === 0
+        visible: ScreenTime.enabled && page.dayApps.length === 0
         icon: String.fromCodePoint(0xF0150)
         title: ScreenTime.enabled ? "Nothing yet" : "Screen time is off"
         desc: ScreenTime.enabled ? "Time in apps appears here as you use them" : "Turn it on below"
     }
 
     Rectangle {
-        visible: page.dayApps.length > 0
+        visible: ScreenTime.enabled && page.dayApps.length > 0
         Layout.fillWidth: true
         implicitHeight: appCol.implicitHeight
         radius: 18
@@ -287,18 +301,9 @@ Page {
         }
     }
 
-    // ── настройки
-    SSection { text: I18n.tr("Settings") }
+    // ── история
+    SSection { text: I18n.tr("History") }
 
-    SCard {
-        icon: String.fromCodePoint(0xF051B)
-        title: "Count screen time"
-        desc: "The app in focus, every 5 seconds; two minutes without mouse and keyboard don't count"
-        SSwitch {
-            checked: ScreenTime.enabled
-            onToggled: v => Settings.setScreenTime("enabled", v)
-        }
-    }
     SCard {
         icon: Icons.trash
         title: "Forget the history"

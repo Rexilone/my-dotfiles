@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Звуки системы RexOS (assets/sounds/*.wav): мягкие щелчки, перезвоны, сигналы устройств.
-Синтез — сумма синусов с быстрой атакой и экспоненциальным затуханием, без чужих семплов.
+"""Звуки системы RexOS (assets/sounds/*.wav) — тихие и мягкие, в духе Pixel и iOS: короткие «токи» вместо
+щелчков, тёплые колокольчики в средних частотах, плавная атака (без треска в начале), срезанные верха.
+Синтез из синусов, без чужих семплов.
 
     python3 scripts/gen-sounds.py   → assets/sounds/
 """
@@ -13,31 +14,57 @@ RATE = 48000
 OUT = Path(__file__).resolve().parent.parent / "assets" / "sounds"
 
 
-def env(n, attack=0.004, tau=0.15):
-    t = np.arange(n) / RATE
-    a = np.clip(t / attack, 0, 1)
-    return a * np.exp(-t / tau)
+def t_axis(dur):
+    return np.arange(int(dur * RATE)) / RATE
 
 
-def tone(freq, dur, tau=0.15, attack=0.004, partials=((1, 1.0),), detune=0.0):
-    """Нота: основной тон и обертоны (множитель, громкость)."""
-    n = int(dur * RATE)
-    t = np.arange(n) / RATE
-    s = np.zeros(n)
-    for mult, amp in partials:
-        f = freq * mult
-        s += amp * np.sin(2 * np.pi * f * t) * np.exp(-t / (tau / max(1.0, mult ** 0.6)))
-        if detune:
-            s += amp * 0.5 * np.sin(2 * np.pi * f * (1 + detune) * t) * np.exp(-t / (tau / max(1.0, mult ** 0.6)))
-    return s * np.clip(t / attack, 0, 1)
+def envelope(dur, attack, tau):
+    """Плавная атака (полуволна косинуса) и экспоненциальное затухание."""
+    t = t_axis(dur)
+    a = np.where(t < attack, 0.5 - 0.5 * np.cos(np.pi * t / attack), 1.0)
+    return a * np.exp(-np.maximum(0, t - attack) / tau)
 
 
-BELL = ((1, 1.0), (2, 0.28), (2.76, 0.10), (4.07, 0.05))      # мягкий колокольчик
-MARIMBA = ((1, 1.0), (3.9, 0.18), (9.2, 0.04))                 # деревянный перкуссионный
+def glide(f0, f1, dur, glide_time):
+    """Тон, скользящий от f0 к f1 (как «бульк» переключателя или «ток» клавиатуры)."""
+    t = t_axis(dur)
+    k = np.clip(t / glide_time, 0, 1)
+    f = f0 + (f1 - f0) * (1 - (1 - k) ** 2)
+    return np.sin(2 * np.pi * np.cumsum(f) / RATE)
+
+
+def note(freq, dur, attack=0.006, tau=0.35, harm=(0.12, 0.04), detune=0.0015):
+    """Тёплая нота: основной тон, слабые 2-я и 3-я гармоники, лёгкий хорус."""
+    t = t_axis(dur)
+    s = np.sin(2 * np.pi * freq * t) + 0.5 * np.sin(2 * np.pi * freq * (1 + detune) * t)
+    for i, a in enumerate(harm, start=2):
+        s += a * np.sin(2 * np.pi * freq * i * t) * np.exp(-t / (tau / i))
+    return s * envelope(dur, attack, tau)
+
+
+def lowpass(s, cutoff, passes=2):
+    a = np.exp(-2 * np.pi * cutoff / RATE)
+    for _ in range(passes):
+        y = np.empty_like(s)
+        acc = 0.0
+        for i, v in enumerate(s):
+            acc = (1 - a) * v + a * acc
+            y[i] = acc
+        s = y
+    return s
+
+
+def room(s, taps=((0.031, 0.16), (0.053, 0.11), (0.079, 0.07), (0.113, 0.04))):
+    """Немного воздуха: несколько ранних отражений, приглушённых."""
+    y = s.copy()
+    for d, g in taps:
+        n = int(d * RATE)
+        if n < len(y):
+            y[n:] += lowpass(s[:-n], 2500, 1) * g
+    return y
 
 
 def mix(length, *parts):
-    """parts: (сдвиг в секундах, сигнал)."""
     out = np.zeros(int(length * RATE))
     for at, sig in parts:
         i = int(at * RATE)
@@ -46,82 +73,55 @@ def mix(length, *parts):
     return out
 
 
-def room(s, delay=0.045, fb=0.25, wet=0.18):
-    """Короткое «эхо комнаты» — звук не такой сухой."""
-    d = int(delay * RATE)
-    y = s.copy()
-    for k in range(1, 5):
-        sh = d * k
-        if sh >= len(y):
-            break
-        y[sh:] += s[:-sh] * wet * (fb ** (k - 1))
-    return y
-
-
-def lowpass(s, cutoff):
-    a = np.exp(-2 * np.pi * cutoff / RATE)
-    y = np.zeros_like(s)
-    acc = 0.0
-    for i, v in enumerate(s):
-        acc = (1 - a) * v + a * acc
-        y[i] = acc
-    return y
-
-
 def save(name, s, peak_db):
     s = s / (np.max(np.abs(s)) or 1) * (10 ** (peak_db / 20))
-    fade = min(len(s), int(0.01 * RATE))
-    s[-fade:] *= np.linspace(1, 0, fade)
-    data = (s * 32767).astype("<i2").tobytes()
+    fade = min(len(s), int(0.015 * RATE))
+    s[-fade:] *= np.linspace(1, 0, fade) ** 2
     OUT.mkdir(parents=True, exist_ok=True)
     with wave.open(str(OUT / f"{name}.wav"), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(RATE)
-        w.writeframes(data)
+        w.writeframes((s * 32767).astype("<i2").tobytes())
 
 
-rng = np.random.default_rng(7)
+def tock(f0, f1, dur=0.05, tau=0.011):
+    """«Ток» — короткий тон с падением высоты и телом снизу (клавиатура iOS, кнопки Pixel)."""
+    body = glide(f0, f1, dur, 0.015) + 0.35 * glide(f0 / 2.6, f1 / 2.6, dur, 0.015)
+    return lowpass(body * envelope(dur, 0.0015, tau), 3200)
 
-# щелчок интерфейса: короткий «тик» — высокий тон и щепотка шума
-n = int(0.03 * RATE)
-click = tone(2100, 0.03, tau=0.006, attack=0.0008) + 0.25 * lowpass(rng.standard_normal(n), 5000) * env(n, 0.0005, 0.003)
-save("click", click, -16)
 
-# переключатель: два коротких «тика» вверх (вкл) и вниз (выкл)
-save("toggle-on", mix(0.12, (0, tone(1400, 0.05, tau=0.012, attack=0.001)), (0.045, tone(2100, 0.06, tau=0.014, attack=0.001))), -15)
-save("toggle-off", mix(0.12, (0, tone(2100, 0.05, tau=0.012, attack=0.001)), (0.045, tone(1400, 0.06, tau=0.014, attack=0.001))), -15)
+# щелчок кнопки
+save("click", tock(1050, 620), -25)
+# переключатель: «бульк» вверх и вниз
+save("toggle-on", lowpass(glide(480, 820, 0.09, 0.05) * envelope(0.09, 0.003, 0.028), 3000), -23)
+save("toggle-off", lowpass(glide(820, 480, 0.09, 0.05) * envelope(0.09, 0.003, 0.028), 3000), -23)
+# громкость: еле слышный тик
+save("volume", tock(900, 700, 0.035, 0.007), -27)
 
-# громкость: совсем тихий деревянный тик
-save("volume", tone(1500, 0.05, tau=0.01, attack=0.001, partials=MARIMBA), -14)
+# уведомление: две тёплые ноты ре–ля, как мягкий колокольчик
+save("notify", lowpass(room(mix(1.2, (0, note(587.3, 1.0, tau=0.42)), (0.12, note(880, 1.05, tau=0.48)))), 4200), -13)
 
-# уведомление: два колокольчика — ми и си
-save("notify", room(mix(0.9, (0, tone(1318.5, 0.8, tau=0.22, partials=BELL)), (0.11, tone(1975.5, 0.75, tau=0.26, partials=BELL)))), -8)
+# снимок экрана: два мягких «тока», как затвор
+save("shutter", room(mix(0.22, (0, tock(760, 430, 0.06, 0.014)), (0.075, tock(640, 380, 0.06, 0.016) * 0.8))), -19)
 
-# снимок экрана: мягкий затвор — два щелчка шума
-n = int(0.03 * RATE)
-burst = lowpass(rng.standard_normal(n), 3500) * env(n, 0.0005, 0.006)
-save("shutter", room(mix(0.2, (0, burst), (0.07, burst * 0.7), (0.0, tone(900, 0.04, tau=0.008) * 0.3))), -10)
+# флешка вставлена / вынута
+save("plug", lowpass(room(mix(0.6, (0, note(659.3, 0.45, tau=0.18)), (0.09, note(880, 0.5, tau=0.22)))), 3800), -17)
+save("unplug", lowpass(room(mix(0.6, (0, note(880, 0.45, tau=0.18)), (0.09, note(659.3, 0.5, tau=0.22)))), 3800), -18)
 
-# устройство подключено / отключено: две ноты вверх / вниз
-save("plug", room(mix(0.45, (0, tone(784, 0.35, tau=0.12, partials=MARIMBA)), (0.09, tone(1174.7, 0.35, tau=0.14, partials=MARIMBA)))), -10)
-save("unplug", room(mix(0.45, (0, tone(1174.7, 0.35, tau=0.12, partials=MARIMBA)), (0.09, tone(784, 0.35, tau=0.14, partials=MARIMBA)))), -11)
+# телефон на связи / пропал
+save("connect", lowpass(room(mix(0.9, (0, note(523.3, 0.6, tau=0.25)), (0.085, note(659.3, 0.6, tau=0.25)),
+                                  (0.17, note(784, 0.7, tau=0.32)))), 3800), -17)
+save("disconnect", lowpass(room(mix(0.8, (0, note(784, 0.55, tau=0.22)), (0.11, note(523.3, 0.65, tau=0.28)))), 3800), -18)
 
-# телефон на связи / пропал: арпеджио до-ми-соль и обратно
-save("connect", room(mix(0.7, (0, tone(1046.5, 0.5, tau=0.16, partials=BELL)), (0.08, tone(1318.5, 0.5, tau=0.16, partials=BELL)),
-                          (0.16, tone(1568, 0.55, tau=0.2, partials=BELL)))), -11)
-save("disconnect", room(mix(0.6, (0, tone(1568, 0.45, tau=0.15, partials=BELL)), (0.1, tone(1046.5, 0.5, tau=0.18, partials=BELL)))), -12)
+# запись началась / остановилась — короткий мягкий сигнал
+save("record", lowpass(room(glide(700, 880, 0.25, 0.04) * envelope(0.25, 0.004, 0.07)), 3500), -19)
 
-# таймер: трижды «ля-ми», мягко
-alarm = []
-for k in range(3):
-    alarm += [(k * 0.8, tone(880, 0.6, tau=0.2, partials=BELL)), (k * 0.8 + 0.16, tone(1318.5, 0.6, tau=0.24, partials=BELL))]
-save("timer", room(mix(2.6, *alarm)), -8)
+# ошибка: низкий мягкий «бом-бом»
+save("error", lowpass(mix(0.45, (0, note(330, 0.25, tau=0.09, harm=(0.08,))), (0.14, note(262, 0.3, tau=0.11, harm=(0.08,)))), 1800), -18)
 
-# ошибка: низкий двойной «дун»
-save("error", mix(0.4, (0, tone(330, 0.18, tau=0.06, partials=MARIMBA)), (0.14, tone(247, 0.24, tau=0.08, partials=MARIMBA))), -11)
-
-# запись началась / остановилась
-save("record", room(mix(0.35, (0, tone(988, 0.25, tau=0.08, partials=BELL)), (0.07, tone(1480, 0.25, tau=0.09, partials=BELL)))), -12)
+# старые звуки, которых больше нет
+for old in ("timer",):
+    (OUT / f"{old}.wav").unlink(missing_ok=True)
 
 print("готово:", ", ".join(sorted(p.stem for p in OUT.glob("*.wav"))))

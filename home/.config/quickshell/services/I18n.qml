@@ -1189,5 +1189,9 @@ Singleton {
         "Messages": "Сообщения",
         "No new messages": "Новых сообщений нет",
         "phone": "телефон",
+        "Off: nothing is counted or saved": "Выключено: ничего не считается и не сохраняется",
+        "Send to phone": "На телефон",
+        "Files onto the phone icon": "Файлы на значок телефона",
+        "Drag files onto the phone in the bar — they go to the phone": "Перетащите файлы на телефон в баре — они уйдут на телефон",
     })
 }

@@ -17,10 +17,10 @@ PanelWindow {
     property real popupX: 0
     property var trayItem: null
 
-    // стиль: flat — сплошной, floating — плавающий со скруглением, pills — группы на плашках,
-    // island — плашки по краям и «динамический остров» в центре (modules/Island.qml)
-    readonly property string style: Settings.barStyle
-    readonly property bool pilled: style === "pills" || style === "island"
+    // стиль: flat — сплошной, floating — плавающий со скруглением, pills — группы на плашках
+    // («island» — был «динамический остров», убран: показываем как pills)
+    readonly property string style: Settings.barStyle === "island" ? "pills" : Settings.barStyle
+    readonly property bool pilled: style === "pills"
     readonly property int gap: style === "flat" ? 0 : pilled ? 4 : 6
 
     Connections {
@@ -142,13 +142,11 @@ PanelWindow {
             }
         }
 
-        // ── по центру (в стиле «Остров» тут остров — своё окно, а эта строка только держит место для меню часов)
+        // ── по центру
         Row {
             anchors.centerIn: parent
             height: parent.height
             spacing: 10
-            opacity: bar.style === "island" ? 0 : 1
-            enabled: bar.style !== "island"
 
             // кот, спектр и текст песни
             BarGroup {
@@ -368,11 +366,6 @@ PanelWindow {
                 }
             }
         }
-    }
-
-    Island {
-        bar: bar
-        visible: bar.style === "island"
     }
 
     Popup {

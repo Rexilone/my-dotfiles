@@ -3,8 +3,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// звуки системы (assets/sounds, их делает scripts/gen-sounds.py): щелчки, громкость, уведомления, снимок экрана,
-// флешки, телефон, таймер. Настройки → Звук → Звуки системы. Играет pw-play — свой процесс на звук, без постоянного
+// звуки системы (assets/sounds, их делает scripts/gen-sounds.py): тихие «токи» и тёплые колокольчики
+// в духе Pixel и iOS — щелчки, громкость, уведомления, снимок экрана, флешки, телефон. Настройки → Звук → Звуки системы. Играет pw-play — свой процесс на звук, без постоянного
 // потока в PipeWire. Щелчки в игре и при «Не беспокоить» молчат
 Singleton {
     id: root
@@ -22,7 +22,6 @@ Singleton {
         shutter: "screenshot", record: "screenshot",
         plug: "devices", unplug: "devices",
         connect: "phone", disconnect: "phone",
-        timer: "timer",
     })
     // группы: подпись и включены ли по умолчанию
     readonly property var groupList: [
@@ -32,7 +31,6 @@ Singleton {
         { key: "screenshot", label: "Screenshots and recording", desc: "", def: true, sample: "shutter" },
         { key: "devices", label: "Flash drives and disks", desc: "Plugged in and removed", def: true, sample: "plug" },
         { key: "phone", label: "Phone", desc: "Connected and lost", def: true, sample: "connect" },
-        { key: "timer", label: "Timer", desc: "Time is up", def: true, sample: "timer" },
     ]
     // приложения со своим звуком уведомлений — второй сверху не нужен
     readonly property var ownSound: ["telegram", "discord", "vesktop", "slack", "element", "steam"]
