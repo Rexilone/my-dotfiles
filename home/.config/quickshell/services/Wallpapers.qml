@@ -57,7 +57,7 @@ Singleton {
                 t="$cache/$h.jpg"; d="$cache/$h.txt"
                 if [ ! -s "$t" ] || [ "$f" -nt "$t" ]; then
                     nice -n 19 magick -define jpeg:size=1280x720 "$f[0]" -thumbnail 640x360^ -gravity center -extent 640x360 -quality 88 "$t" < /dev/null 2>/dev/null
-                    magick identify -format '%wx%h' "$f[0]" < /dev/null > "$d" 2>/dev/null
+                    magick identify -ping -format '%wx%h' "$f[0]" < /dev/null > "$d" 2>/dev/null
                 fi
                 printf '%s\\t%s\\t%s\\n' "$f" "$t" "$(cat "$d" 2>/dev/null)"
             done`, "sh", root.dir, root.cacheDir]

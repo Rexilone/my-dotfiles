@@ -49,7 +49,7 @@ Singleton {
         // конфиг — во временный файл, cava — прямой ребёнок шелла (без конвейера: иначе при перезагрузке шелла
         // убивался только sh, а cava оставалась жить сиротой); --pdeathsig — умирает вместе с шеллом
         command: ["sh", "-c", `f="\${XDG_RUNTIME_DIR:-/tmp}/rexilone-cava.conf"
-            printf '%s\\n' '[general]' 'framerate = 45' 'bars = ${root.bands}' 'sleep_timer = 3' \
+            printf '%s\\n' '[general]' 'framerate = 60' 'bars = ${root.bands}' 'sleep_timer = 3' \
             '[output]' 'method = raw' 'raw_target = /dev/stdout' 'data_format = ascii' 'ascii_max_range = 100' \
             'bar_delimiter = 59' 'frame_delimiter = 10' '[smoothing]' 'noise_reduction = 60' > "$f"
             exec setpriv --pdeathsig TERM cava -p "$f"`]

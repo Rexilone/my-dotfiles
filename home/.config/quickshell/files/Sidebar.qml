@@ -1,118 +1,99 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Widgets
 import qs.services
 
-// боковая панель проводника: места, телефон и планшет (Rexlink), диски, закладки, корзина
-Flickable {
+// боковая панель как в Nautilus: шапка с главным меню; недавние, избранное, папки, корзина;
+// закладки; устройства — телефон и планшет (Rexlink), диски и флешки (с извлечением), компьютер
+Rectangle {
     id: sb
 
     required property var br
 
-    contentHeight: col.implicitHeight + 24
-    clip: true
-    boundsBehavior: Flickable.StopAtBounds
+    color: FStyle.sidebar
 
-    component Caption: Text {
-        Layout.topMargin: 14
-        Layout.bottomMargin: 4
-        Layout.leftMargin: 10
-        color: Theme.dim
-        font.family: Theme.font
-        font.pixelSize: Theme.fontSize - 3
-        font.bold: true
+    component Divider: Rectangle {
+        Layout.fillWidth: true
+        Layout.topMargin: 6
+        Layout.bottomMargin: 6
+        Layout.leftMargin: 6
+        Layout.rightMargin: 6
+        implicitHeight: 1
+        color: FStyle.sep
     }
 
+    // строка места: значок, подпись, справа — «…» или кнопка извлечения
     component Place: Rectangle {
         id: pl
-        property string icon: ""         // значок темы
-        property int glyph: 0            // или значок шрифта
+        property int glyph: 0xF0256
         property string label: ""
-        property string sub: ""
-        property string target: ""
+        property string target: ""       // куда бросать файлы
         property bool here: false
         property bool busy: false
+        property bool ejectable: false
+        property string tip: ""
         signal activated
+        signal middle
         signal menu(real x, real y)
+        signal eject
 
         Layout.fillWidth: true
-        implicitHeight: sub ? 44 : 34
-        radius: 9
-        color: here ? Theme.surfaceHi2 : area.containsMouse || drop.containsDrag ? Theme.surfaceHi : "transparent"
-
-        Rectangle {
-            visible: pl.here
-            x: 3
-            anchors.verticalCenter: parent.verticalCenter
-            width: 3
-            height: 16
-            radius: 2
-            color: Theme.accent
-        }
+        implicitHeight: 38
+        radius: 7
+        color: here ? FStyle.active : area.pressed ? FStyle.press : area.containsMouse || drop.containsDrag ? FStyle.hover : "transparent"
 
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 12
-            anchors.rightMargin: 10
-            spacing: 10
+            anchors.rightMargin: pl.ejectable ? 4 : 12
+            spacing: 12
 
-            IconImage {
-                visible: pl.icon !== ""
-                implicitSize: 18
-                source: pl.icon ? Quickshell.iconPath(pl.icon, "folder") : ""
+            Text {
+                Layout.preferredWidth: FStyle.icon + 2
+                horizontalAlignment: Text.AlignHCenter
+                text: String.fromCodePoint(pl.glyph)
+                color: Theme.fg
+                opacity: 0.85
+                font.family: FStyle.glyphs
+                font.pixelSize: FStyle.icon + 1
             }
             Text {
-                visible: pl.icon === ""
-                text: pl.glyph ? String.fromCodePoint(pl.glyph) : ""
-                color: pl.here ? Theme.accent : Theme.muted
-                font.family: Theme.font
-                font.pixelSize: Theme.iconSize + 1
-                Layout.preferredWidth: 18
-                horizontalAlignment: Text.AlignHCenter
-            }
-            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 0
-                Text {
-                    Layout.fillWidth: true
-                    text: pl.label
-                    elide: Text.ElideRight
-                    color: pl.here ? Theme.fg : Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 1
-                    font.bold: pl.here
-                }
-                Text {
-                    visible: pl.sub !== ""
-                    Layout.fillWidth: true
-                    text: pl.sub
-                    elide: Text.ElideRight
-                    color: Theme.dim
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 3
-                }
+                text: pl.label
+                elide: Text.ElideRight
+                color: Theme.fg
+                font.family: FStyle.ui
+                font.pixelSize: FStyle.fs
             }
             Text {
                 visible: pl.busy
                 text: "…"
                 color: Theme.dim
-                font.family: Theme.font
-                font.pixelSize: Theme.fontSize
+                font.family: FStyle.ui
+                font.pixelSize: FStyle.fs
+            }
+            FButton {
+                visible: pl.ejectable && !pl.busy
+                implicitWidth: 30
+                implicitHeight: 30
+                glyph: 0xF0B91
+                tip: I18n.tr("Eject")
+                onClicked: pl.eject()
             }
         }
 
         MouseArea {
             id: area
             anchors.fill: parent
+            anchors.rightMargin: pl.ejectable ? 36 : 0
             hoverEnabled: true
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             onClicked: mouse => {
                 if (mouse.button === Qt.RightButton) {
                     const p = mapToItem(sb.br, mouse.x, mouse.y);
                     pl.menu(p.x, p.y);
-                } else pl.activated();
+                } else if (mouse.button === Qt.MiddleButton) pl.middle();
+                else pl.activated();
             }
         }
 
@@ -130,110 +111,163 @@ Flickable {
         }
     }
 
-    ColumnLayout {
-        id: col
-        x: 10
-        y: 12
-        width: sb.width - 20
-        spacing: 1
 
-        // ── места
-        Repeater {
-            model: sb.br.places.dirs ?? []
-            Place {
-                required property var modelData
-                icon: ({ home: "user-home", desktop: "user-desktop", documents: "folder-documents", download: "folder-download",
-                         music: "folder-music", pictures: "folder-pictures", videos: "folder-videos" })[modelData.icon] ?? "folder"
-                label: I18n.tr(modelData.name)
-                target: modelData.path
-                here: sb.br.mode === "dir" && sb.br.path === modelData.path
-                onActivated: sb.br.go(modelData.path)
+    // меню места: открыть, в новом окне, терминал
+    function placeMenu(x, y, p, extra) {
+        br.popupMenu(x, y, [
+            { text: I18n.tr("Open"), act: () => br.go(p) },
+            { text: I18n.tr("Open in New Window"), act: () => br.newWindowRequested(p) },
+            { text: I18n.tr("Open in Terminal"), act: () => br.openTerminal(p) },
+        ].concat(extra ?? []));
+    }
+
+    // ── шапка: главное меню
+    Item {
+        id: head
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 46
+
+        FButton {
+            id: menuBtn
+            anchors.right: parent.right
+            anchors.rightMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            glyph: 0xF035C
+            tip: I18n.tr("Main Menu")
+            checked: sb.br.menuOwner === menuBtn
+            onClicked: {
+                const p = menuBtn.mapToItem(sb.br, menuBtn.width, menuBtn.height + 4);
+                sb.br.mainMenu(p.x, p.y, menuBtn);
             }
         }
-        Place {
-            icon: "user-trash"
-            label: I18n.tr("Trash")
-            sub: (sb.br.places.trash ?? 0) ? `${sb.br.places.trash}` : ""
-            here: sb.br.mode === "trash"
-            onActivated: sb.br.openTrash()
-        }
+    }
 
-        // ── устройства: телефон и планшет через Rexlink, диски
-        Caption {
-            visible: Rexlink.connected && Rexlink.devices.length > 0 || Drives.drives.length > 0
-            text: I18n.tr("DEVICES")
-        }
-        Repeater {
-            model: Rexlink.connected ? Rexlink.devices : []
-            Place {
-                id: ph
-                required property var modelData
-                readonly property string p: sb.br.phonePath(modelData)
-                glyph: modelData.kind === "tablet" ? 0xF04F7 : modelData.kind === "watch" ? 0xF0954 : 0xF011C
-                label: modelData.name
-                sub: !modelData.online ? I18n.tr("Offline")
-                    : p ? `${modelData.battery >= 0 ? modelData.battery + "%   ·   " : ""}${I18n.tr("Storage")}`
-                    : modelData.files?.state === "permission" ? I18n.tr("Allow «All files» on the device")
-                    : modelData.files?.state === "mounting" ? I18n.tr("Connecting…")
-                    : I18n.tr("Click to open the storage")
-                target: p
-                busy: sb.br.waitPhone === modelData.id
-                here: !!p && sb.br.path.startsWith(p)
-                opacity: modelData.online ? 1 : 0.5
-                onActivated: if (modelData.online) sb.br.openPhone(modelData)
-            }
-        }
-        // диски и флешки (services/Drives.qml): не подключённые — подключить по клику
-        Repeater {
-            model: Drives.drives
-            Place {
-                id: dv
-                required property var modelData
-                glyph: modelData.removable ? 0xF129E : 0xF02CA
-                label: modelData.name
-                sub: modelData.mount
-                    ? (modelData.free !== null ? `${Drives.human(modelData.free)} ${I18n.tr("free of")} ${modelData.sizeText}` : modelData.sizeText)
-                    : `${modelData.sizeText}   ·   ${I18n.tr("not connected")}`
-                target: modelData.mount
-                busy: sb.br.waitDrive === modelData.dev
-                here: !!modelData.mount && sb.br.mode === "dir" && (sb.br.path === modelData.mount || sb.br.path.startsWith(modelData.mount + "/"))
-                opacity: modelData.mount ? 1 : 0.75
-                onActivated: sb.br.openDrive(modelData)
-                onMenu: (x, y) => sb.br.popupMenu(x, y, modelData.mount ? [
-                    { icon: 0xF0DCE, text: "Open", act: () => sb.br.go(modelData.mount) },
-                    { icon: 0xF018D, text: "Open terminal here", act: () => sb.br.openTerminal(modelData.mount) },
-                    { sep: true },
-                    { icon: 0xF033A, text: "Disconnect", act: () => { if (sb.br.path.startsWith(modelData.mount)) sb.br.go(sb.br.home); Drives.unmount(modelData.dev); } },
-                ].concat(modelData.removable ? [{ icon: 0xF01EA, text: "Eject", act: () => { if (sb.br.path.startsWith(modelData.mount)) sb.br.go(sb.br.home); Drives.eject(modelData); } }] : [])
-                : [{ icon: 0xF0DCE, text: "Connect", act: () => sb.br.openDrive(modelData) }])
-            }
-        }
-        Place {
-            glyph: 0xF0A0A
-            label: I18n.tr("Computer")
-            sub: "/"
-            target: "/"
-            here: sb.br.mode === "dir" && sb.br.path === "/"
-            onActivated: sb.br.go("/")
-        }
+    Flickable {
+        anchors.top: head.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        contentHeight: col.implicitHeight + 12
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
-        // ── закладки
-        Caption {
-            visible: (sb.br.places.bookmarks ?? []).length > 0
-            text: I18n.tr("BOOKMARKS")
-        }
-        Repeater {
-            model: sb.br.places.bookmarks ?? []
+        ColumnLayout {
+            id: col
+            x: 6
+            width: parent.width - 12
+            spacing: 2
+
             Place {
-                required property var modelData
-                icon: "folder"
-                label: modelData.name
-                target: modelData.path
-                here: sb.br.mode === "dir" && sb.br.path === modelData.path
-                onActivated: sb.br.go(modelData.path)
+                glyph: 0xF0150
+                label: I18n.tr("Recent")
+                here: sb.br.mode === "recent"
+                onActivated: sb.br.openSpecial("recent")
+            }
+            Place {
+                glyph: 0xF04D2
+                label: I18n.tr("Starred")
+                here: sb.br.mode === "starred"
+                onActivated: sb.br.openSpecial("starred")
+            }
+            Repeater {
+                model: sb.br.places.dirs ?? []
+                Place {
+                    required property var modelData
+                    glyph: ({ home: 0xF06A1, desktop: 0xF0379, documents: 0xF09EE, download: 0xF0B8F,
+                              music: 0xF0F74, pictures: 0xF0976, videos: 0xF0BDC })[modelData.icon] ?? 0xF0256
+                    label: modelData.icon === "home" ? I18n.tr("Home Folder") : I18n.tr(modelData.name)
+                    target: modelData.path
+                    here: sb.br.mode === "dir" && sb.br.path === modelData.path
+                    onActivated: sb.br.go(modelData.path)
+                    onMiddle: sb.br.newWindowRequested(modelData.path)
+                    onMenu: (x, y) => sb.placeMenu(x, y, modelData.path)
+                }
+            }
+            Place {
+                glyph: 0xF0A7A
+                label: I18n.tr("Trash")
+                here: sb.br.mode === "trash"
+                onActivated: sb.br.openTrash()
                 onMenu: (x, y) => sb.br.popupMenu(x, y, [
-                    { icon: 0xF0156, text: "Remove from bookmarks", act: () => sb.br.unbookmark(modelData.path) },
+                    { text: I18n.tr("Open"), act: () => sb.br.openTrash() },
+                    { sep: true },
+                    { text: I18n.tr("Empty Trash…"), off: !(sb.br.places.trash ?? 0), danger: true, act: () => sb.br.askEmptyTrash() },
                 ])
+            }
+
+            // ── закладки (GTK — их видят и окна выбора файлов)
+            Divider { visible: (sb.br.places.bookmarks ?? []).length > 0 }
+            Repeater {
+                model: sb.br.places.bookmarks ?? []
+                Place {
+                    required property var modelData
+                    glyph: 0xF0256
+                    label: modelData.name
+                    target: modelData.path
+                    here: sb.br.mode === "dir" && sb.br.path === modelData.path
+                    onActivated: sb.br.go(modelData.path)
+                    onMiddle: sb.br.newWindowRequested(modelData.path)
+                    onMenu: (x, y) => sb.placeMenu(x, y, modelData.path, [
+                        { sep: true },
+                        { text: I18n.tr("Remove from Bookmarks"), act: () => sb.br.unbookmark(modelData.path) },
+                    ])
+                }
+            }
+
+            // ── устройства: телефон и планшет через Rexlink, диски и флешки, корень
+            Divider {}
+            Repeater {
+                model: Rexlink.connected ? Rexlink.devices : []
+                Place {
+                    required property var modelData
+                    readonly property string p: sb.br.phonePath(modelData)
+                    glyph: modelData.kind === "tablet" ? 0xF04F6 : 0xF011C
+                    label: modelData.name
+                    target: p
+                    busy: sb.br.waitPhone === modelData.id
+                    here: !!p && sb.br.path.startsWith(p)
+                    opacity: modelData.online ? 1 : 0.5
+                    onActivated: {
+                        if (!modelData.online) sb.br.say(`${modelData.name}: ${I18n.tr("offline")}`);
+                        else sb.br.openPhone(modelData);
+                    }
+                }
+            }
+            // диски и флешки (services/Drives.qml): не подключённые — подключить по щелчку
+            Repeater {
+                model: Drives.drives
+                Place {
+                    required property var modelData
+                    readonly property var d: modelData
+                    glyph: d.removable ? 0xF129F : 0xF02CA
+                    label: d.name
+                    target: d.mount
+                    busy: sb.br.waitDrive === d.dev
+                    ejectable: !!d.mount && d.removable
+                    here: !!d.mount && sb.br.mode === "dir" && (sb.br.path === d.mount || sb.br.path.startsWith(d.mount + "/"))
+                    onActivated: sb.br.openDrive(d)
+                    onMiddle: if (d.mount) sb.br.newWindowRequested(d.mount)
+                    onEject: sb.br.ejectDrive(d)
+                    onMenu: (x, y) => sb.br.popupMenu(x, y, d.mount ? [
+                        { text: I18n.tr("Open"), act: () => sb.br.go(d.mount) },
+                        { text: I18n.tr("Open in New Window"), act: () => sb.br.newWindowRequested(d.mount) },
+                        { text: I18n.tr("Open in Terminal"), act: () => sb.br.openTerminal(d.mount) },
+                        { sep: true },
+                        { text: I18n.tr("Unmount"), act: () => sb.br.unmountDrive(d) },
+                    ].concat(d.removable ? [{ text: I18n.tr("Eject"), act: () => sb.br.ejectDrive(d) }] : [])
+                    : [{ text: I18n.tr("Mount"), act: () => sb.br.openDrive(d) }])
+                }
+            }
+            Place {
+                glyph: 0xF07C0
+                label: I18n.tr("Computer")
+                target: "/"
+                here: sb.br.mode === "dir" && sb.br.path === "/"
+                onActivated: sb.br.go("/")
+                onMiddle: sb.br.newWindowRequested("/")
+                onMenu: (x, y) => sb.placeMenu(x, y, "/")
             }
         }
     }

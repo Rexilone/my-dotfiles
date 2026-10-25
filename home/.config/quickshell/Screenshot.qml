@@ -139,6 +139,8 @@ Scope {
     Process {
         id: cropProc
         property var job: null
+        // ImageMagick без OpenCL (на NVIDIA он будит видеокарту и компилирует ядра)
+        environment: ({ MAGICK_OCL_DEVICE: "OFF" })
         onExited: code => {
             if (code === 0) root.deliver(job.out, job.copy, job.save, job.pin, job.geom);
             else root.notify(I18n.tr("Screenshot failed"), "", "dialog-error");

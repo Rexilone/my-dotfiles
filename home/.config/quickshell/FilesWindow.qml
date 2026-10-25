@@ -5,14 +5,14 @@ import Quickshell.Wayland
 import qs.services
 import qs.files
 
-// проводник: qs ipc call files open [путь] (Super+E, rexilone-files, «Файлы» в меню приложений)
-// окно создаётся при открытии и уничтожается при закрытии, как Настройки
+// проводник «Файлы»: qs ipc call files open [путь] (Super+E, rexilone-files, «Файлы» в меню приложений).
+// Как в Nautilus, каждое «открыть» — новое окно; окна создаются при открытии и уничтожаются при закрытии
 Scope {
     id: ctl
 
-    property bool open: false
-    property string startPath: ""
-    property string reveal: ""
+    property var wins: []          // номера открытых окон
+    property var starts: ({})      // номер → { path, reveal, prefs }
+    property int nextId: 1
 
     // путь или file:// URI → путь
     function clean(p) {
@@ -22,49 +22,49 @@ Scope {
         return p;
     }
 
-    function show(path) {
-        const p = clean(path);
-        if (open && loader.item) {
-            if (p) loader.item.browser.go(p);
-            return;
-        }
-        startPath = p;
-        open = true;
+    function newWindow(path, reveal, prefs) {
+        const id = nextId++;
+        const s = Object.assign({}, starts);
+        s[id] = { path: clean(path), reveal: clean(reveal ?? ""), prefs: !!prefs };
+        starts = s;
+        wins = wins.concat([id]);
+    }
+    function closeWindow(id) {
+        wins = wins.filter(w => w !== id);
     }
 
     IpcHandler {
         target: "files"
 
-        function open(path: string): void { ctl.show(path); }
+        function open(path: string): void { ctl.newWindow(path); }
         // показать файл в его папке, выделенным («Показать в папке» из браузеров — rexilone-filemanager1)
         function reveal(path: string): void {
             const p = ctl.clean(path);
-            const dir = p.substring(0, p.lastIndexOf("/")) || "/";
-            ctl.reveal = p;
-            ctl.show(dir);
-            if (loader.item) loader.item.browser.reveal(p);
+            ctl.newWindow(p.substring(0, p.lastIndexOf("/")) || "/", p);
         }
-        function toggle(): void { if (ctl.open) ctl.open = false; else ctl.show(""); }
-        function hide(): void { ctl.open = false; }
+        // окно с открытыми параметрами проводника
+        function prefs(): void { ctl.newWindow("", "", true); }
+        function toggle(): void { if (ctl.wins.length) ctl.wins = []; else ctl.newWindow(""); }
+        function hide(): void { ctl.wins = []; }
     }
 
-    LazyLoader {
-        id: loader
-        active: ctl.open
+    Variants {
+        model: ctl.wins
 
         FloatingWindow {
             id: win
 
-            property alias browser: browser
+            required property var modelData
+            readonly property var start: ctl.starts[modelData] ?? {}
 
-            title: "Files"  // на заголовок завязано правило окна в niri — не переводить
+            title: browser.title
             visible: true
             implicitWidth: 1180
             implicitHeight: 760
-            minimumSize: Qt.size(640, 420)
-            color: Theme.panel
+            minimumSize: Qt.size(560, 400)
+            color: "transparent"
 
-            onVisibleChanged: if (!visible) ctl.open = false
+            onVisibleChanged: if (!visible) ctl.closeWindow(modelData)
 
             BackgroundEffect.blurRegion: Theme.blurOn ? blurReg : null
             Region {
@@ -75,9 +75,12 @@ Scope {
             Browser {
                 id: browser
                 anchors.fill: parent
-                startPath: ctl.startPath
-                revealPath: ctl.reveal
+                startPath: win.start.path ?? ""
+                revealPath: win.start.reveal ?? ""
+                startPrefs: win.start.prefs ?? false
                 onCloseRequested: win.visible = false
+                onNewWindowRequested: p => ctl.newWindow(p)
+                onQuitRequested: ctl.wins = []
             }
         }
     }

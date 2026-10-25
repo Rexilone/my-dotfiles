@@ -9,6 +9,8 @@
     files.py info <путь>                  размер (с вложенными), число файлов, тип, права, даты
     files.py apps <путь>                  чем открыть: [{id, name, default}]
     files.py search <папка> <строка>      поиск по имени во вложенных папках (fd), до 500
+    files.py recent                       недавние файлы (recently-used.xbel), до 200, новые первыми
+    files.py stat <путь…>                 сведения о файлах (для «Избранного»)
     files.py thumb <файл> <png> <размер>  миниатюра видео (ffmpegthumbnailer) или PDF (pdftoppm)
     files.py compress <архив> <что…>      zip / tar.gz / 7z — по расширению (bsdtar, 7z)
     files.py extract <архив> <папка>      распаковать в новую папку рядом
@@ -295,6 +297,44 @@ def search(folder, query):
     out(res)
 
 
+def entry(p):
+    try:
+        st = os.stat(p)
+    except OSError:
+        return None
+    return {"name": os.path.basename(p.rstrip("/")) or p, "path": p, "dir": stat.S_ISDIR(st.st_mode),
+            "size": st.st_size, "mtime": int(st.st_mtime)}
+
+
+def recent():
+    import xml.etree.ElementTree as ET
+    f = Path(os.environ.get("XDG_DATA_HOME", HOME / ".local/share")) / "recently-used.xbel"
+    try:
+        root = ET.parse(f).getroot()
+    except (OSError, ET.ParseError):
+        out([])
+        return
+    seen, items = set(), []
+    for b in root.iter("bookmark"):
+        href = b.get("href", "")
+        if not href.startswith("file://"):
+            continue
+        p = unquote(urlparse(href).path)
+        if p in seen:
+            continue
+        seen.add(p)
+        items.append((b.get("visited") or b.get("modified") or b.get("added") or "", p))
+    items.sort(reverse=True)
+    res = []
+    for _, p in items:
+        e = entry(p)
+        if e:
+            res.append(e)
+            if len(res) >= 200:
+                break
+    out(res)
+
+
 def thumb(src, png, size):
     Path(png).parent.mkdir(parents=True, exist_ok=True)
     m = mime(src)
@@ -365,6 +405,10 @@ if __name__ == "__main__":
         apps(args[0])
     elif cmd == "search":
         search(args[0], args[1])
+    elif cmd == "recent":
+        recent()
+    elif cmd == "stat":
+        out([e for e in map(entry, args) if e])
     elif cmd == "thumb":
         thumb(args[0], args[1], args[2])
     elif cmd == "compress":

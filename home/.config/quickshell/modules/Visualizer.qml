@@ -32,8 +32,8 @@ Row {
             radius: root.barWidth / 2
             color: root.color
             opacity: 0.55 + 0.45 * v
-
-            Behavior on height { NumberAnimation { duration: 60 } }
+            // без Behavior: cava сама сглаживает и шлёт 60 кадров в секунду, а постоянно идущая анимация
+            // заставляла перерисовываться все окна шелла с частотой экрана
         }
     }
 }

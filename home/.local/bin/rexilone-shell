@@ -11,7 +11,33 @@ set -u
 
 say() { printf '%s\n' "$*"; }
 
-qs_running() { pgrep -x qs >/dev/null 2>&1 || pgrep -x quickshell >/dev/null 2>&1; }
+RUN="${XDG_RUNTIME_DIR:-/tmp}"
+STUCK="$RUN/rexilone-shell.stuck"            # шеллы, не умершие даже от SIGKILL (зависли в драйвере видеокарты)
+
+# живые процессы шелла (зависшие намертво не считаются: новый шелл запускается и при них)
+qs_pids() {
+    local p
+    for p in $(pgrep -x 'qs|quickshell'); do
+        grep -qxF "$p" "$STUCK" 2>/dev/null || echo "$p"
+    done
+}
+qs_running() { [[ -n "$(qs_pids)" ]]; }
+
+# SIGTERM, затем SIGKILL; кто не умер и от него — висит в ядре (обычно в драйвере видеокарты):
+# запоминаем, чтобы не ждать его вечно, и говорим, что поможет только перезагрузка
+kill_shell() {
+    local p
+    p=$(qs_pids)
+    [[ -z "$p" ]] && return 0
+    env kill $p 2>/dev/null
+    wait_gone qs_running && return 0
+    env kill -9 $(qs_pids) 2>/dev/null
+    wait_gone qs_running && return 0
+    qs_pids >> "$STUCK"
+    command -v notify-send >/dev/null && notify-send -a RexOS -i dialog-warning "Шелл завис в драйвере видеокарты" \
+        "Запускаю новый. Старый процесс исчезнет только после перезагрузки"
+    return 0
+}
 
 running() { if qs_running; then say quickshell; else say none; fi; }
 
@@ -32,17 +58,13 @@ wait_gone() {
     return 1
 }
 
-RUN="${XDG_RUNTIME_DIR:-/tmp}"
 STOPPED="$RUN/rexilone-shell.stopped"        # остановили нарочно — сторож не поднимает
 WATCH_PID="$RUN/rexilone-shell-watchdog.pid"
 HANGS="${XDG_CACHE_HOME:-$HOME/.cache}/rexilone/hangs"
 
 stop() {
     touch "$STOPPED"
-    qs_running || return 0
-    pkill -x qs; pkill -x quickshell
-    wait_gone qs_running || { pkill -9 -x qs; pkill -9 -x quickshell; }
-    return 0
+    kill_shell
 }
 
 start() {
@@ -54,7 +76,7 @@ start() {
 # ── сторож
 watchdog_start() {
     [[ -f "$WATCH_PID" ]] && kill -0 "$(cat "$WATCH_PID")" 2>/dev/null && return 0
-    setsid -f "$0" watchdog >/dev/null 2>&1
+    detach "$0" watchdog
 }
 
 # отчёт о зависании: что делают потоки шелла, где ждут в ядре, лог; затем SIGABRT — обработчик падений
@@ -68,6 +90,8 @@ report() {
         echo "== видеокарта"; lspci -k 2>/dev/null | grep -A3 -Ei 'vga|3d' | head -12
         echo "== потоки (stat, где ждут в ядре)"; ps -L -o tid,stat,wchan:32,pcpu,rss,comm -p "$pid" 2>&1
         echo "== состояние"; grep -E 'State|VmRSS|Threads' "/proc/$pid/status" 2>&1
+        echo "== драйвер"; cat /proc/driver/nvidia/version 2>/dev/null; uname -r
+        echo "== ядро (ошибки видеокарты)"; timeout 5 journalctl -k -b --no-pager -n 400 2>&1 | grep -iE "nvrm|xid|nvidia|amdgpu|i915|drm|gpu|hung|blocked" | tail -40
         echo "== лог шелла"; timeout 5 qs log 2>&1 | tail -150
     } > "$f" 2>&1
     kill -CONT "$pid" 2>/dev/null; kill -ABRT "$pid" 2>/dev/null
@@ -95,10 +119,9 @@ watchdog() {
         if timeout 5 qs ipc show >/dev/null 2>&1; then fails=0; continue; fi
         fails=$((fails + 1))
         (( fails < 2 )) && continue
-        pid=$(pgrep -xo qs)
+        pid=$(qs_pids | head -1)
         f=$(report "$pid")
-        pkill -9 -x qs; pkill -9 -x quickshell
-        wait_gone qs_running
+        kill_shell
         detach qs
         command -v notify-send >/dev/null && notify-send -a RexOS -i dialog-warning "Шелл завис и был перезапущен" "Отчёт: ${f/#$HOME/~}"
         fails=0

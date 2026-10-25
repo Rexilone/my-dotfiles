@@ -22,6 +22,11 @@ Scope {
     function show(i) {
         // скрытая страница-ссылка: открыть её вкладку на другой странице
         const p = pages[i];
+        // «Файлы» — параметры в самом проводнике
+        if (p && p.files) {
+            Quickshell.execDetached(["qs", "ipc", "call", "files", "prefs"]);
+            return;
+        }
         if (p && p.go !== undefined) {
             pendingPage = p.go;
             pendingTab = p.tab ?? "";
@@ -461,7 +466,6 @@ Scope {
                     PageSlot { index: 18; sourceComponent: UpdatesPage {} }
                     PageSlot { index: 19; sourceComponent: BootPage {} }
                     PageSlot { index: 20; sourceComponent: GamesPage {} }
-                    PageSlot { index: 23; sourceComponent: FilesPage {} }
                 }
             }
         }

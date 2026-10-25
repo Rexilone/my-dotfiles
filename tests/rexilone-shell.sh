@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Тесты запуска шелла (home/.local/bin/rexilone-shell).
-# Настоящие qs, niri, pgrep и pkill подменяются заглушками: запущенные процессы — файлы в $T/proc.
+# Настоящие qs, niri, pgrep и kill подменяются заглушками: запущенные процессы — файлы в $T/proc
+# (имя процесса, внутри — его номер).
 #   bash tests/rexilone-shell.sh
 set -u
 
@@ -15,9 +16,12 @@ setup() {
     mkdir -p "$T/bin" "$T/proc"
     : > "$T/log"
     stub() { printf '#!/usr/bin/env bash\n%s\n' "$2" > "$T/bin/$1"; chmod +x "$T/bin/$1"; }
-    stub pgrep '[[ -e "$STUB/proc/${@: -1}" ]]'
-    stub pkill 'f="$STUB/proc/${@: -1}"; [[ -e "$f" ]] || exit 1; rm -f "$f"; echo "kill ${@: -1}" >> "$STUB/log"'
-    stub setsid '[[ "$1" == -f ]] && shift; echo "start $*" >> "$STUB/log"; touch "$STUB/proc/$(basename "$1")"'
+    # pgrep -x 'qs|quickshell' — номера живых процессов с такими именами
+    stub pgrep 'ok=1; for n in ${@: -1}; do :; done; IFS="|" read -ra ns <<< "${@: -1}"; for n in "${ns[@]}"; do [[ -e "$STUB/proc/$n" ]] && { cat "$STUB/proc/$n"; ok=0; }; done; exit $ok'
+    # kill [-сигнал] номер… — убрать процессы; номер из $STUB/unkillable не умирает (завис в ядре)
+    stub kill 'for a; do [[ $a == -* ]] && continue; grep -qxF "$a" "$STUB/unkillable" 2>/dev/null && continue; for f in "$STUB"/proc/*; do [[ -e $f && $(cat "$f") == "$a" ]] && { rm -f "$f"; echo "kill $(basename "$f")" >> "$STUB/log"; }; done; done; exit 0'
+    stub setsid '[[ "$1" == -f ]] && shift; echo "start $*" >> "$STUB/log"; n=$(basename "$1"); [[ -e "$STUB/proc/$n" ]] && n="$n.$RANDOM"; echo $((RANDOM + 1000)) > "$STUB/proc/$n"'
+    stub notify-send 'echo "notify $*" >> "$STUB/log"'
     stub qs 'echo "qs $*" >> "$STUB/log"'
     stub sleep ':'
     export PATH="$T/bin:/usr/bin:/bin"
@@ -59,6 +63,18 @@ t_start_stop() {
     teardown
 }
 
+# шелл завис в драйвере и не умирает от SIGKILL: stop не ждёт его вечно, start запускает новый
+t_stuck() {
+    setup
+    run start
+    cat "$T/proc/qs" > "$T/unkillable"
+    run stop
+    check "зависший: stop предупреждает" logged "notify"
+    run start
+    check "зависший: start запускает новый qs" test "$(grep -c '^start qs$' "$T/log")" = 2
+    teardown
+}
+
 t_ipc() {
     setup
     run ipc launcher toggle
@@ -77,6 +93,7 @@ t_bad_args() {
 
 echo "rexilone-shell"
 t_start_stop
+t_stuck
 t_ipc
 t_bad_args
 echo "пройдено: $PASS, ошибок: $FAIL"

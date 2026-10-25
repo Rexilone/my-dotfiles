@@ -137,6 +137,12 @@ quick settings tile) sends the magic packet to the home network and, if set, to 
 your home IP or DDNS name with a UDP port forwarded on the router to the computer (port 9). That address is separate
 from the computer's address on the local network; set it in Settings → Power or right in the app.
 
+A packet forwarded straight to a computer that is off often gets lost: a minute after shutdown the router forgets
+which device owns that address. The reliable way is a device that stays at home (a tablet, an old phone): turn on
+**Wake the computer through this device** in its app and forward the UDP port on the router to that device, port
+40009. It repeats magic packets for your computers to the whole home network. Waking from outside also needs a public
+IP: if the router's WAN address is 100.64–100.127.x.x, 10.x.x.x or 172.16–31.x.x, the provider shares it (CGNAT).
+
 Every computer the app has connected to is kept as a profile (name, the addresses it answered on, pairing keys,
 wake-up data). **Another PC** disconnects but keeps the profile; under **My computers** one tap connects back
 without typing an address or pairing again, and the power icon wakes that computer.

@@ -190,7 +190,7 @@ Page {
             title: "Restart shell"
             desc: "Reload the bar and all menus"
             clickable: true
-            onClicked: Quickshell.execDetached(["sh", "-c", "pkill -x qs; sleep 0.3; setsid -f qs"])
+            onClicked: Quickshell.execDetached(["setsid", "-f", Quickshell.env("HOME") + "/.local/bin/rexilone-shell", "restart"])
         }
         SCard {
             icon: String.fromCodePoint(0xF0B85)

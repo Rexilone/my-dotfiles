@@ -242,6 +242,14 @@ Page {
                 onTextChanged: wolSave.restart()
             }
         }
+        // проброс на сам ПК часто не работает: выключенный компьютер роутер через минуту «забывает» —
+        // надёжнее пробросить порт на устройство, которое остаётся дома (Rexlink повторит пакет в сеть)
+        SCard {
+            visible: page.wol.enabled ?? false
+            icon: String.fromCodePoint(0xF04F6)
+            title: "Reliable way: through a device at home"
+            desc: "A minute after shutdown the router forgets the computer, and a packet forwarded to it gets lost. Leave a tablet or an old phone at home with Rexlink, turn on «Wake the computer through this device» in it, and forward the UDP port on the router to that device, port 40009 — it repeats the packet to the whole home network. Check that the router's internet address (WAN) is the same as the one above: an address like 100.64–100.127.x.x, 10.x.x.x or 172.16–31.x.x means the provider shares it, and nothing gets in from outside — ask the provider for a public IP"
+        }
     }
 
     SSection { text: I18n.tr("Power") }

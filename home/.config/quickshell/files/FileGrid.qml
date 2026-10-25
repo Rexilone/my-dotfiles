@@ -4,8 +4,8 @@ import Quickshell
 import Quickshell.Widgets
 import qs.services
 
-// файлы сеткой или списком: выделение (клик, Ctrl, Shift, рамкой), перетаскивание наружу и на папки,
-// бросить файлы из других программ — скопировать сюда, правый клик — меню
+// файлы сеткой или списком, как в Nautilus: выделение (щелчок, Ctrl, Shift, рамкой), перетаскивание наружу
+// и на папки, бросить файлы из других программ — скопировать сюда, правый щелчок — меню, в списке — звёздочки
 Item {
     id: fg
 
@@ -13,10 +13,15 @@ Item {
 
     readonly property bool grid: (br.cfg.view ?? "grid") === "grid"
     readonly property real zoom: br.cfg.zoom ?? 1
-    readonly property int tile: Math.round(112 * zoom)
-    readonly property int rowH: Math.round(34 * Math.max(0.8, zoom))
-    readonly property int columns: grid ? Math.max(1, Math.floor(view.width / tile)) : 1
+    readonly property int iconSize: grid ? Math.round(80 * zoom) : Math.round(28 * zoom)
+    readonly property int columns: grid ? Math.max(1, Math.floor(view.width / (iconSize + 52))) : 1
+    readonly property int rowH: iconSize + 18
     readonly property bool remote: br.path.includes("/gvfs/")
+    readonly property bool singleClick: br.cfg.singleClick ?? false
+    // колонки списка
+    readonly property int colSize: 96
+    readonly property int colDate: 150
+    readonly property int colStar: 44
 
     function forceFocus() {
         view.forceActiveFocus();
@@ -40,7 +45,7 @@ Item {
         dragProxy.Drag.active = false;
     }
 
-    // ── бросили файлы сюда (из другой программы или из этого окна): скопировать в текущую папку
+    // ── бросили файлы сюда (из другой программы или другого окна): скопировать в текущую папку
     DropArea {
         anchors.fill: parent
         enabled: fg.br.mode === "dir"
@@ -53,16 +58,102 @@ Item {
         }
     }
 
+    // заголовок колонки списка: щелчок — сортировать по ней, ещё раз — в обратную сторону
+    component ColHead: Rectangle {
+        id: ch
+        property string label
+        property string field
+        property int align: Text.AlignLeft
+        readonly property bool current: (fg.br.cfg.sort ?? "name") === field
+        height: parent.height
+        color: chArea.containsMouse ? FStyle.hover : "transparent"
+        Row {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: ch.align === Text.AlignLeft ? parent.left : undefined
+            anchors.right: ch.align === Text.AlignRight ? parent.right : undefined
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            spacing: 4
+            Text {
+                text: ch.label
+                color: ch.current ? Theme.fg : Theme.dim
+                font.family: FStyle.ui
+                font.pixelSize: FStyle.fsSmall
+                font.weight: Font.DemiBold
+            }
+            Text {
+                visible: ch.current
+                anchors.verticalCenter: parent.verticalCenter
+                text: String.fromCodePoint((fg.br.cfg.reverse ?? false) ? 0xF0143 : 0xF0140)
+                color: Theme.fg
+                font.family: FStyle.glyphs
+                font.pixelSize: FStyle.fsSmall
+            }
+        }
+        MouseArea {
+            id: chArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: {
+                if (ch.current) Settings.setFiles("reverse", !(fg.br.cfg.reverse ?? false));
+                else {
+                    Settings.setFiles("sort", ch.field);
+                    Settings.setFiles("reverse", false);
+                }
+            }
+        }
+    }
+
+    // список: шапка колонок (над списком — остаётся на месте при прокрутке)
+    Item {
+        id: colHead
+        visible: !fg.grid
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        height: fg.grid ? 0 : 34
+        ColHead {
+            x: 0
+            width: parent.width - fg.colSize - fg.colDate - fg.colStar
+            label: I18n.tr("Name")
+            field: "name"
+        }
+        ColHead {
+            x: parent.width - fg.colSize - fg.colDate - fg.colStar
+            width: fg.colSize
+            label: I18n.tr("Size")
+            field: "size"
+            align: Text.AlignRight
+        }
+        ColHead {
+            x: parent.width - fg.colDate - fg.colStar
+            width: fg.colDate
+            label: I18n.tr("Modified")
+            field: "time"
+            align: Text.AlignRight
+        }
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 1
+            color: FStyle.sep
+        }
+    }
+
     GridView {
         id: view
         anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
+        anchors.topMargin: colHead.height
+        anchors.leftMargin: fg.grid ? 12 : 8
+        anchors.rightMargin: fg.grid ? 12 : 8
         clip: true
         focus: true
         model: fg.br.shown
         cellWidth: fg.grid ? width / fg.columns : width
-        cellHeight: fg.grid ? fg.tile + 22 : fg.rowH
+        cellHeight: fg.grid ? fg.iconSize + 76 : fg.rowH
         boundsBehavior: Flickable.StopAtBounds
         keyNavigationEnabled: false
         currentIndex: -1
@@ -70,20 +161,9 @@ Item {
 
         Keys.onPressed: event => { if (fg.br.key(event)) event.accepted = true; }
 
-        // список: шапка колонок
         header: Item {
             width: view.width
-            height: fg.grid ? 6 : 30
-            visible: !fg.grid
-            RowLayout {
-                visible: !fg.grid
-                anchors.fill: parent
-                anchors.leftMargin: 44
-                anchors.rightMargin: 12
-                Text { Layout.fillWidth: true; text: I18n.tr("Name"); color: Theme.dim; font.family: Theme.font; font.pixelSize: Theme.fontSize - 3; font.bold: true }
-                Text { Layout.preferredWidth: 90; text: I18n.tr("Size"); color: Theme.dim; font.family: Theme.font; font.pixelSize: Theme.fontSize - 3; font.bold: true; horizontalAlignment: Text.AlignRight }
-                Text { Layout.preferredWidth: 150; text: I18n.tr("Modified"); color: Theme.dim; font.family: Theme.font; font.pixelSize: Theme.fontSize - 3; font.bold: true; horizontalAlignment: Text.AlignRight }
-            }
+            height: fg.grid ? 8 : 0
         }
 
         delegate: Item {
@@ -94,12 +174,14 @@ Item {
             readonly property bool renaming: fg.br.renaming === modelData.path
             readonly property bool image: !modelData.dir && fg.br.isImage(modelData.name)
             readonly property bool thumbsOn: (fg.br.cfg.thumbs ?? true) && (!fg.remote || (fg.br.cfg.remoteThumbs ?? false))
-            readonly property string thumbKind: modelData.dir || !thumbsOn ? "" : FileThumbs.kind(modelData.name)
+            readonly property bool thumbWanted: thumbsOn && fg.iconSize >= 32
+            readonly property string thumbKind: modelData.dir || !thumbWanted ? "" : FileThumbs.kind(modelData.name)
             readonly property string thumbKey: thumbKind ? FileThumbs.key(modelData.path, String(modelData.mtime)) : ""
             readonly property string thumb: thumbKey ? (FileThumbs.ready[thumbKey] ?? "") : ""
             onThumbKeyChanged: if (thumbKey) Qt.callLater(() => FileThumbs.request(modelData.path, String(modelData.mtime)))
             Component.onCompleted: if (thumbKey) Qt.callLater(() => FileThumbs.request(modelData.path, String(modelData.mtime)))
             readonly property bool cut: fg.br.clip.mode === "move" && fg.br.clip.paths.includes(modelData.path)
+            readonly property bool starred: fg.br.isStarred(modelData.path)
 
             width: view.cellWidth
             height: view.cellHeight
@@ -107,20 +189,22 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                anchors.margins: fg.grid ? 4 : 1
+                anchors.margins: fg.grid ? 3 : 0
+                anchors.topMargin: fg.grid ? 3 : 1
+                anchors.bottomMargin: fg.grid ? 3 : 1
                 radius: fg.grid ? 12 : 8
-                color: cell.selected ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
-                    : cellArea.containsMouse || folderDrop.containsDrag ? Theme.surfaceHi : "transparent"
-                border.width: fg.br.cur === cell.index && view.activeFocus ? 1 : 0
-                border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.6)
+                color: cell.selected ? (cellArea.containsMouse ? FStyle.selHover : FStyle.sel)
+                    : cellArea.containsMouse || folderDrop.containsDrag ? FStyle.hover : "transparent"
+                border.width: fg.br.cur === cell.index && view.activeFocus && fg.br.keyboardUsed ? 2 : 0
+                border.color: FStyle.alpha(Theme.accent, 0.7)
             }
 
             // значок или миниатюра
             Item {
                 id: pic
                 x: fg.grid ? (cell.width - width) / 2 : 12
-                y: fg.grid ? 10 : (cell.height - height) / 2
-                width: fg.grid ? fg.tile - 34 : 22
+                y: fg.grid ? 12 : (cell.height - height) / 2
+                width: fg.iconSize
                 height: width
 
                 IconImage {
@@ -133,42 +217,66 @@ Item {
                     id: thumbImg
                     anchors.fill: parent
                     visible: status === Image.Ready
-                    source: !fg.grid && fg.zoom < 1.5 ? "" : cell.image && cell.thumbsOn ? "file://" + cell.modelData.path : cell.thumb ? "file://" + cell.thumb : ""
+                    source: !cell.thumbWanted ? "" : cell.image ? "file://" + cell.modelData.path : cell.thumb ? "file://" + cell.thumb : ""
                     sourceSize.width: 256
                     sourceSize.height: 256
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: true
                 }
-                // ярлык
+                // тонкая рамка вокруг миниатюры, как в Nautilus
+                Rectangle {
+                    visible: thumbImg.visible && fg.iconSize >= 48
+                    anchors.centerIn: parent
+                    width: thumbImg.paintedWidth + 2
+                    height: thumbImg.paintedHeight + 2
+                    color: "transparent"
+                    radius: 3
+                    border.width: 1
+                    border.color: FStyle.sep
+                }
                 Text {
-                    visible: cell.thumbKind === "video" && thumbImg.status === Image.Ready && fg.grid
+                    visible: cell.thumbKind === "video" && thumbImg.status === Image.Ready
                     anchors.centerIn: parent
                     text: String.fromCodePoint(0xF040A)
                     color: "white"
                     style: Text.Outline
                     styleColor: "#80000000"
-                    font.family: Theme.font
-                    font.pixelSize: parent.width / 4
+                    font.family: FStyle.glyphs
+                    font.pixelSize: Math.max(14, parent.width / 4)
+                }
+                // звезда в углу значка (сетка)
+                Text {
+                    visible: fg.grid && cell.starred
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.rightMargin: -4
+                    text: String.fromCodePoint(0xF04CE)
+                    color: Theme.warn
+                    style: Text.Outline
+                    styleColor: FStyle.view
+                    font.family: FStyle.glyphs
+                    font.pixelSize: Math.max(14, fg.iconSize / 5)
                 }
             }
 
-            // имя (и где лежит — в поиске и корзине)
+            // ── сетка: имя под значком (и где лежит — в поиске, корзине, недавних)
             Column {
                 visible: fg.grid && !cell.renaming
-                x: 6
-                y: pic.y + pic.height + 6
-                width: cell.width - 12
+                x: 8
+                y: pic.y + pic.height + 8
+                width: cell.width - 16
+                spacing: 1
                 Text {
                     width: parent.width
                     text: cell.modelData.name
                     horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WrapAnywhere
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     maximumLineCount: cell.selected ? 4 : 2
                     elide: Text.ElideRight
                     color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 2
+                    font.family: FStyle.ui
+                    font.pixelSize: FStyle.fs - 1
                 }
                 Text {
                     visible: !!cell.modelData.sub
@@ -177,65 +285,93 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideMiddle
                     color: Theme.dim
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 4
+                    font.family: FStyle.ui
+                    font.pixelSize: FStyle.fsSmall - 1
                 }
             }
-            RowLayout {
+
+            // ── список: имя | размер | изменён | звезда
+            Item {
                 visible: !fg.grid && !cell.renaming
                 anchors.fill: parent
-                anchors.leftMargin: 44
-                anchors.rightMargin: 12
-                spacing: 10
-                Text {
-                    Layout.fillWidth: true
-                    text: cell.modelData.name + (cell.modelData.sub ? `   ${cell.modelData.sub}` : "")
-                    elide: Text.ElideMiddle
-                    color: Theme.fg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 1
+                Column {
+                    x: pic.x + pic.width + 12
+                    width: parent.width - x - fg.colSize - fg.colDate - fg.colStar
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text {
+                        width: parent.width
+                        text: cell.modelData.name
+                        elide: Text.ElideMiddle
+                        color: Theme.fg
+                        font.family: FStyle.ui
+                        font.pixelSize: FStyle.fs
+                    }
+                    Text {
+                        visible: !!cell.modelData.sub
+                        width: parent.width
+                        text: cell.modelData.sub ?? ""
+                        elide: Text.ElideMiddle
+                        color: Theme.dim
+                        font.family: FStyle.ui
+                        font.pixelSize: FStyle.fsSmall
+                    }
                 }
                 Text {
-                    Layout.preferredWidth: 90
+                    x: parent.width - fg.colSize - fg.colDate - fg.colStar
+                    width: fg.colSize - 10
+                    anchors.verticalCenter: parent.verticalCenter
                     horizontalAlignment: Text.AlignRight
                     text: cell.modelData.dir ? "" : fg.br.human(cell.modelData.size)
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 2
+                    color: Theme.dim
+                    font.family: FStyle.ui
+                    font.pixelSize: FStyle.fs - 1
                 }
                 Text {
-                    Layout.preferredWidth: 150
+                    x: parent.width - fg.colDate - fg.colStar
+                    width: fg.colDate - 10
+                    anchors.verticalCenter: parent.verticalCenter
                     horizontalAlignment: Text.AlignRight
                     text: fg.br.when(cell.modelData.mtime)
-                    color: Theme.muted
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 2
+                    color: Theme.dim
+                    font.family: FStyle.ui
+                    font.pixelSize: FStyle.fs - 1
+                }
+                Text {
+                    visible: cell.starred || cellArea.containsMouse || starArea.containsMouse
+                    x: parent.width - fg.colStar
+                    width: fg.colStar
+                    anchors.verticalCenter: parent.verticalCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    text: String.fromCodePoint(cell.starred ? 0xF04CE : 0xF04D2)
+                    color: cell.starred ? Theme.warn : starArea.containsMouse ? Theme.fg : Theme.dim
+                    font.family: FStyle.glyphs
+                    font.pixelSize: FStyle.icon + 1
                 }
             }
 
             // переименование на месте
             Rectangle {
                 visible: cell.renaming
-                x: fg.grid ? 4 : 40
-                y: fg.grid ? pic.y + pic.height + 2 : 3
-                width: fg.grid ? cell.width - 8 : cell.width - 52
-                height: fg.grid ? 28 : cell.height - 6
-                radius: 7
-                color: Theme.surfaceHi
-                border.width: 1
-                border.color: Theme.accent
+                x: fg.grid ? 4 : pic.x + pic.width + 6
+                y: fg.grid ? pic.y + pic.height + 4 : 4
+                width: fg.grid ? cell.width - 8 : cell.width - x - fg.colSize - fg.colDate - fg.colStar
+                height: fg.grid ? 32 : cell.height - 8
+                radius: 8
+                color: FStyle.view
+                border.width: 2
+                border.color: FStyle.alpha(Theme.accent, 0.8)
                 TextInput {
                     id: renameField
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
+                    anchors.leftMargin: 9
+                    anchors.rightMargin: 9
                     verticalAlignment: TextInput.AlignVCenter
                     horizontalAlignment: fg.grid ? TextInput.AlignHCenter : TextInput.AlignLeft
                     color: Theme.fg
                     selectionColor: Theme.accent
                     selectedTextColor: Theme.bg
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontSize - 2
+                    font.family: FStyle.ui
+                    font.pixelSize: FStyle.fs - 1
                     clip: true
                     onVisibleChanged: if (visible) {
                         text = cell.modelData.name;
@@ -254,11 +390,13 @@ Item {
                 id: cellArea
                 anchors.fill: parent
                 hoverEnabled: true
+                cursorShape: fg.singleClick ? Qt.PointingHandCursor : Qt.ArrowCursor
                 acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                 property point p0
                 property bool dragging: false
                 onPressed: mouse => {
                     fg.forceFocus();
+                    fg.br.keyboardUsed = false;
                     p0 = Qt.point(mouse.x, mouse.y);
                     dragging = false;
                     if (mouse.button === Qt.RightButton) {
@@ -284,10 +422,23 @@ Item {
                         const p = mapToItem(fg.br, mouse.x, mouse.y);
                         fg.br.itemMenu(p.x, p.y);
                     } else if (mouse.button === Qt.MiddleButton && cell.modelData.dir) {
-                        fg.br.go(cell.modelData.path);
+                        fg.br.newWindowRequested(cell.modelData.path);
+                    } else if (mouse.button === Qt.LeftButton && fg.singleClick && !dragging
+                               && !(mouse.modifiers & (Qt.ControlModifier | Qt.ShiftModifier))) {
+                        fg.br.openItem(cell.modelData);
                     }
                 }
-                onDoubleClicked: mouse => { if (mouse.button === Qt.LeftButton) fg.br.openItem(cell.modelData); }
+                onDoubleClicked: mouse => { if (mouse.button === Qt.LeftButton && !fg.singleClick) fg.br.openItem(cell.modelData); }
+            }
+            // звезда в списке
+            MouseArea {
+                id: starArea
+                visible: !fg.grid && fg.br.mode !== "trash"
+                x: parent.width - fg.colStar
+                width: fg.colStar
+                height: parent.height
+                hoverEnabled: true
+                onClicked: fg.br.toggleStar([cell.modelData.path])
             }
 
             // бросить на папку — переместить в неё (Ctrl — скопировать)
@@ -305,7 +456,7 @@ Item {
             }
         }
 
-        // пустое место: снять выделение, рамкой выделить, правый клик — меню папки
+        // пустое место: снять выделение, рамкой выделить, правый щелчок — меню папки
         MouseArea {
             id: empty
             z: -1
@@ -351,32 +502,50 @@ Item {
             parent: view.contentItem
             visible: empty.band
             z: 10
-            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.12)
+            color: FStyle.alpha(Theme.accent, 0.15)
             border.width: 1
             border.color: Theme.accent
             radius: 4
         }
     }
 
-    // пусто
+    // пусто — как страница состояния Adwaita
     Column {
         anchors.centerIn: parent
-        visible: fg.br.shown.length === 0
-        spacing: 10
+        visible: fg.br.shown.length === 0 && !fg.br.loading
+        width: Math.min(parent.width - 48, 420)
+        spacing: 12
+        readonly property var page: fg.br.mode === "search" ? (fg.br.searching ? [0xF0349, "Searching…", ""] : [0xF0349, "No Results Found", "Try a different search"])
+            : fg.br.mode === "trash" ? [0xF0A7A, "Trash is Empty", ""]
+            : fg.br.mode === "recent" ? [0xF0150, "No Recent Files", "Files you open appear here"]
+            : fg.br.mode === "starred" ? [0xF04D2, "No Starred Files", "Star files and folders to see them here"]
+            : fg.br.filter ? [0xF0349, "No Results Found", ""]
+            : [0xF0256, "Folder is Empty", ""]
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: String.fromCodePoint(fg.br.mode === "search" ? 0xF0349 : fg.br.mode === "trash" ? 0xF0A7A : 0xF0256)
-            color: Theme.faint
-            font.family: Theme.font
-            font.pixelSize: 64
+            text: String.fromCodePoint(parent.page[0])
+            color: FStyle.alpha(Theme.fg, 0.35)
+            font.family: FStyle.glyphs
+            font.pixelSize: 96
         }
         Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: I18n.tr(fg.br.mode === "search" ? (fg.br.searching ? "Searching…" : "Nothing found")
-                : fg.br.mode === "trash" ? "The trash is empty" : fg.br.filter ? "Nothing found" : "The folder is empty")
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            text: I18n.tr(parent.page[1])
+            color: Theme.fg
+            font.family: FStyle.ui
+            font.pixelSize: FStyle.fs + 8
+            font.weight: Font.Bold
+        }
+        Text {
+            visible: text !== ""
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.Wrap
+            text: I18n.tr(parent.page[2])
             color: Theme.dim
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize
+            font.family: FStyle.ui
+            font.pixelSize: FStyle.fs
         }
     }
 }
