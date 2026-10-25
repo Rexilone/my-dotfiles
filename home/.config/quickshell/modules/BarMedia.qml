@@ -31,6 +31,6 @@ Row {
         text: [root.player?.trackArtist, root.player?.trackTitle].filter(s => s).join(" — ")
         font.pixelSize: Theme.fontSize - 1
         onClicked: root.openPlayer()
-        onWheel: w => w.angleDelta.y > 0 ? root.player.previous() : root.player.next()
+        onWheel: w => w.angleDelta.y > 0 ? Media.previous(root.player) : Media.next(root.player)
     }
 }

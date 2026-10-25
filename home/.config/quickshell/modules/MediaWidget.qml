@@ -30,7 +30,9 @@ Item {
     }
 
     implicitWidth: 380
-    implicitHeight: artSize
+    // высота — по содержимому, а не по обложке: иначе кнопки вылезали за карточку и щелчки по ним
+    // ловила строка сети под плеером
+    implicitHeight: player ? Math.max(artSize, info.implicitHeight) : artSize
 
     // позиция в MPRIS не обновляется сама
     Timer {
@@ -94,7 +96,9 @@ Item {
         }
 
         ColumnLayout {
+            id: info
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
             spacing: 2
 
             // источник (клик — следующий плеер, если их несколько)
@@ -167,6 +171,7 @@ Item {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: mouse => {
                         root.player.position = Math.max(0, Math.min(1, mouse.x / width)) * root.player.length;
+                        root.player.positionChanged();
                     }
                 }
             }
@@ -223,8 +228,8 @@ Item {
                     Ctrl {
                         anchors.verticalCenter: parent.verticalCenter
                         icon: String.fromCodePoint(0xF04AE)  // skip-previous
-                        can: root.player?.canGoPrevious ?? false
-                        onHit: root.player.previous()
+                        can: Media.canPrevious(root.player)
+                        onHit: Media.previous(root.player)
                     }
                     Ctrl {
                         primary: true
@@ -235,8 +240,8 @@ Item {
                     Ctrl {
                         anchors.verticalCenter: parent.verticalCenter
                         icon: String.fromCodePoint(0xF04AD)  // skip-next
-                        can: root.player?.canGoNext ?? false
-                        onHit: root.player.next()
+                        can: Media.canNext(root.player)
+                        onHit: Media.next(root.player)
                     }
                 }
             }

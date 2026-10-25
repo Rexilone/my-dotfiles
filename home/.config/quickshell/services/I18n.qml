@@ -1137,5 +1137,7 @@ Singleton {
         "Set as Background": "Сделать фоном",
         "Reliable way: through a device at home": "Надёжно: через устройство дома",
         "A minute after shutdown the router forgets the computer, and a packet forwarded to it gets lost. Leave a tablet or an old phone at home with Rexlink, turn on «Wake the computer through this device» in it, and forward the UDP port on the router to that device, port 40009 — it repeats the packet to the whole home network. Check that the router's internet address (WAN) is the same as the one above: an address like 100.64–100.127.x.x, 10.x.x.x or 172.16–31.x.x means the provider shares it, and nothing gets in from outside — ask the provider for a public IP": "Через минуту после выключения роутер «забывает» компьютер, и проброшенный на него пакет теряется. Оставьте дома планшет или старый телефон с Rexlink, включите в нём «Будить компьютер через это устройство» и пробросьте UDP-порт на роутере на это устройство, порт 40009 — оно повторит пакет на всю домашнюю сеть. Проверьте, что адрес роутера в интернете (WAN) совпадает с указанным выше: адрес вида 100.64–100.127.x.x, 10.x.x.x или 172.16–31.x.x значит, что провайдер делит его на многих, и снаружи ничего не дойдёт — попросите у провайдера «белый» IP",
+        "charging": "заряжается",
+        "Mobile data": "Мобильная сеть",
     })
 }

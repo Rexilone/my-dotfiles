@@ -64,6 +64,8 @@ ShellRoot {
     readonly property var callAudio: CallAudio
     // флешки: подключаются сами (Настройки → Файлы)
     readonly property var drives: Drives
+    // медиаклавиши: «следующий»/«предыдущий» и для браузеров (qs ipc call media next)
+    readonly property var media: Media
     readonly property var nightLight: NightLight
     readonly property var updates: Updates
     // скрытые с демонстрации приложения (Super+G): индикатор в баре

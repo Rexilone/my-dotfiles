@@ -71,6 +71,20 @@ if (( PACKAGES )); then
         info "Убираю пакет rexlink: Rexlink теперь часть системы (служба + Настройки → Телефон)"
         run sudo pacman -Rn --noconfirm rexlink
     fi
+    # Nautilus не нужен (свой проводник), но его требует портал GNOME — пустой пакет вместо него ставится
+    # до основной установки, чтобы сам Nautilus даже не скачивался (заглушку собирает makepkg из base-devel)
+    run sudo pacman -Syu --needed --noconfirm base-devel git
+    if ! pacman -Qq rexos-nautilus-stub >/dev/null 2>&1; then
+        info "Nautilus → заглушка (свой проводник)"
+        tmp=$(mktemp -d)
+        cp "$DOTS/packages/rexos-nautilus-stub/PKGBUILD" "$tmp/"
+        (( DRY )) || (cd "$tmp" && makepkg -f --noconfirm >/dev/null)
+        for p in nautilus-image-converter nautilus-python nautilus; do
+            if pacman -Qq "$p" >/dev/null 2>&1; then run sudo pacman -Rdd --noconfirm "$p"; fi
+        done
+        (( DRY )) || run sudo pacman -U --noconfirm "$tmp"/rexos-nautilus-stub-*.pkg.tar.zst
+        rm -rf "$tmp"
+    fi
     # -Syu, а не -S: частичное обновление в Arch ломает библиотеки
     run sudo pacman -Syu --needed --noconfirm "${pkgs[@]}"
     # уже стоявшие как чьи-то зависимости — теперь нужны системе сами по себе
@@ -98,18 +112,6 @@ if (( PACKAGES )); then
     (( TABLET )) && aur+=( $(list "$DOTS/packages/tablet-aur.txt") )
     (( ${#aur[@]} )) && run "$AUR" -S --needed --noconfirm "${aur[@]}"
 
-    # Nautilus не нужен (свой проводник), но его требует портал GNOME — ставим пустой пакет вместо него
-    if ! pacman -Qq rexos-nautilus-stub >/dev/null 2>&1; then
-        info "Nautilus → заглушка (свой проводник)"
-        tmp=$(mktemp -d)
-        cp "$DOTS/packages/rexos-nautilus-stub/PKGBUILD" "$tmp/"
-        (( DRY )) || (cd "$tmp" && makepkg -f --noconfirm >/dev/null)
-        for p in nautilus-image-converter nautilus-python nautilus; do
-            if pacman -Qq "$p" >/dev/null 2>&1; then run sudo pacman -Rdd --noconfirm "$p"; fi
-        done
-        (( DRY )) || run sudo pacman -U --noconfirm "$tmp"/rexos-nautilus-stub-*.pkg.tar.zst
-        rm -rf "$tmp"
-    fi
 fi
 
 # ─────────────────────────── ссылки на конфиги
