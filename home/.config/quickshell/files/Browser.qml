@@ -759,12 +759,6 @@ Item {
             visible: br.sidebarOn
             br: br
         }
-        Rectangle {
-            Layout.fillHeight: true
-            implicitWidth: 1
-            color: FStyle.sep
-            visible: br.sidebarOn
-        }
 
         Rectangle {
             id: content

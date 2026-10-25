@@ -12,6 +12,16 @@ Rectangle {
 
     color: FStyle.sidebar
 
+    // граница с папкой — поверх панели, а не отдельной прозрачной полосой (сквозь неё были видны обои)
+    Rectangle {
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        width: 1
+        z: 10
+        color: FStyle.sep
+    }
+
     component Divider: Rectangle {
         Layout.fillWidth: true
         Layout.topMargin: 6
