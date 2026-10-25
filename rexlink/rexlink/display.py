@@ -561,6 +561,7 @@ class RemoteInput:
         self.fd = None
         self.down = set()
         self.acc = [0.0, 0.0]
+        self.wacc = [0.0, 0.0]
 
     def open(self):
         if self.fd is not None:
@@ -610,12 +611,18 @@ class RemoteInput:
         self._ev(EV_SYN, 0, 0)
 
     def wheel(self, dy, dx):
+        """dy/dx — в щелчках колеса, дробные (прокрутка двумя пальцами): точная прокрутка сразу,
+        обычные щелчки — по мере накопления (их понимают все программы)."""
         self.open()
-        for v, hi, lo in ((dy, REL_WHEEL_HI_RES, REL_WHEEL), (dx, REL_HWHEEL_HI_RES, REL_HWHEEL)):
-            if v:
-                self._ev(EV_REL, hi, int(v * 120))
-                if abs(v) >= 1:
-                    self._ev(EV_REL, lo, int(v))
+        for i, (v, hi, lo) in enumerate(((dy, REL_WHEEL_HI_RES, REL_WHEEL), (dx, REL_HWHEEL_HI_RES, REL_HWHEEL))):
+            if not v:
+                continue
+            self._ev(EV_REL, hi, int(v * 120))
+            self.wacc[i] += v
+            notches = int(self.wacc[i])
+            if notches:
+                self._ev(EV_REL, lo, notches)
+                self.wacc[i] -= notches
         self._ev(EV_SYN, 0, 0)
 
     def close(self):
@@ -631,6 +638,16 @@ class RemoteInput:
             pass
         self.fd = None
         self.down.clear()
+
+
+# действия niri с телефона: рабочие столы, фокус, перемещение окон (только из этого списка)
+NIRI_ACTIONS = {
+    "focus-workspace-up", "focus-workspace-down", "focus-column-left", "focus-column-right",
+    "focus-window-up", "focus-window-down", "move-column-left", "move-column-right",
+    "move-window-up", "move-window-down", "move-column-to-workspace-up", "move-column-to-workspace-down",
+    "toggle-overview", "maximize-column", "fullscreen-window", "close-window", "center-column",
+    "switch-preset-column-width", "consume-or-expel-window-left", "consume-or-expel-window-right",
+}
 
 
 class RemoteSession(Session):
@@ -692,6 +709,11 @@ class RemoteSession(Session):
                 self.kbd.key(BTN_ALL[ev["b"]], bool(ev.get("d")))
             elif a == "wheel":
                 self.kbd.wheel(float(ev.get("dy", 0)), float(ev.get("dx", 0)))
+            return
+        if a == "niri":
+            act = str(ev.get("n", ""))
+            if act in NIRI_ACTIONS:
+                subprocess.run(["niri", "msg", "action", act], capture_output=True, timeout=5)
             return
         if a == "text":
             text = str(ev.get("s", ""))[:500]
