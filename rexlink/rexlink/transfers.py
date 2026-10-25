@@ -91,8 +91,11 @@ class Transfers(QObject):
     def incoming(self, device, header):
         fid = str(header.get("fid") or secrets.token_hex(6))
         size = int(header.get("size", 0))
-        dest = unique_path(self.config.downloads(), str(header.get("name", "file")))
-        item = self._add(fid=fid, name=dest.name, size=size, dir="in", path=str(dest), device=device)
+        # скан документа — в свою папку и сразу открыть
+        folder = self.config.scans() if header.get("dest") == "scans" else self.config.downloads()
+        dest = unique_path(folder, str(header.get("name", "file")))
+        item = self._add(fid=fid, name=dest.name, size=size, dir="in", path=str(dest), device=device,
+                         dest=str(header.get("dest", "")))
 
         def stream(sock):
             self._socks[fid] = sock

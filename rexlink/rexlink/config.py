@@ -28,6 +28,17 @@ def download_dir() -> Path:
     return Path.home() / "Downloads" / "Rexlink"
 
 
+def scans_dir() -> Path:
+    """Сканы документов с телефона: «Документы/Сканы»."""
+    try:
+        out = subprocess.run(["xdg-user-dir", "DOCUMENTS"], capture_output=True, text=True, timeout=2).stdout.strip()
+        if out and out != str(Path.home()):
+            return Path(out) / "Сканы"
+    except Exception:
+        pass
+    return Path.home() / "Documents" / "Сканы"
+
+
 DEFAULTS = {
     "name": socket.gethostname(),
     "devices": {},          # id -> { name, token }
@@ -49,6 +60,9 @@ DEFAULTS = {
     "phoneFiles": False,      # память устройства как папка в файловом менеджере (WebDAV)
     # включение компьютера с устройства (Wake-on-LAN): внешний адрес (IP или DDNS) и UDP-порт, проброшенный на роутере
     "wol": {"host": "", "port": 9},
+    # управление компьютером с устройства: экран, мышь, клавиатура, питание, свои команды
+    "remote": {"enabled": True, "maxSize": 1920, "bitrate": 8000000, "fps": 30, "commands": []},
+    "scanDir": "",            # куда класть сканы документов (пусто — «Документы/Сканы»)
     "display": {"maxSize": 2560, "fps": 60, "bitrate": 12000000, "usbBitrate": 30000000, "connector": "auto",
                 "via": "auto", "encoder": "auto"},
 }
@@ -90,6 +104,11 @@ class Config:
             tmp.write_text(json.dumps(self.data, indent=2, ensure_ascii=False))
             os.chmod(tmp, 0o600)
             tmp.replace(self.path)
+
+    def scans(self) -> Path:
+        d = Path(self.data["scanDir"]) if self.data.get("scanDir") else scans_dir()
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
     def downloads(self) -> Path:
         d = Path(self.data["downloadDir"]) if self.data.get("downloadDir") else download_dir()

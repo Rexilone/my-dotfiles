@@ -138,6 +138,94 @@ ColumnLayout {
     }
 
     // ── в шелле
+    // ── управление этим компьютером с устройства (Rexlink: экран, мышь, клавиатура, питание, свои команды)
+    SSection { text: I18n.tr("Computer control") }
+
+    SCard {
+        icon: String.fromCodePoint(0xF037D)
+        title: "Control this computer from the device"
+        desc: "Screen, mouse and keyboard, lock, sleep, restart and your commands — from the Rexlink app. Away from home it works if the router forwards TCP 47820 to this computer"
+        SSwitch {
+            checked: tab.st.remote?.enabled ?? true
+            onToggled: v => Rexlink.set("remote", { enabled: v })
+        }
+    }
+    SCard {
+        visible: tab.st.remote?.enabled ?? true
+        icon: String.fromCodePoint(0xF0A07)
+        title: "Picture quality"
+        desc: "Long side and frames per second — lower is lighter for mobile internet"
+        SChoice {
+            options: [{ value: 1280, label: "1280" }, { value: 1600, label: "1600" }, { value: 1920, label: "1920" }]
+            current: tab.st.remote?.maxSize ?? 1920
+            onPicked: v => Rexlink.set("remote", { maxSize: v })
+        }
+        SChoice {
+            options: [{ value: 15, label: "15" }, { value: 30, label: "30" }, { value: 60, label: "60" }]
+            current: tab.st.remote?.fps ?? 30
+            onPicked: v => Rexlink.set("remote", { fps: v })
+        }
+    }
+    // свои команды: появляются кнопками в приложении (раздел «Компьютер»)
+    Repeater {
+        model: (tab.st.remote?.enabled ?? true) ? (tab.st.remote?.commands ?? []) : []
+        SCard {
+            id: rc
+            required property var modelData
+            required property int index
+            icon: String.fromCodePoint(0xF018D)
+            title: modelData.name
+            desc: modelData.cmd
+            SButton {
+                icon: Icons.trash
+                danger: true
+                onClicked: Rexlink.set("remote", { commands: (tab.st.remote?.commands ?? []).filter((_, i) => i !== rc.index) })
+            }
+        }
+    }
+    SCard {
+        visible: tab.st.remote?.enabled ?? true
+        icon: String.fromCodePoint(0xF0415)
+        title: "Add a command"
+        desc: "A button in the app runs it on this computer, the output comes back to the phone"
+        SField {
+            id: cmdName
+            Layout.preferredWidth: 150
+            Layout.fillWidth: false
+            placeholder: I18n.tr("Name")
+        }
+        SField {
+            id: cmdLine
+            Layout.preferredWidth: 260
+            Layout.fillWidth: false
+            placeholder: "systemctl --user restart …"
+            onAccepted: addCmd.clicked()
+        }
+        SButton {
+            id: addCmd
+            text: "Add"
+            primary: true
+            enabled: cmdName.text.trim() !== "" && cmdLine.text.trim() !== ""
+            onClicked: {
+                Rexlink.set("remote", { commands: (tab.st.remote?.commands ?? []).concat([{ name: cmdName.text.trim(), cmd: cmdLine.text.trim() }]) });
+                cmdName.text = "";
+                cmdLine.text = "";
+            }
+        }
+    }
+
+    // ── скан документа камерой устройства
+    SCard {
+        icon: String.fromCodePoint(0xF06AB)
+        title: "Document scans"
+        desc: `${I18n.tr("PDF from the phone camera goes to")} ${(tab.st.scanDirResolved ?? "").replace(Quickshell.env("HOME"), "~")} ${I18n.tr("and opens")}`
+        SButton {
+            text: "Scan"
+            enabled: Rexlink.online
+            onClicked: Rexlink.scan("")
+        }
+    }
+
     SSection { text: I18n.tr("In the shell") }
 
     ShellToggle { key: "phone"; icon: String.fromCodePoint(0xF011C); title: "Phone in the bar"; desc: "Battery and notifications; click for the phone menu, right-click to find it" }

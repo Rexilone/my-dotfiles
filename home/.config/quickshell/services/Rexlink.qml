@@ -196,6 +196,19 @@ Singleton {
     function forget(id) { cmd("forget", { device: id }, () => refresh()); }
     function pairAnswer(accept) { cmd("pair_answer", { device: pairing.id, accept }, () => root.pairing = {}); }
     function set(key, value) { cmd("set", { key, value }); }
+
+    // ── продолжить на устройстве: играющее видео (с той же секунды), вкладку браузера или файл (extra: { url | path })
+    function continueOn(id, extra) {
+        cmd("continue", Object.assign({}, extra ?? {}, dev_(id)), (r, err) => {
+            const name = (id ? devices.find(d => d.id === id) : dev)?.name ?? "";
+            const msg = r?.ok ? `${I18n.tr("Continue on")} ${name}: ${r.title}` : (r?.error || err || I18n.tr("The device must be online"));
+            Quickshell.execDetached(["notify-send", "-a", "Rexlink", "-i", r?.ok ? "emblem-shared" : "dialog-information", msg]);
+        });
+    }
+    // скан документа камерой устройства → «Документы/Сканы» на ПК
+    function scan(id) { cmd("scan", dev_(id)); }
+    // управление этим компьютером с устройства
+    function remoteStop() { cmd("remote_stop", {}); }
     function setDownloadDir(path) { cmd("download_dir", { path }); }
 
     // смотреть видеоканал ("screen:<id>" | "camera"): пока смотрим, служба присылает кадры
@@ -455,6 +468,8 @@ Singleton {
     IpcHandler {
         target: "rexlink"
         function open(page: string): void { root.show(page); }
+        // то, что открыто на ПК, — на телефон (Super+Alt+C)
+        function handoff(): void { root.continueOn(""); }
         function ring(): void { root.ring(""); }
     }
 }

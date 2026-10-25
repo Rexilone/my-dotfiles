@@ -229,6 +229,19 @@ class Api(QObject):
             return True
         if cmd == "apk":
             return b._get_apk()
+        # управление компьютером с устройства и скан документа
+        if cmd == "remote_start":
+            b.startRemoteFor(self._online(req))
+            return True
+        if cmd == "remote_stop":
+            b.stopRemote(str(req.get("device", "")))
+            return True
+        if cmd == "scan":
+            b.scanOn(self._online(req))
+            return True
+        # продолжить на устройстве: то, что открыто (или url / path)
+        if cmd == "continue":
+            return b.continueTo(self._online(req), str(req.get("url", "")), str(req.get("path", "")))
         if cmd == "ring":
             b.ringDevice(self._online(req))
             return True

@@ -638,6 +638,7 @@ binds {
 
     // The quit action will show a confirmation dialog to avoid accidental exits.
     Mod+Alt+S hotkey-overlay-title="Restart Shell" { spawn-sh "$HOME/.local/bin/rexilone-shell restart"; }
+    Mod+Alt+C hotkey-overlay-title="Continue on Phone" { spawn-sh "qs ipc call rexlink handoff"; }
     Mod+G hotkey-overlay-title="Game Bar" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc gamebar toggle"; }
     Mod+Shift+G hotkey-overlay-title="Hide Window From Screencast" { spawn-sh "$HOME/.local/bin/niri-cast-toggle"; }
     Mod+Shift+E hotkey-overlay-title="Power Menu" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc power toggle"; }

@@ -6,6 +6,16 @@
 LANG = "ru"
 
 EN = {
+    "Нечего продолжать: ничего не играет, и в фокусе не браузер": "Nothing to continue: nothing is playing and no browser is in focus",
+    "Не удалось продолжить на компьютере": "Couldn't continue on the computer",
+    "Продолжено с устройства": "Continued from the device",
+    "Скан документа": "Document scan",
+    "Управление компьютером: {}": "Computer control: {}",
+    "{} управляет компьютером": "{} is controlling the computer",
+    "Экран, мышь и клавиатура — с устройства": "Screen, mouse and keyboard — from the device",
+    "Прервать": "Stop",
+    "Управление компьютером выключено в Настройках → Телефон": "Computer control is off in Settings → Phone",
+    "Управление компьютером выключено": "Computer control is off",
     "{} подключён": "{} connected",
     "Сопряжение: {}": "Pairing: {}",
     "Код: {}. Сверьте его с устройством.": "Code: {}. Check that it matches the device.",

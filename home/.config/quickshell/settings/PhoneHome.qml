@@ -324,7 +324,8 @@ ColumnLayout {
                         { icon: 0xF05A0, label: Rexlink.camera.running ? "Stop webcam" : "Webcam", h: 0.0, on: Rexlink.camera.running, act: () => Rexlink.cameraToggle() },
                         { icon: 0xF014D, label: "Get clipboard", h: 0.76, on: false, act: () => Rexlink.clipboardPull() },
                         { icon: 0xF04F6, label: Rexlink.screen.display?.running ? "Stop monitor" : "Monitor", h: 0.12, on: !!Rexlink.screen.display?.running, act: () => Rexlink.displayToggle() },
-                        { icon: 0xF0369, label: "Messages", h: 0.38, on: false, act: () => home.page.openTab("messages") },
+                        { icon: 0xF1483, label: "Continue on phone", h: 0.95, on: false, act: () => Rexlink.continueOn("") },
+                        { icon: 0xF06AB, label: "Scan a document", h: 0.38, on: false, act: () => Rexlink.scan("") },
                     ]
                     Item {
                         id: act

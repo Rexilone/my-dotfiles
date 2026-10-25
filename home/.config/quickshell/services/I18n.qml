@@ -1193,5 +1193,17 @@ Singleton {
         "Send to phone": "На телефон",
         "Files onto the phone icon": "Файлы на значок телефона",
         "Drag files onto the phone in the bar — they go to the phone": "Перетащите файлы на телефон в баре — они уйдут на телефон",
+        "Continue on": "Продолжить на",
+        "Continue on phone": "Продолжить на телефоне",
+        "Scan a document": "Скан документа",
+        "Computer control": "Управление компьютером",
+        "Control this computer from the device": "Управлять компьютером с устройства",
+        "Screen, mouse and keyboard, lock, sleep, restart and your commands — from the Rexlink app. Away from home it works if the router forwards TCP 47820 to this computer": "Экран, мышь и клавиатура, блокировка, сон, перезагрузка и свои команды — из приложения Rexlink. Не из дома работает, если роутер пробрасывает TCP 47820 на этот компьютер",
+        "Picture quality": "Качество картинки",
+        "Long side and frames per second — lower is lighter for mobile internet": "Длинная сторона и кадры в секунду — меньше легче для мобильного интернета",
+        "A button in the app runs it on this computer, the output comes back to the phone": "Кнопка в приложении запускает её на этом компьютере, вывод возвращается на телефон",
+        "Document scans": "Сканы документов",
+        "PDF from the phone camera goes to": "PDF с камеры телефона попадает в",
+        "and opens": "и открывается",
     })
 }

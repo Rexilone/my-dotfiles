@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Property, QTimer, QUrl, Signal, Slot
 
-from . import PORT, display, firewall, phonefiles, updates, video, wol
+from . import PORT, display, firewall, handoff, phonefiles, updates, video, wol
 from .i18n import set_lang, tr
 from .adb import Adb, ScrcpyVideo
 from .clipboard import Clipboard
@@ -106,6 +106,7 @@ class Backend(QObject):
         self._cam_stream = None
         self._screen_streams = {}   # устройство -> VideoStream
         self._display = None        # (устройство, display.Session) — монитор один на всех
+        self._remote = None         # (устройство, display.RemoteSession) — управление ПК с устройства
         self._pending_off = ""
         self._apk = updates.bundled_apk()
 
@@ -153,6 +154,8 @@ class Backend(QObject):
         self._write_state()
 
     def shutdown(self):
+        if self._remote:
+            self._remote[1].stop()
         if self._display:
             self._display[1].stop()
         display.cleanup_stale()
@@ -247,6 +250,7 @@ class Backend(QObject):
     def _get_settings(self):
         d = {k: v for k, v in self.config.data.items() if k not in ("devices",)}
         d["downloadDirResolved"] = str(self.config.downloads())
+        d["scanDirResolved"] = str(self.config.scans())
         d["webcamResolved"] = video.find_loopback(self.config["webcamDevice"]) or ""
         d["ffmpeg"] = video.ffmpeg_available()
         d["wlClipboard"] = self.clip.available
@@ -322,6 +326,8 @@ class Backend(QObject):
         self._stop_screen_local(did)
         if self._display and self._display[0] == did:
             self._display[1].stop()
+        if self._remote and self._remote[0] == did:
+            self._remote[1].stop()
         for s in (self.stateChanged, self.statusChanged, self.notifsChanged, self.mediaChanged, self.callChanged,
                   self.devicesChanged):
             s.emit()
@@ -411,7 +417,10 @@ class Backend(QObject):
                                # чем включить этот компьютер, когда он выключен: MAC — с той карты, через которую
                                # видно устройство; внешний адрес — для включения не из домашней сети
                                "wol": dict(wol.lan_info(self.devs.get(did, {}).get("address", "")),
-                                           host=c["wol"].get("host", ""), port=int(c["wol"].get("port") or 9))})
+                                           host=c["wol"].get("host", ""), port=int(c["wol"].get("port") or 9)),
+                               # управление компьютером: можно ли и какие свои команды есть (только имена)
+                               "remote": {"enabled": bool(c["remote"].get("enabled", True)),
+                                          "commands": [x.get("name", "") for x in c["remote"].get("commands", [])]}})
 
     def _send_theme(self, did=None):
         h = {"t": "theme", "palette": self.theme.for_phone()}
@@ -551,6 +560,10 @@ class Backend(QObject):
         kind, did, ref = self._desk_rev.get(nid, (None, None, None))
         if kind == "pair":
             self.server.answer_pair(did, key == "pair-yes")
+            return
+        if kind == "remote_stop":
+            if key == "stop":
+                self.stopRemote(did)
             return
         if did and did in self.devs and key == "default":
             self.selectDevice(did)
@@ -798,6 +811,16 @@ class Backend(QObject):
     def _on_transfer_done(self, item):
         item = dict(item, deviceName=self.devs.get(item.get("device"), {}).get("name", ""))
         self.event.emit("transfer", item)
+        if item["dir"] == "in" and item["state"] == "done" and item.get("dest") == "scans":
+            handoff.open_url(QUrl.fromLocalFile(item["path"]).toString())
+            path = item["path"]
+
+            def done_scan(nid):
+                self._desk_rev[nid] = ("file", item.get("device"), path)
+            self.notifier.notify_async(done_scan, summary=tr("Скан документа") + self._label(item.get("device")),
+                                       body=item["name"], icon="scanner",
+                                       actions=[("open", tr("Открыть")), ("open-dir", tr("Папка"))])
+            return
         if item["dir"] == "in" and item["state"] == "done":
             path = item["path"]
 
@@ -907,6 +930,19 @@ class Backend(QObject):
                     self.toast.emit(tr("Второй монитор: {}", st["error"]))
                 self._emit(did, self.screenChanged)
                 self.event.emit("display", dict(self.devs[did]["display"], device=did))
+        elif kind == "remote_state":
+            did, sess, st = data
+            if not st.get("running") and self._remote and self._remote[1] is sess:
+                self._remote = None
+            if st.get("error"):
+                self.toast.emit(tr("Управление компьютером: {}", st["error"]))
+            self.event.emit("remote", dict(st, device=did, name=self.devs.get(did, {}).get("name", "")))
+            if st.get("running") and not st.get("starting"):
+                def done(nid):
+                    self._desk_rev[nid] = ("remote_stop", did, "")
+                self.notifier.notify_async(done, summary=tr("{} управляет компьютером", self.devs.get(did, {}).get("name", "")),
+                                           body=tr("Экран, мышь и клавиатура — с устройства"), icon="preferences-desktop-remote-desktop",
+                                           actions=[("stop", tr("Прервать"))])
         elif kind == "screen_end":
             did, stream = data
             if self._screen_streams.get(did) is stream:
@@ -1072,6 +1108,76 @@ class Backend(QObject):
         msg["sid"] = self.server.expect_stream(did, sess.run)
         self.server.send(did, msg)
         state({"running": True, "starting": True, "error": ""})
+
+    # ── управление компьютером с устройства (display.RemoteSession)
+    @Slot(str)
+    def startRemoteFor(self, did, output=""):
+        if not self.config["remote"].get("enabled", True):
+            raise ValueError(tr("Управление компьютером выключено в Настройках → Телефон"))
+        if not self.server.online(did):
+            raise ValueError(tr("Устройство не подключено"))
+        if self._remote:
+            if self._remote[0] == did:
+                return
+            self._remote[1].stop()
+        sess = None
+
+        def state(st):
+            self._videoEvent.emit("remote_state", (did, sess, st))
+
+        sess = display.RemoteSession(self.config.data, state)
+        self._remote = (did, sess)
+        sid = self.server.expect_stream(did, sess.run)
+        self.server.send(did, {"t": "remote_start", "sid": sid, "remote": True})
+
+    @Slot(str)
+    def stopRemote(self, did=""):
+        if self._remote and (not did or self._remote[0] == did):
+            did, sess = self._remote
+            self.server.send(did, {"t": "remote_stop"})
+            sess.stop()
+
+    def _m_remote_request(self, did, h, _):
+        try:
+            if h.get("on", True):
+                self.startRemoteFor(did, str(h.get("output", "")))
+            else:
+                self.stopRemote(did)
+        except ValueError as e:
+            self.server.send(did, {"t": "toast", "text": str(e)})
+
+    def _m_pc_action(self, did, h, _):
+        """Питание и свои команды с устройства (Настройки → Телефон → Управление компьютером)."""
+        rc = self.config["remote"]
+        if not rc.get("enabled", True):
+            self.server.send(did, {"t": "toast", "text": tr("Управление компьютером выключено")})
+            return
+        a = str(h.get("action", ""))
+        builtin = {
+            "lock": ["sh", "-c", "qs ipc call idle lock || loginctl lock-session"],
+            "screen_off": ["niri", "msg", "action", "power-off-monitors"],
+            "sleep": ["systemctl", "suspend"],
+            "reboot": ["systemctl", "reboot"],
+            "shutdown": ["systemctl", "poweroff"],
+        }
+        name, cmd = a, builtin.get(a)
+        if a == "cmd":
+            i = int(h.get("index", -1))
+            cmds = rc.get("commands", [])
+            if not 0 <= i < len(cmds):
+                return
+            name, cmd = cmds[i].get("name", ""), ["sh", "-c", cmds[i].get("cmd", "")]
+        if not cmd:
+            return
+
+        def run():
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                code, out = r.returncode, (r.stdout + r.stderr).strip()[-600:]
+            except (OSError, subprocess.TimeoutExpired) as e:
+                code, out = -1, str(e)
+            self.server.send(did, {"t": "pc_action_result", "name": name, "code": code, "out": out})
+        threading.Thread(target=run, daemon=True).start()
 
     @Slot(str)
     def stopDisplayFor(self, did):
@@ -1302,6 +1408,42 @@ class Backend(QObject):
     @Slot(str)
     def ringDevice(self, did):
         self.server.send(did, {"t": "ring"})
+
+    # ── скан документа камерой устройства: PDF придёт в «Документы/Сканы» и откроется
+    def scanOn(self, did):
+        if not self.server.online(did):
+            raise ValueError(tr("Устройство не подключено"))
+        self.server.send(did, {"t": "scan_start"})
+
+    # ── «продолжить на другом устройстве» (handoff.py)
+    def continueTo(self, did, url="", path=""):
+        """Отправить на устройство то, что открыто на ПК: ссылку (видео — с той же секунды) или файл."""
+        if path:
+            ctx = {"kind": "file", "path": path, "title": Path(path).name}
+        elif url:
+            ctx = {"kind": "url", "url": url, "title": url}
+        else:
+            ctx = handoff.current()
+        if not ctx:
+            return {"ok": False, "error": tr("Нечего продолжать: ничего не играет, и в фокусе не браузер")}
+        if not self.server.online(did):
+            return {"ok": False, "error": tr("Устройство не подключено")}
+        if ctx["kind"] == "file":
+            self.transfers.send_files(did, [ctx["path"]])
+        else:
+            self.server.send(did, {"t": "continue", "url": ctx["url"], "title": ctx.get("title", "")})
+        handoff.pause(ctx.get("player"))
+        return {"ok": True, "kind": ctx["kind"], "title": ctx.get("title", "")}
+
+    def _m_continue(self, did, h, _):
+        """С устройства: ссылка или то, что на нём играет, — открыть здесь."""
+        url = str(h.get("url") or "") or handoff.media_url(h.get("media") or {})
+        if not url.startswith(("http://", "https://")) or not handoff.open_url(url):
+            self.toast.emit(tr("Не удалось продолжить на компьютере"))
+            return
+        title = str(h.get("title") or (h.get("media") or {}).get("title") or url)
+        self.notifier.notify_async(None, summary=tr("Продолжено с устройства") + self._label(did), body=title,
+                                   icon="emblem-shared")
 
     def _m_toast(self, did, h, _):
         self.toast.emit(h.get("text", ""))

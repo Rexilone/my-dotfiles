@@ -410,9 +410,12 @@ class Session:
         self.on_state({"running": True, "starting": False, "output": self.connector, "w": w, "h": h, "error": ""})
 
     def _ffmpeg(self, w, h, pix, bitrate, fps):
-        enc_va = ["-vaapi_device", "/dev/dri/renderD128", "-vf", "hwupload,scale_vaapi=format=nv12",
+        out = getattr(self, "out", None)          # (ш, в) — уменьшить при кодировании
+        va_size = f"w={out[0]}:h={out[1]}:" if out else ""
+        sw_scale = f"scale={out[0]}:{out[1]}," if out else ""
+        enc_va = ["-vaapi_device", "/dev/dri/renderD128", "-vf", f"hwupload,scale_vaapi={va_size}format=nv12",
                   "-c:v", "h264_vaapi", "-profile:v", "high", "-bf", "0", "-async_depth", "1"]
-        enc_sw = ["-vf", "format=yuv420p", "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+        enc_sw = ["-vf", f"{sw_scale}format=yuv420p", "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
                   "-profile:v", "high"]
         enc = enc_va if os.path.exists("/dev/dri/renderD128") and self.cfg["display"].get("encoder", "auto") != "x264" else enc_sw
         cmd = (["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "rawvideo", "-pix_fmt", pix,
@@ -477,9 +480,12 @@ class Session:
                             ev = json.loads(body)
                         except ValueError:
                             continue
-                        if ev.get("a") in ("down", "click"):
-                            self.pointer.update(self.connector)
-                        self.pointer.handle(ev)
+                        self._input(ev)
+
+    def _input(self, ev):
+        if ev.get("a") in ("down", "click"):
+            self.pointer.update(self.connector)
+        self.pointer.handle(ev)
 
     def _cleanup(self):
         self.stopped = True
@@ -494,7 +500,11 @@ class Session:
             except Exception:  # noqa: BLE001
                 pass
         if self.cap:
-            self.cap.close()
+            # поток захвата мог ещё держать последний кадр — память освободится вместе с ним
+            try:
+                self.cap.close()
+            except (BufferError, OSError) as e:
+                print("capture close:", e)
         self.pointer.close()
         if self.enabled:
             try:
@@ -508,3 +518,92 @@ class Session:
         except OSError:
             pass
         self.on_state({"running": False, "starting": False, "output": ""})
+
+
+# ── управление компьютером с устройства (как AnyDesk/RustDesk, но по своей связи Rexlink)
+def focused_output():
+    """Монитор, на котором сейчас работают (в фокусе), иначе первый."""
+    try:
+        r = subprocess.run(["niri", "msg", "-j", "focused-output"], capture_output=True, text=True, timeout=3)
+        name = (json.loads(r.stdout or "null") or {}).get("name", "")
+        if name:
+            return name
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        pass
+    return next(iter(niri_outputs()), "")
+
+
+# клавиши с устройства → имена для wtype
+KEYS = {"enter": "Return", "backspace": "BackSpace", "tab": "Tab", "esc": "Escape", "delete": "Delete",
+        "left": "Left", "right": "Right", "up": "Up", "down": "Down", "home": "Home", "end": "End",
+        "pageup": "Prior", "pagedown": "Next", "space": "space", "super": "Super_L",
+        **{f"f{i}": f"F{i}" for i in range(1, 13)}}
+MODS = {"ctrl": "ctrl", "alt": "alt", "shift": "shift", "super": "logo"}
+
+
+class RemoteSession(Session):
+    """Экран ПК на устройстве как есть, без виртуального монитора: касания — мышь (uinput), текст и клавиши —
+    клавиатура (wtype). Кадров не больше remote.fps, длинная сторона — до remote.maxSize."""
+
+    def _start(self, hello):
+        rc = self.cfg.get("remote", {})
+        if not shutil.which("ffmpeg"):
+            raise DisplayError("нужен ffmpeg")
+        self.connector = str(hello.get("output") or "") or focused_output()
+        if not self.connector:
+            raise DisplayError("не найден монитор")
+        self.on_state({"running": True, "starting": True, "output": self.connector, "remote": True})
+        self.cap = Capture(self.connector)
+        mv, pix, w, h, stride = self.cap.grab(first=True)
+        self.size = (w, h, stride, pix)
+        k = min(1.0, int(rc.get("maxSize", 1920)) / max(w, h))
+        self.out = (int(w * k) // 2 * 2, int(h * k) // 2 * 2)
+        self.fps = max(5, min(60, int(rc.get("fps", 30))))
+        self._send(0, json.dumps({"w": self.out[0], "h": self.out[1], "remote": True, "output": self.connector,
+                                  "outputs": list(niri_outputs())}).encode())
+        self._ffmpeg(w, h, pix, int(rc.get("bitrate", 8000000)), self.fps)
+        self.ffmpeg.stdin.write(mv[:stride * h])
+        self.pointer.update(self.connector, force=True)
+        self.on_state({"running": True, "starting": False, "output": self.connector, "remote": True, "error": ""})
+
+    def _capture_loop(self):
+        # экран ПК может обновляться 180 раз в секунду — устройству хватит remote.fps
+        w, h, stride, _ = self.size
+        step = 1.0 / self.fps
+        nxt = time.time()
+        try:
+            while not self.stopped:
+                nxt += step
+                time.sleep(max(0.0, nxt - time.time()))
+                nxt = max(nxt, time.time())
+                mv, pix, nw, nh, nstride = self.cap.grab()
+                if (nw, nh, nstride) != (w, h, stride):
+                    raise DisplayError("размер монитора изменился")
+                self.ffmpeg.stdin.write(mv[:stride * h])
+        except (OSError, ValueError, WaylandError, DisplayError) as e:
+            if not self.stopped:
+                print("remote capture:", e)
+                self.stop()
+
+    def _input(self, ev):
+        a = ev.get("a")
+        if a == "text":
+            text = str(ev.get("s", ""))[:500]
+            if text:
+                subprocess.run(["wtype", "--", text], capture_output=True, timeout=5)
+            return
+        if a == "key":
+            key = KEYS.get(str(ev.get("k", "")).lower(), str(ev.get("k", "")))
+            if not re.fullmatch(r"[A-Za-z0-9_]{1,20}", key or ""):
+                return
+            mods = [MODS[m] for m in ev.get("mods", []) if m in MODS]
+            cmd = ["wtype"]
+            for m in mods:
+                cmd += ["-M", m]
+            cmd += ["-k", key]
+            for m in reversed(mods):
+                cmd += ["-m", m]
+            subprocess.run(cmd, capture_output=True, timeout=5)
+            return
+        super()._input(ev)
+

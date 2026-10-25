@@ -127,6 +127,20 @@ Device kinds: `phone`, `tablet`, `watch`. `caps`: `notifications clipboard files
 Frame = `u32 length | JSON | binary`; video = `u32 length | u8 type | data`
 (0 — JSON `{w, h}`, 1 — H.264 Annex-B, SPS/PPS before every keyframe).
 
+## Continue on another device, scans, controlling the computer
+
+- **Continue**: `Super+Alt+C` (or the phone page) sends what is open on the computer to the device — the playing
+  video from the same second, the browser tab in focus (its address comes from the browser history by the page
+  title) — as a notification: one tap opens it. Back: the **Continue on PC** tile opens what the phone plays on the
+  computer (YouTube by video id, Spotify by track, otherwise a YouTube Music search); **Share → Open on PC** opens a link.
+- **Scan on PC**: the phone camera finds the sheet edges, crops and straightens pages (Google ML Kit document
+  scanner); the PDF goes to `Documents/Сканы` and opens. Start it from the app, the tile or Settings → Phone.
+- **Control the computer**: the app shows the computer screen (H.264, up to 1920 px, 30 fps by default), touches
+  become the mouse, the phone keyboard types (wtype); a bar has Esc, Tab, Win, Alt+Tab, copy and paste. The
+  **Computer** section has screen off, lock, sleep, restart, shutdown and your own commands (Settings → Phone →
+  Rexlink settings → Computer control, where it can be turned off). Away from home it needs the computer reachable:
+  TCP 47820 forwarded on the router.
+
 ## Turning the computer on from a device
 
 **Settings → Power → Wake-on-LAN** turns on Wake-on-LAN on the network card (`rexilone-wol`, a systemd `.link` file,
