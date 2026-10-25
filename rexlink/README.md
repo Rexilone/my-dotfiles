@@ -135,8 +135,13 @@ Frame = `u32 length | JSON | binary`; video = `u32 length | u8 type | data`
   computer (YouTube by video id, Spotify by track, otherwise a YouTube Music search); **Share → Open on PC** opens a link.
 - **Scan on PC**: the phone camera finds the sheet edges, crops and straightens pages (Google ML Kit document
   scanner); the PDF goes to `Documents/Сканы` and opens. Start it from the app, the tile or Settings → Phone.
-- **Control the computer**: the app shows the computer screen (H.264, up to 1920 px, 30 fps by default), touches
-  become the mouse, the phone keyboard types (wtype); a bar has Esc, Tab, Win, Alt+Tab, copy and paste. The
+- **Control the computer** (like RustDesk): the app shows the computer screen (H.264, up to 1920 px, 30 fps by
+  default). Touches become the mouse, the on-screen keyboard types (wtype). A keyboard and mouse plugged into the
+  phone (USB-OTG or Bluetooth) work as if plugged into the computer: real key codes with press and release (any
+  shortcut), the mouse is captured like in RustDesk — relative movement, all buttons, wheel (uinput,
+  `/etc/udev/rules.d/60-rexlink-uinput.rules`). A bar (⋯) has the mouse capture, another monitor, Esc, Tab, Win,
+  Alt+Tab, copy and paste. Away from home the phone connects to the home IP / DDNS from Settings → Power (TCP 47820
+  forwarded on the router). The
   **Computer** section has screen off, lock, sleep, restart, shutdown and your own commands (Settings → Phone →
   Rexlink settings → Computer control, where it can be turned off). Away from home it needs the computer reachable:
   TCP 47820 forwarded on the router.

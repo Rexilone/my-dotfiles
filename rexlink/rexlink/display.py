@@ -400,7 +400,15 @@ class Session:
                     niri("output", self.connector, "scale", scale)
                     self.pointer.update(self.connector, force=True)
         threading.Thread(target=keep_scale, daemon=True).start()
-        self.cap = Capture(self.connector)
+        # niri показывает монитор в `niri msg outputs` чуть раньше, чем объявляет его по Wayland — подождать
+        for i in range(20):
+            try:
+                self.cap = Capture(self.connector)
+                break
+            except WaylandError:
+                if i == 19:
+                    raise
+                time.sleep(0.3)
         mv, pix, w, h, stride = self.cap.grab(first=True)
         self.size = (w, h, stride, pix)
         self._send(0, json.dumps({"w": w, "h": h}).encode())
@@ -541,6 +549,90 @@ KEYS = {"enter": "Return", "backspace": "BackSpace", "tab": "Tab", "esc": "Escap
 MODS = {"ctrl": "ctrl", "alt": "alt", "shift": "shift", "super": "logo"}
 
 
+# клавиатура и мышь, подключённые к устройству: настоящие коды клавиш Linux и относительное движение мыши
+BTN_ALL = {"left": 0x110, "right": 0x111, "middle": 0x112, "side": 0x113, "extra": 0x114}
+REL_X, REL_Y = 0, 1
+
+
+class RemoteInput:
+    """Виртуальные клавиатура и мышь (uinput) — как если бы их воткнули в этот компьютер."""
+
+    def __init__(self):
+        self.fd = None
+        self.down = set()
+        self.acc = [0.0, 0.0]
+
+    def open(self):
+        if self.fd is not None:
+            return
+        fd = os.open("/dev/uinput", os.O_WRONLY | os.O_NONBLOCK)
+        fcntl.ioctl(fd, UI_SET_EVBIT, EV_KEY)
+        for code in range(1, 249):                 # все клавиши клавиатуры
+            fcntl.ioctl(fd, UI_SET_KEYBIT, code)
+        for b in BTN_ALL.values():
+            fcntl.ioctl(fd, UI_SET_KEYBIT, b)
+        fcntl.ioctl(fd, UI_SET_EVBIT, EV_REL)
+        for r in (REL_X, REL_Y, REL_WHEEL, REL_HWHEEL, REL_WHEEL_HI_RES, REL_HWHEEL_HI_RES):
+            fcntl.ioctl(fd, UI_SET_RELBIT, r)
+        fcntl.ioctl(fd, UI_DEV_SETUP, struct.pack("HHHH80sI", 3, 0x1209, 0x7279, 1, b"Rexlink remote input", 0))
+        fcntl.ioctl(fd, UI_DEV_CREATE)
+        self.fd = fd
+        time.sleep(0.15)
+
+    def _ev(self, t, c, v):
+        os.write(self.fd, struct.pack("llHHi", 0, 0, t, c, v))
+
+    def key(self, code, down):
+        if not 0 < code < 249 and code not in BTN_ALL.values():
+            return
+        self.open()
+        if down:
+            self.down.add(code)
+        else:
+            self.down.discard(code)
+        self._ev(EV_KEY, code, 1 if down else 0)
+        self._ev(EV_SYN, 0, 0)
+
+    def move(self, dx, dy):
+        self.open()
+        # дробные сдвиги копим, чтобы медленное движение не терялось
+        self.acc[0] += dx
+        self.acc[1] += dy
+        ix, iy = int(self.acc[0]), int(self.acc[1])
+        if not ix and not iy:
+            return
+        self.acc[0] -= ix
+        self.acc[1] -= iy
+        if ix:
+            self._ev(EV_REL, REL_X, ix)
+        if iy:
+            self._ev(EV_REL, REL_Y, iy)
+        self._ev(EV_SYN, 0, 0)
+
+    def wheel(self, dy, dx):
+        self.open()
+        for v, hi, lo in ((dy, REL_WHEEL_HI_RES, REL_WHEEL), (dx, REL_HWHEEL_HI_RES, REL_HWHEEL)):
+            if v:
+                self._ev(EV_REL, hi, int(v * 120))
+                if abs(v) >= 1:
+                    self._ev(EV_REL, lo, int(v))
+        self._ev(EV_SYN, 0, 0)
+
+    def close(self):
+        if self.fd is None:
+            return
+        try:
+            for code in list(self.down):          # ничего не должно остаться зажатым
+                self._ev(EV_KEY, code, 0)
+            self._ev(EV_SYN, 0, 0)
+            fcntl.ioctl(self.fd, UI_DEV_DESTROY)
+            os.close(self.fd)
+        except OSError:
+            pass
+        self.fd = None
+        self.down.clear()
+
+
 class RemoteSession(Session):
     """Экран ПК на устройстве как есть, без виртуального монитора: касания — мышь (uinput), текст и клавиши —
     клавиатура (wtype). Кадров не больше remote.fps, длинная сторона — до remote.maxSize."""
@@ -549,7 +641,8 @@ class RemoteSession(Session):
         rc = self.cfg.get("remote", {})
         if not shutil.which("ffmpeg"):
             raise DisplayError("нужен ffmpeg")
-        self.connector = str(hello.get("output") or "") or focused_output()
+        want = getattr(self, "want_output", "") or str(hello.get("output") or "")
+        self.connector = want if want in niri_outputs() else focused_output()
         if not self.connector:
             raise DisplayError("не найден монитор")
         self.on_state({"running": True, "starting": True, "output": self.connector, "remote": True})
@@ -587,6 +680,19 @@ class RemoteSession(Session):
 
     def _input(self, ev):
         a = ev.get("a")
+        # клавиатура и мышь, подключённые к устройству
+        if a in ("kc", "rel", "btn", "wheel"):
+            if not hasattr(self, "kbd"):
+                self.kbd = RemoteInput()
+            if a == "kc":
+                self.kbd.key(int(ev.get("c", 0)), bool(ev.get("d")))
+            elif a == "rel":
+                self.kbd.move(float(ev.get("dx", 0)), float(ev.get("dy", 0)))
+            elif a == "btn" and ev.get("b") in BTN_ALL:
+                self.kbd.key(BTN_ALL[ev["b"]], bool(ev.get("d")))
+            elif a == "wheel":
+                self.kbd.wheel(float(ev.get("dy", 0)), float(ev.get("dx", 0)))
+            return
         if a == "text":
             text = str(ev.get("s", ""))[:500]
             if text:
@@ -606,4 +712,9 @@ class RemoteSession(Session):
             subprocess.run(cmd, capture_output=True, timeout=5)
             return
         super()._input(ev)
+
+    def _cleanup(self):
+        if hasattr(self, "kbd"):
+            self.kbd.close()
+        super()._cleanup()
 

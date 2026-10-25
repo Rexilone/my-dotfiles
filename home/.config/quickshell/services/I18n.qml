@@ -1198,7 +1198,7 @@ Singleton {
         "Scan a document": "Скан документа",
         "Computer control": "Управление компьютером",
         "Control this computer from the device": "Управлять компьютером с устройства",
-        "Screen, mouse and keyboard, lock, sleep, restart and your commands — from the Rexlink app. Away from home it works if the router forwards TCP 47820 to this computer": "Экран, мышь и клавиатура, блокировка, сон, перезагрузка и свои команды — из приложения Rexlink. Не из дома работает, если роутер пробрасывает TCP 47820 на этот компьютер",
+        "Like RustDesk: the screen, mouse and keyboard — touch, or a keyboard and mouse plugged into the phone; lock, sleep, restart and your commands. Away from home: forward TCP 47820 on the router to this computer and enter your home IP or DDNS in Settings → Power → Wake-on-LAN": "Как RustDesk: экран, мышь и клавиатура — касаниями или клавиатурой и мышью, подключёнными к телефону; блокировка, сон, перезагрузка и свои команды. Не из дома: пробросьте на роутере TCP 47820 на этот компьютер и впишите домашний IP или DDNS в Настройки → Электропитание → Включение по сети",
         "Picture quality": "Качество картинки",
         "Long side and frames per second — lower is lighter for mobile internet": "Длинная сторона и кадры в секунду — меньше легче для мобильного интернета",
         "A button in the app runs it on this computer, the output comes back to the phone": "Кнопка в приложении запускает её на этом компьютере, вывод возвращается на телефон",

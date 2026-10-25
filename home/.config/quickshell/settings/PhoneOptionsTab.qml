@@ -144,7 +144,7 @@ ColumnLayout {
     SCard {
         icon: String.fromCodePoint(0xF037D)
         title: "Control this computer from the device"
-        desc: "Screen, mouse and keyboard, lock, sleep, restart and your commands — from the Rexlink app. Away from home it works if the router forwards TCP 47820 to this computer"
+        desc: "Like RustDesk: the screen, mouse and keyboard — touch, or a keyboard and mouse plugged into the phone; lock, sleep, restart and your commands. Away from home: forward TCP 47820 on the router to this computer and enter your home IP or DDNS in Settings → Power → Wake-on-LAN"
         SSwitch {
             checked: tab.st.remote?.enabled ?? true
             onToggled: v => Rexlink.set("remote", { enabled: v })

@@ -1,0 +1,3 @@
+# Rexlink: управление компьютером с телефона и планшет как монитор — виртуальные мышь и клавиатура (uinput)
+# доступны пользователю за этим компьютером (uaccess), без root
+KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"

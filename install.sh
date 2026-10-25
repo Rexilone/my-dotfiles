@@ -231,6 +231,10 @@ if (( PACKAGES )); then
         run sudo ufw allow 47821/udp comment Rexlink >/dev/null
         info "порты Rexlink открыты в ufw"
     fi
+    # мышь и клавиатура с телефона (управление компьютером, планшет как монитор): /dev/uinput без root
+    run sudo install -Dm644 "$DOTS/rexlink/system/60-rexlink-uinput.rules" /etc/udev/rules.d/60-rexlink-uinput.rules
+    run sudo udevadm control --reload || true
+    run sudo udevadm trigger --name-match=uinput || true
     # планшет/телефон как второй монитор: включение свободного разъёма видеокарты (без пароля — polkit)
     run sudo install -Dm755 "$DOTS/rexlink/system/rexlink-display" /usr/local/lib/rexlink/rexlink-display
     run sudo install -Dm644 "$DOTS/rexlink/system/dev.rexilone.rexlink.display.policy" \

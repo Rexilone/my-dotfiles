@@ -419,6 +419,8 @@ class Backend(QObject):
                                "wol": dict(wol.lan_info(self.devs.get(did, {}).get("address", "")),
                                            host=c["wol"].get("host", ""), port=int(c["wol"].get("port") or 9)),
                                # управление компьютером: можно ли и какие свои команды есть (только имена)
+                               # подключиться не из дома: внешний адрес (IP / DDNS) и порт связи, проброшенный на роутере
+                               "external": {"host": c["wol"].get("host", ""), "port": PORT},
                                "remote": {"enabled": bool(c["remote"].get("enabled", True)),
                                           "commands": [x.get("name", "") for x in c["remote"].get("commands", [])]}})
 
@@ -1117,7 +1119,7 @@ class Backend(QObject):
         if not self.server.online(did):
             raise ValueError(tr("Устройство не подключено"))
         if self._remote:
-            if self._remote[0] == did:
+            if self._remote[0] == did and not output:
                 return
             self._remote[1].stop()
         sess = None
@@ -1126,6 +1128,7 @@ class Backend(QObject):
             self._videoEvent.emit("remote_state", (did, sess, st))
 
         sess = display.RemoteSession(self.config.data, state)
+        sess.want_output = output           # другой монитор — кнопка на устройстве
         self._remote = (did, sess)
         sid = self.server.expect_stream(did, sess.run)
         self.server.send(did, {"t": "remote_start", "sid": sid, "remote": True})
