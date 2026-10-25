@@ -126,6 +126,11 @@ Singleton {
     property alias overlay: cfg.overlay
     function setGame(key, value) { gameMode = Object.assign({}, gameMode, { [key]: value }); }
     function setOverlay(key, value) { overlay = Object.assign({}, overlay, { [key]: value }); }
+    // звуки системы (services/Sounds.qml), экранное время (services/ScreenTime.qml)
+    property alias sounds: cfg.sounds
+    function setSounds(key, value) { sounds = Object.assign({}, sounds, { [key]: value }); }
+    property alias screenTime: cfg.screenTime
+    function setScreenTime(key, value) { screenTime = Object.assign({}, screenTime, { [key]: value }); }
     // ── расписание темы (services/ThemeSchedule.qml)
     property alias themeSchedule: cfg.themeSchedule
     function setSchedule(key, value) { themeSchedule = Object.assign({}, themeSchedule, { [key]: value }); }
@@ -273,6 +278,8 @@ Singleton {
             property var files: ({ view: "grid", zoom: 1, hidden: false, sort: "name", reverse: false, sidebar: true })
             property var audioRoutes: ({ out: {}, in: {} })
             property var gameMode: ({ auto: true, dnd: true, performance: true, noAnimations: true, pauseEffects: true, hideWidgets: false })
+            property var sounds: ({ enabled: true, volume: 0.6 })
+            property var screenTime: ({ enabled: true })
             property var overlay: ({ enabled: false, visible: true, position: "top-left", fps: true, frametime: true, cpu: true, gpu: true,
                                      temps: true, ram: true, vram: true, scale: 1, opacity: 0.5 })
             property var themeSchedule: ({ mode: "off", day: "light", night: "dark", from: "07:00", to: "20:00", wallDay: "", wallNight: "" })

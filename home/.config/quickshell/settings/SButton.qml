@@ -50,6 +50,6 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: btn.clicked()
+        onClicked: { Sounds.click(); btn.clicked(); }
     }
 }

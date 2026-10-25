@@ -87,4 +87,57 @@ Page {
             onToggled: v => Settings.setModule("osd", v)
         }
     }
+
+    // ── звуки системы (services/Sounds.qml)
+    SSection { text: I18n.tr("System sounds") }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 3
+
+        SCard {
+            icon: String.fromCodePoint(0xF075A)
+            title: "System sounds"
+            desc: "Soft clicks, chimes and device signals in the RexOS style"
+            SSwitch {
+                checked: Sounds.enabled
+                onToggled: v => Settings.setSounds("enabled", v)
+            }
+        }
+        SCard {
+            visible: Sounds.enabled
+            icon: String.fromCodePoint(0xF057E)
+            title: "Volume"
+            SSlider {
+                from: 0.1
+                to: 1.5
+                step: 0.1
+                value: Sounds.volume
+                display: Math.round(value * 100)
+                suffix: "%"
+                onMoved: v => Settings.setSounds("volume", v)
+            }
+            SButton {
+                icon: String.fromCodePoint(0xF040A)
+                onClicked: Sounds.play("notify", true)
+            }
+        }
+        Repeater {
+            model: Sounds.enabled ? Sounds.groupList : []
+            SCard {
+                id: sg
+                required property var modelData
+                title: modelData.label
+                desc: modelData.desc
+                SButton {
+                    icon: String.fromCodePoint(0xF040A)
+                    onClicked: Sounds.play(sg.modelData.sample, true)
+                }
+                SSwitch {
+                    checked: Sounds.groupOn(sg.modelData.key)
+                    onToggled: v => Settings.setSounds(sg.modelData.key, v)
+                }
+            }
+        }
+    }
 }

@@ -5,7 +5,7 @@ import Quickshell.Widgets
 import qs.services
 import qs.settings
 
-// приложения, скрытые с демонстрации экрана (Super+G): кто скрыт и кнопка «Показать»
+// приложения, скрытые с демонстрации экрана (Super+Shift+G): кто скрыт и кнопка «Показать»
 ColumnLayout {
     id: root
 
@@ -82,7 +82,7 @@ ColumnLayout {
         }
     }
 
-    // скрыть активное окно отсюда же (то же, что Super+G)
+    // скрыть активное окно отсюда же (то же, что Super+Shift+G)
     SButton {
         Layout.fillWidth: true
         visible: !!Niri.focusedWindow && !CastHide.focusedHidden && Niri.focusedWindow.app_id !== "org.quickshell"
@@ -93,7 +93,7 @@ ColumnLayout {
 
     Text {
         Layout.fillWidth: true
-        text: I18n.tr("Super+G hides or shows the active app. Viewers see a black box in its place.")
+        text: I18n.tr("Super+Shift+G hides or shows the active app. Viewers see a black box in its place.")
         wrapMode: Text.Wrap
         color: Theme.dim
         font.family: Theme.font

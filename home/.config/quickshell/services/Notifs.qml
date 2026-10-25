@@ -71,8 +71,10 @@ Singleton {
             root.timesChanged();
             n.closed.connect(() => root.hidePopup(n));
             // «Не беспокоить» или игровой режим: всплывают только важные
-            if ((!root.dnd && !GameMode.quiet) || n.urgency === NotificationUrgency.Critical)
+            if ((!root.dnd && !GameMode.quiet) || n.urgency === NotificationUrgency.Critical) {
                 root.popups = root.popups.filter(p => p !== n).concat([n]);
+                Sounds.notify(n);
+            }
         }
     }
 

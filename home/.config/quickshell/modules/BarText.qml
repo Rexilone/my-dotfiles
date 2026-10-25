@@ -24,7 +24,7 @@ Text {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onClicked: mouse => root.clicked(mouse)
+        onClicked: mouse => { Sounds.click(); root.clicked(mouse); }
         onWheel: wheel => root.wheel(wheel)
     }
 }

@@ -7,7 +7,7 @@ Item {
 
     default property alias content: row.data
     property int spacing: Theme.spacing
-    readonly property bool pill: Settings.barStyle === "pills"
+    readonly property bool pill: Settings.barStyle === "pills" || Settings.barStyle === "island"
     readonly property int pad: pill ? 14 : 0
 
     implicitWidth: row.implicitWidth + pad * 2

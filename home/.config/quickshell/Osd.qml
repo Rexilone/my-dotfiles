@@ -113,7 +113,10 @@ PanelWindow {
         const changed = lastSinkVol >= 0 && (Math.abs(a.volume - lastSinkVol) > 0.004 || a.muted !== lastSinkMute);
         lastSinkVol = a.volume;
         lastSinkMute = a.muted;
-        if (changed && armed && Ui.menusOpen === 0) pop("volume");
+        if (changed && armed && Ui.menusOpen === 0) {
+            pop("volume");
+            Sounds.play("volume");
+        }
     }
     function srcUpdate() {
         const a = source?.audio;

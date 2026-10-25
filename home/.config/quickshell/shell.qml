@@ -45,6 +45,8 @@ ShellRoot {
     PhoneReply {}
     // нижний индикатор: громкость, микрофон, яркость, голосовой ввод
     Osd {}
+    // игровая панель поверх игры (Super+Shift+G)
+    GameBar {}
     // цвета «под обои» считаются в фоне
     readonly property var wallColors: WallColors
     // настройки niri: сразу узнаём мониторы, чтобы запись конфига их не потеряла
@@ -66,9 +68,13 @@ ShellRoot {
     readonly property var drives: Drives
     // медиаклавиши: «следующий»/«предыдущий» и для браузеров (qs ipc call media next)
     readonly property var media: Media
+    // звуки системы, экранное время, таймер острова (IPC: sounds, timer)
+    readonly property var sounds: Sounds
+    readonly property var screenTime: ScreenTime
+    readonly property var timers: Timers
     readonly property var nightLight: NightLight
     readonly property var updates: Updates
-    // скрытые с демонстрации приложения (Super+G): индикатор в баре
+    // скрытые с демонстрации приложения (Super+Shift+G): индикатор в баре
     readonly property var castHide: CastHide
     // графический планшет через OpenTabletDriver (если установлен)
     readonly property var tablet: Tablet

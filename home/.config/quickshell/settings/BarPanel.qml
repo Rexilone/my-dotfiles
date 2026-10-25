@@ -19,6 +19,7 @@ ColumnLayout {
                 { value: "flat", label: "Solid" },
                 { value: "floating", label: "Floating" },
                 { value: "pills", label: "Pills" },
+                { value: "island", label: "Island" },
             ]
 
             Rectangle {
@@ -59,6 +60,14 @@ ColumnLayout {
                         height: 10
                         radius: 4
                         color: Theme.surfaceHi2
+                    }
+                    // остров: плашки по краям, чёрная капсула в центре
+                    Item {
+                        visible: st.modelData.value === "island"
+                        anchors.fill: parent
+                        Rectangle { x: 6; y: 5; width: 36; height: 10; radius: 5; color: Theme.surfaceHi2 }
+                        Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 4; width: 46; height: 12; radius: 6; color: "#050505" }
+                        Rectangle { anchors.right: parent.right; anchors.rightMargin: 6; y: 5; width: 30; height: 10; radius: 5; color: Theme.surfaceHi2 }
                     }
                     Row {
                         visible: st.modelData.value === "pills"
@@ -214,7 +223,7 @@ ColumnLayout {
                 { key: "stats", def: false, icon: 0xF061A, title: "CPU & RAM", desc: "Load at a glance; click opens system stats" },
                 { key: "updates", def: false, icon: 0xF06B0, title: "System updates", desc: "Shows available pacman updates; click to update" },
                 { key: "phone", def: true, icon: 0xF011C, title: "Phone (Rexlink)", desc: "Battery and notifications of your phone; click for the phone menu" },
-                { key: "castHidden", def: true, icon: 0xF0209, title: "Hidden from screencast", desc: "Shown while apps are hidden with Super+G; click for the list" },
+                { key: "castHidden", def: true, icon: 0xF0209, title: "Hidden from screencast", desc: "Shown while apps are hidden with Super+Shift+G; click for the list" },
                 { key: "tray", icon: 0xF0DCA, title: "System tray", desc: "App icons" },
                 { key: "keyboard", icon: 0xF030C, title: "Keyboard layout", desc: "en / ru indicator" },
                 { key: "volume", icon: 0xF057E, title: "Volume", desc: "Speaker and mixer" },

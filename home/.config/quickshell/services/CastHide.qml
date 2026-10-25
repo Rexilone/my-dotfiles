@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Приложения, скрытые с демонстрации экрана (Super+G → ~/.local/bin/niri-cast-toggle).
+// Приложения, скрытые с демонстрации экрана (Super+Shift+G → ~/.local/bin/niri-cast-toggle).
 // Список — ~/.config/niri/screencast-hidden.list, из него — правило niri в screencast-hidden.kdl.
 // Шелл следит за списком: индикатор в баре и меню со списком скрытых.
 Singleton {
@@ -18,7 +18,7 @@ Singleton {
         return apps.includes(appId);
     }
 
-    // показать приложение на демонстрации снова (скрыть — Super+G на его окне)
+    // показать приложение на демонстрации снова (скрыть — Super+Shift+G на его окне)
     function unhide(appId) {
         save(apps.filter(a => a !== appId));
     }
@@ -34,7 +34,7 @@ Singleton {
     }
 
     function writeKdl() {
-        const L = ["// генерируется niri-cast-toggle (Super+G) и шеллом, вручную не редактировать\n"];
+        const L = ["// генерируется niri-cast-toggle (Super+Shift+G) и шеллом, вручную не редактировать\n"];
         if (apps.length) {
             L.push("window-rule {\n");
             for (const a of apps) L.push(`    match app-id=r#"^${a.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}$"#\n`);

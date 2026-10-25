@@ -638,7 +638,8 @@ binds {
 
     // The quit action will show a confirmation dialog to avoid accidental exits.
     Mod+Alt+S hotkey-overlay-title="Restart Shell" { spawn-sh "$HOME/.local/bin/rexilone-shell restart"; }
-    Mod+G hotkey-overlay-title="Hide Window From Screencast" { spawn-sh "$HOME/.local/bin/niri-cast-toggle"; }
+    Mod+G hotkey-overlay-title="Game Bar" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc gamebar toggle"; }
+    Mod+Shift+G hotkey-overlay-title="Hide Window From Screencast" { spawn-sh "$HOME/.local/bin/niri-cast-toggle"; }
     Mod+Shift+E hotkey-overlay-title="Power Menu" { spawn-sh "$HOME/.local/bin/rexilone-shell ipc power toggle"; }
     Ctrl+Alt+Delete { quit; }
 
@@ -647,7 +648,7 @@ binds {
     Mod+Shift+P { power-off-monitors; }
 }
 
-// окна, скрытые с демонстрации экрана (Super+G)
+// окна, скрытые с демонстрации экрана (Super+Shift+G)
 include "screencast-hidden.kdl"
 
 // ввод и мониторы из Настроек Quickshell (Super+I)

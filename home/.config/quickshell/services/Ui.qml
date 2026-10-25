@@ -46,6 +46,7 @@ Singleton {
         { name: "Colors", keys: "theme scheme dark light schedule day night sunset", icon2: 0xF03D8, hidden: true, go: 7, tab: "colors" },
         // параметры проводника теперь в нём самом (главное меню → Параметры): находится поиском и открывает их
         { name: "Files", keys: "files file manager explorer folders drives usb flash disk mount preview thumbnails nautilus", icon2: 0xF024B, files: true },
+        { name: "Screen time", keys: "screen time usage apps hours statistics digital wellbeing", icon2: 0xF051B },
     ]
 
     // порядок в боковой панели Настроек — по группам
@@ -54,7 +55,7 @@ Singleton {
         { group: "Hardware", items: [1, 2, 10, 14, 20] },
         { group: "Connections", items: [3, 4, 5] },
         { group: "Look & feel", items: [7, 15] },
-        { group: "System", items: [11, 12, 13, 18, 19, 16, 17] },
+        { group: "System", items: [11, 12, 13, 18, 19, 24, 16, 17] },
     ]
 
     // последняя тёмная схема — чтобы плитка «Тёмная тема» возвращала её

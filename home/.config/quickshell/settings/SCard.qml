@@ -26,7 +26,7 @@ Rectangle {
         enabled: card.clickable
         hoverEnabled: true
         cursorShape: card.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
-        onClicked: card.clicked()
+        onClicked: { Sounds.click(); card.clicked(); }
     }
 
     RowLayout {

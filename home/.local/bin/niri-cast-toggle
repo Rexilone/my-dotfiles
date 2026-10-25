@@ -16,7 +16,7 @@ def notify(title, body, icon):
 
 
 def write_kdl(apps):
-    out = ["// генерируется niri-cast-toggle (Super+G) и шеллом, вручную не редактировать\n"]
+    out = ["// генерируется niri-cast-toggle (Super+Shift+G) и шеллом, вручную не редактировать\n"]
     if apps:
         out.append("window-rule {\n")
         for a in apps:

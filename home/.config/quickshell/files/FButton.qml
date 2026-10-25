@@ -100,6 +100,6 @@ Rectangle {
             else tipDelay.stop();
         }
         onPressed: { tipDelay.stop(); b.tipShown = false; b.pressed(); }
-        onClicked: b.clicked()
+        onClicked: { Sounds.click(); b.clicked(); }
     }
 }

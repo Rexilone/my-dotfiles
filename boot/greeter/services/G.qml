@@ -40,7 +40,8 @@ Singleton {
     readonly property int fontSize: Math.round(13 * scale)
     readonly property int iconSize: Math.round(15 * scale)
     readonly property int barHeight: Math.max(24, Math.min(56, t.barHeight ?? 32))
-    readonly property string barStyle: t.barStyle ?? "flat"
+    // «остров» (динамический остров шелла) на экране входа — как «пилюли»
+    readonly property string barStyle: t.barStyle === "island" ? "pills" : (t.barStyle ?? "flat")
     readonly property bool clock: t.greeterClock ?? true
     readonly property int radius: 10
     readonly property int animFast: 120

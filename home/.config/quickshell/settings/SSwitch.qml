@@ -38,6 +38,6 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: sw.toggled(!sw.checked)
+        onClicked: { Sounds.toggle(!sw.checked); sw.toggled(!sw.checked); }
     }
 }

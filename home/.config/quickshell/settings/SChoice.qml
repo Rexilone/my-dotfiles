@@ -63,7 +63,7 @@ Rectangle {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: seg.picked(opt.modelData.value)
+                    onClicked: { Sounds.click(); seg.picked(opt.modelData.value); }
                 }
             }
         }

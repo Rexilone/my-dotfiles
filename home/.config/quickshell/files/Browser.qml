@@ -68,6 +68,10 @@ Item {
     property var clip: ({ mode: "", paths: [] })
     property string renaming: ""
     property var job: null              // { title, done, total }
+    // ход копирования виден и в «острове» бара
+    readonly property string jobId: `files-${Math.random()}`
+    onJobChanged: job ? Jobs.set(jobId, Object.assign({ cancel: () => cancelJob() }, job)) : Jobs.remove(jobId)
+    Component.onDestruction: Jobs.remove(jobId)
     property string toast: ""
     property bool showPreview: false
     property var info: null             // свойства

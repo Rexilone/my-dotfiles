@@ -154,7 +154,7 @@ ColumnLayout {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: tile.hit()
+            onClicked: { Sounds.click(); tile.hit(); }
         }
     }
 

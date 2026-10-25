@@ -12,8 +12,12 @@ Singleton {
     // [{ dev, parent, name, size, free, fstype, mount, removable }]
     property var drives: []
     property var known: ({})          // устройства, которые уже видели (новые — подключили только что)
+    property var knownRemovable: ({})
     property bool first: true
     signal mounted(string dev, string path)
+    // флешку вставили / вынули (для звуков; первое сканирование при запуске не считается)
+    signal plugged
+    signal unplugged
 
     // системные разделы и служебные типы разделов не показываем
     readonly property var systemMounts: ["/", "/boot", "/boot/efi", "/efi", "/home", "/var", "/var/log", "/var/cache/pacman/pkg", "/nix", "/nix/store", "/usr", "/opt", "/srv", "/tmp", "[SWAP]"]
@@ -66,6 +70,14 @@ Singleton {
             if (!d.mount && (cfg.automount ?? true)) mount(d.dev, true);
             else if (d.mount && (cfg.driveNotify ?? true)) notifyDrive(d, d.mount);
         }
+        if (!first) {
+            if (out.some(d => d.removable && !known[d.parent] && !known[d.dev])) plugged();
+            else if (Object.keys(known).some(k => knownRemovable[k] && !seen[k])) unplugged();
+        }
+        const rem = {};
+        for (const d of out) if (d.removable) { rem[d.dev] = true; rem[d.parent] = true; }
+        knownRemovable = rem;
+        for (const d of out) seen[d.parent] = true;
         known = seen;
         first = false;
     }

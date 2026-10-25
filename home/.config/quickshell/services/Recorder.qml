@@ -78,6 +78,7 @@ Singleton {
         paused = false;
         rec.command = args(false);
         rec.running = true;
+        Sounds.play("record");
     }
 
     function stop() {
@@ -86,6 +87,7 @@ Singleton {
             countdown = 0;
         } else if (recording) {
             rec.signal(2);  // SIGINT: остановить и сохранить
+            Sounds.play("record");
         }
     }
 

@@ -17,9 +17,11 @@ PanelWindow {
     property real popupX: 0
     property var trayItem: null
 
-    // стиль: flat — сплошной, floating — плавающий со скруглением, pills — группы на плашках
+    // стиль: flat — сплошной, floating — плавающий со скруглением, pills — группы на плашках,
+    // island — плашки по краям и «динамический остров» в центре (modules/Island.qml)
     readonly property string style: Settings.barStyle
-    readonly property int gap: style === "flat" ? 0 : style === "pills" ? 4 : 6
+    readonly property bool pilled: style === "pills" || style === "island"
+    readonly property int gap: style === "flat" ? 0 : pilled ? 4 : 6
 
     Connections {
         target: Ui
@@ -69,17 +71,17 @@ PanelWindow {
     BackgroundEffect.blurRegion: Theme.blurOn ? blurReg : null
     Region {
         id: blurReg
-        item: bar.style === "pills" ? null : barBg
+        item: bar.pilled ? null : barBg
         radius: barBg.radius
-        Region { item: bar.style === "pills" && gLaunch.visible ? gLaunch : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gWs.visible ? gWs : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gWin.visible ? gWin : null; radius: Theme.radius }
+        Region { item: bar.pilled && gLaunch.visible ? gLaunch : null; radius: Theme.radius }
+        Region { item: bar.pilled && gWs.visible ? gWs : null; radius: Theme.radius }
+        Region { item: bar.pilled && gWin.visible ? gWin : null; radius: Theme.radius }
         Region { item: bar.style === "pills" && gMedia.visible ? gMedia : null; radius: Theme.radius }
         Region { item: bar.style === "pills" && gClock.visible ? gClock : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gInd.visible ? gInd : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gTray.visible ? gTray : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gPlug.visible ? gPlug : null; radius: Theme.radius }
-        Region { item: bar.style === "pills" && gStatus.visible ? gStatus : null; radius: Theme.radius }
+        Region { item: bar.pilled && gInd.visible ? gInd : null; radius: Theme.radius }
+        Region { item: bar.pilled && gTray.visible ? gTray : null; radius: Theme.radius }
+        Region { item: bar.pilled && gPlug.visible ? gPlug : null; radius: Theme.radius }
+        Region { item: bar.pilled && gStatus.visible ? gStatus : null; radius: Theme.radius }
     }
 
     // фон бара
@@ -89,7 +91,7 @@ PanelWindow {
         anchors.topMargin: bar.gap
         anchors.leftMargin: bar.style === "floating" ? 10 : 0
         anchors.rightMargin: bar.style === "floating" ? 10 : 0
-        visible: bar.style !== "pills"
+        visible: !bar.pilled
         radius: bar.style === "floating" ? 14 : 0
         color: Theme.panel
         border.width: bar.style === "floating" ? 1 : 0
@@ -100,13 +102,13 @@ PanelWindow {
         id: inner
         anchors.fill: parent
         anchors.topMargin: bar.gap
-        anchors.leftMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 4 : 0
-        anchors.rightMargin: bar.style === "floating" ? 10 : bar.style === "pills" ? 4 : 0
+        anchors.leftMargin: bar.style === "floating" ? 10 : bar.pilled ? 4 : 0
+        anchors.rightMargin: bar.style === "floating" ? 10 : bar.pilled ? 4 : 0
 
         // ── слева
         Row {
             anchors.left: parent.left
-            anchors.leftMargin: bar.style === "pills" ? 0 : Theme.padding
+            anchors.leftMargin: bar.pilled ? 0 : Theme.padding
             height: parent.height
             spacing: 10
 
@@ -140,11 +142,13 @@ PanelWindow {
             }
         }
 
-        // ── по центру
+        // ── по центру (в стиле «Остров» тут остров — своё окно, а эта строка только держит место для меню часов)
         Row {
             anchors.centerIn: parent
             height: parent.height
             spacing: 10
+            opacity: bar.style === "island" ? 0 : 1
+            enabled: bar.style !== "island"
 
             // кот, спектр и текст песни
             BarGroup {
@@ -211,7 +215,7 @@ PanelWindow {
         // ── справа
         Row {
             anchors.right: parent.right
-            anchors.rightMargin: bar.style === "pills" ? 0 : Theme.padding
+            anchors.rightMargin: bar.pilled ? 0 : Theme.padding
             height: parent.height
             spacing: 10
 
@@ -223,7 +227,7 @@ PanelWindow {
                     || Settings.moduleOn("stats", false)
                     || (Settings.moduleOn("updates", false) && (!Updates.installed || Updates.count > 0 || Updates.checking))
 
-                // есть приложения, скрытые с демонстрации (Super+G); ярче — если скрыто активное окно
+                // есть приложения, скрытые с демонстрации (Super+Shift+G); ярче — если скрыто активное окно
                 BarText {
                     id: castIcon
                     anchors.verticalCenter: parent.verticalCenter
@@ -364,6 +368,11 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    Island {
+        bar: bar
+        visible: bar.style === "island"
     }
 
     Popup {

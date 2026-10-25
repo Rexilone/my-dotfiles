@@ -63,6 +63,7 @@ Scope {
 
     // готовая картинка (уже обрезанная): в буфер, в файл, закрепить; в историю — если сохранена
     function deliver(file, copy, save, pin, pinGeom) {
+        Sounds.play("shutter");
         const out = savePath();
         Quickshell.execDetached(["sh", "-c", `
             [ "$2" = 1 ] && wl-copy -t image/png < "$1"
