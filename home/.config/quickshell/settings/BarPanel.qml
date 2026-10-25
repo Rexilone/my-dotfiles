@@ -215,7 +215,7 @@ ColumnLayout {
                 { key: "updates", def: false, icon: 0xF06B0, title: "System updates", desc: "Shows available pacman updates; click to update" },
                 { key: "phone", def: true, icon: 0xF011C, title: "Phone (Rexlink)", desc: "Battery and notifications of your phone; click for the phone menu" },
                 { key: "phoneDrop", def: true, icon: 0xF0552, title: "Files onto the phone icon", desc: "Drag files onto the phone in the bar — they go to the phone" },
-                { key: "castHidden", def: true, icon: 0xF0209, title: "Hidden from screencast", desc: "Shown while apps are hidden with Super+Shift+G; click for the list" },
+                { key: "castHidden", def: true, icon: 0xF0209, title: "Hidden from screencast", desc: "Shown while apps are hidden with Super+G; click for the list" },
                 { key: "tray", icon: 0xF0DCA, title: "System tray", desc: "App icons" },
                 { key: "keyboard", icon: 0xF030C, title: "Keyboard layout", desc: "en / ru indicator" },
                 { key: "volume", icon: 0xF057E, title: "Volume", desc: "Speaker and mixer" },

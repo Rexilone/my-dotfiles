@@ -139,7 +139,9 @@ Frame = `u32 length | JSON | binary`; video = `u32 length | u8 type | data`
   default). By default the screen is a touchpad: the finger moves the pointer, a tap clicks, two fingers scroll,
   a two-finger tap is a right click, three — middle, tap-and-hold-again drags («Касания» switches to pointing
   directly). Win, Ctrl, Alt and Shift on the bar stay pressed until the next key (long press — until pressed again),
-  so any shortcut works; keys go as real Linux key codes. The on-screen keyboard types text (wtype). A keyboard and mouse plugged into the
+  so any shortcut works; keys go as real Linux key codes. Windows and workspaces: three fingers left/right — the
+  neighbouring window, up/down — another workspace; four fingers — the same, moving the window along. The «Окна»
+  row on the bar has the same plus overview, width, fullscreen and close (niri actions from a fixed list). The on-screen keyboard types text (wtype). A keyboard and mouse plugged into the
   phone (USB-OTG or Bluetooth) work as if plugged into the computer: real key codes with press and release (any
   shortcut), the mouse is captured like in RustDesk — relative movement, all buttons, wheel (uinput,
   `/etc/udev/rules.d/60-rexlink-uinput.rules`). A bar (⋯) has the mouse capture, another monitor, Esc, Tab, Win,

@@ -115,7 +115,7 @@ Singleton {
         "Phone (Rexlink)": "Телефон (Rexlink)",
         "Battery and notifications of your phone; click for the phone menu": "Заряд и уведомления телефона; клик — меню телефона",
         "Hidden from screencast": "Скрыто с трансляции",
-        "Shown while apps are hidden with Super+Shift+G; click for the list": "Виден, пока приложения скрыты через Super+Shift+G; клик — список",
+        "Shown while apps are hidden with Super+G; click for the list": "Виден, пока приложения скрыты через Super+G; клик — список",
         "System tray": "Системный трей", "App icons": "Значки приложений", "Keyboard layout": "Раскладка клавиатуры",
         "en / ru indicator": "Индикатор en / ru", "Volume": "Громкость", "Speaker and mixer": "Динамики и микшер",
         "Microphone": "Микрофон", "Mic level and mute": "Уровень микрофона и отключение", "Network": "Сеть",
@@ -374,7 +374,7 @@ Singleton {
         "Right-click — app menu. Pin — keep the icon in the bar.": "Правый клик — меню приложения. Булавка — оставить значок в баре.",
         "App menu": "Меню приложения", "Show": "Показать", "active window": "активное окно",
         "1 app is blacked out for viewers": "1 приложение скрыто от зрителей",
-        "Super+Shift+G hides or shows the active app. Viewers see a black box in its place.": "Super+Shift+G скрывает или показывает активное приложение. Зрители видят на его месте чёрный прямоугольник.",
+        "Super+G hides or shows the active app. Viewers see a black box in its place.": "Super+G скрывает или показывает активное приложение. Зрители видят на его месте чёрный прямоугольник.",
         // телефон
         "No paired devices": "Нет сопряжённых устройств", "Start Rexlink to connect your phone": "Запустите Rexlink, чтобы подключить телефон",
         "Send files": "Отправить файлы", "Get clipboard": "Взять буфер", "Webcam on": "Камера включена", "Send": "Отправить",

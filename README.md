@@ -35,7 +35,7 @@ one color scheme across the shell, terminal, Neovim, yazi, GTK apps and even Ste
 - **Software** — install apps from pacman and AUR: categories, editors' picks, screenshots, search across repositories and AUR, one-click install, remove and update (password via the polkit dialog). Opens from the launcher.
 - **Launcher** (`Super+D`) — fuzzy search (also in the wrong keyboard layout), pinned apps, calculator, `>` shell commands, `?` web search, app actions, settings pages.
 - **Notifications** with history and Do not disturb; **clipboard history** with images (`Super+V`).
-- **Screen recorder** (`Alt+Z`) on gpu-screen-recorder; **hide a window from screencasts** (`Super+Shift+G`).
+- **Screen recorder** (`Alt+Z`) on gpu-screen-recorder; **hide a window from screencasts** (`Super+G`).
 - **Desktop widgets** — clock, system rings, weather, media, calendar, notes, quotes, phone.
 - **Wallpaper switcher** (`Super+W`), **polkit** password dialog, **power menu** (`Super+Shift+E`).
 - **Steam theme** for [Millennium](https://steambrew.app) that follows the shell's colors.
@@ -112,8 +112,7 @@ Tests: `bash tests/run.sh`.
 | `Super+I` | Settings |
 | `Super+V` | Clipboard history |
 | `Super+W` | Wallpapers |
-| `Super+G` | Game bar: performance, music, sound, messages, screenshot, clip |
-| `Super+Shift+G` | Hide the window from screencasts |
+| `Super+G` | Hide the window from screencasts |
 | `Alt+Z` | Screen recorder |
 | `Super+Shift+E` | Power menu |
 | `Super+Alt+S` | Restart the shell |

@@ -225,7 +225,7 @@ PanelWindow {
                     || Settings.moduleOn("stats", false)
                     || (Settings.moduleOn("updates", false) && (!Updates.installed || Updates.count > 0 || Updates.checking))
 
-                // есть приложения, скрытые с демонстрации (Super+Shift+G); ярче — если скрыто активное окно
+                // есть приложения, скрытые с демонстрации (Super+G); ярче — если скрыто активное окно
                 BarText {
                     id: castIcon
                     anchors.verticalCenter: parent.verticalCenter
